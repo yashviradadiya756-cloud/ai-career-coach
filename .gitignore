@@ -1,0 +1,14 @@
+# Node modules
+node_modules/
+
+# Environment
+.env
+
+# Build
+dist/
+
+# Upload files
+backend/uploads/
+
+# Logs
+*.log

@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+@import "tailwindcss";
+
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --dark: #0f172a;
+  --light: #f8fafc;
+  --gray: #64748b;
+  --border: #e2e8f0;
+  --success: #10b981;
+}
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:'Inter',sans-serif;
+}
+
+body {
+  background-color: var(--light);
+  color: var(--dark);
+  line-height: 1.5;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Custom Scrollbar for better UX */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.footer-link {
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.footer-link:hover {
+  color: #3b82f6;
+}
+/* Custom Scrollbars for a clean workspace feel */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0B1120;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+/* Linear & Notion Inspired Card Mechanics */
+.premium-card {
+  background: #1E293B;
+  padding: 24px;
+  border-radius: 18px;
+  border: 1px solid #334155;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.premium-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 35px rgba(0, 0, 0, 0.35);
+  border-color: #475569;
+}
+
+/* Sidebar Animation Mechanics */
+.sidebar-link {
+  transition: background-color 0.25s ease, color 0.25s ease, transform 0.2s ease;
+}
+.sidebar-link:active {
+  transform: scale(0.98);
+}
+
+/* Interactive Utility States */
+.activity-row {
+  transition: background-color 0.2s ease;
+}
+.activity-row:hover {
+  background: #273449;
+  cursor: pointer;
+}
+
+.premium-btn {
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.premium-btn:active {
+  transform: scale(0.96);
+}
+
+.progress-fill-anim {
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}

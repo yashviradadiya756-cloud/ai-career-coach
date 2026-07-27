@@ -1,0 +1,166 @@
+.pricing-section{
+    padding:90px 0;
+    background:#f8fafc;
+}
+
+.container{
+    max-width:1500px;
+    margin:auto;
+}
+
+.pricing-header{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.pricing-header h2{
+    font-size:45px;
+    font-weight:700;
+    margin:20px 0;
+}
+
+.pricing-header p{
+    color:#64748b;
+    max-width:700px;
+    margin:auto;
+}
+
+.pricing-row{
+    display:flex;
+    justify-content:center;
+    gap:30px;
+    flex-wrap:wrap;
+}
+
+.pricing-card{
+    width:500px;
+    min-height:700px;
+    background:white;
+    border-radius:20px;
+    padding:35px;
+    box-shadow:0 15px 40px rgba(0,0,0,.08);
+    display:flex;
+    flex-direction:column;
+    transition:.3s;
+    position:relative;
+}
+
+.pricing-card:hover{
+    transform:translateY(-10px);
+}
+
+.popular-card{
+    border:2px solid #2563eb;
+    transform:scale(1.04);
+}
+
+.popular-card:hover{
+    transform:scale(1.04) translateY(-10px);
+}
+
+.popular-badge{
+    position:absolute;
+    top:20px;
+    right:20px;
+    background:#2563eb;
+    color:white;
+    padding:8px 16px;
+    border-radius:20px;
+    font-size:14px;
+}
+
+.plan-description{
+    color:#64748b;
+    margin:6px 0;
+    min-height:70px;
+}
+
+.price{
+    margin:8px 0 8px;
+}
+
+.price span{
+    font-size:60px;
+    color:#2563eb;
+    font-weight:700;
+}
+
+.price small{
+    font-size:24px;
+    color:#64748b;
+}
+
+.feature-list{
+    list-style:none;
+    padding:0;
+    flex:1;
+}
+
+.feature-list li{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    padding: 8px 0;
+}
+
+.check{
+    color:#22c55e;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.pricing-btn{
+    width:100%;
+    padding:15px;
+    border-radius:12px;
+    margin-top:20px;
+    font-weight:600;
+}
+
+.btn-primary{
+    background:#2563eb;
+    color:white;
+    border:none;
+}
+
+.btn-outline-primary{
+    background:white;
+    border:2px solid #2563eb;
+    color:#2563eb;
+}
+
+.btn-primary:hover{
+    background:#1d4ed8;
+}
+
+.btn-outline-primary:hover{
+    background:#2563eb;
+    color:white;
+}
+
+@media (max-width: 1200px) {
+    .pricing-card {
+        width: 420px;
+    }
+}
+
+@media (max-width: 992px) {
+    .pricing-row {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .pricing-card {
+        width: 100%;
+        max-width: 500px;
+        min-height: auto;
+    }
+
+    .popular-card {
+        transform: scale(1);
+    }
+
+    .popular-card:hover {
+        transform: translateY(-10px);
+    }
+}

@@ -1,0 +1,121 @@
+.resume-page{
+    padding:30px;
+    background:#f8fafc;
+    min-height:100vh;
+}
+
+.resume-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.resume-header h2{
+    font-size:30px;
+    color:#1e293b;
+}
+
+.search-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#fff;
+    padding:10px 15px;
+    border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+.search-box input{
+    border:none;
+    outline:none;
+    font-size:15px;
+}
+
+.resume-card{
+    background:white;
+    border-radius:15px;
+    overflow:hidden;
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+thead{
+    background:#eff6ff;
+}
+
+th,td{
+    padding:16px;
+    text-align:left;
+}
+
+tbody tr{
+    border-bottom:1px solid #e2e8f0;
+}
+
+tbody tr:hover{
+    background:#f8fafc;
+}
+
+.ats{
+    background:#dcfce7;
+    color:#15803d;
+    padding:5px 12px;
+    border-radius:20px;
+    font-weight:600;
+}
+
+.reviewed{
+    background:#dcfce7;
+    color:#15803d;
+    padding:5px 10px;
+    border-radius:20px;
+}
+
+.pending{
+    background:#fef3c7;
+    color:#b45309;
+    padding:5px 10px;
+    border-radius:20px;
+}
+
+.actions{
+    display:flex;
+    gap:10px;
+}
+
+.actions button{
+    width:36px;
+    height:36px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.view{
+    background:#dbeafe;
+    color:#2563eb;
+}
+
+.download{
+    background:#dcfce7;
+    color:#16a34a;
+}
+
+.delete{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.empty{
+    padding:40px;
+    text-align:center;
+    color:#64748b;
+}

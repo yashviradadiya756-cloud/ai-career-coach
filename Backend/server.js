@@ -1,0 +1,54 @@
+require("dotenv").config();
+console.log("Gemini Key Loaded:", process.env.GEMINI_API_KEY ? "YES" : "NO");
+
+const express = require("express");
+const cors = require("cors");
+
+const connectDB = require("./config/db");
+
+const userRoutes = require("./routes/userRoutes");
+const authRoutes = require("./routes/authRoutes");
+const resumeRoutes = require("./routes/resumeRoutes");  
+const skillGapRoutes = require("./routes/skillGapRoutes");
+const roadmapRoutes = require("./routes/roadmapRoutes");
+const interviewRoutes = require("./routes/interviewRoutes");
+const learningRoutes = require("./routes/learningRoutes");
+const progressRoutes = require("./routes/progressRoutes");
+const achievementRoutes = require("./routes/achievementRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+
+const app = express();
+
+// Connect Database
+connectDB();
+
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true,}));
+
+const path = require("path");
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.get("/", (req, res) => {
+  res.send("AI Career Coach Backend is Running...");
+});
+
+app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/resume", resumeRoutes);
+app.use("/api/skillgap", skillGapRoutes);
+app.use("/api/roadmap", roadmapRoutes);
+app.use("/api/interview", interviewRoutes);
+app.use("/api/learning", learningRoutes);
+app.use("/api/progress", progressRoutes);
+app.use("/api/achievements", achievementRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/payment", paymentRoutes);
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+

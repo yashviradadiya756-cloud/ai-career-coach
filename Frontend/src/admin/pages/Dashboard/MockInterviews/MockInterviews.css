@@ -1,0 +1,234 @@
+/* ==========================
+   Mock Interview Page
+========================== */
+
+.mock-page {
+    padding: 30px;
+    background: #f4f7fc;
+    min-height: 100vh;
+}
+
+/* ==========================
+   Header
+========================== */
+
+.mock-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:30px;
+}
+
+.mock-title h2{
+    font-size:34px;
+    font-weight:700;
+    color:#1e293b;
+}
+
+.mock-title p{
+    color:#64748b;
+    margin-top:6px;
+}
+
+.mock-search{
+    width:340px;
+    height:55px;
+    background:#fff;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    padding:0 18px;
+    box-shadow:0 8px 25px rgba(0,0,0,.08);
+}
+
+.mock-search svg{
+    color:#64748b;
+}
+
+.mock-search input{
+    flex:1;
+    border:none;
+    outline:none;
+    margin-left:12px;
+    font-size:16px;
+    background:none;
+}
+
+/* ==========================
+   Table Card
+========================== */
+
+.mock-table-card{
+    background:#fff;
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+/* ==========================
+   Table
+========================== */
+
+.mock-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.mock-table thead{
+    background:#eef4ff;
+}
+
+.mock-table th{
+    padding:18px;
+    text-align:left;
+    font-size:16px;
+    font-weight:700;
+    color:#1e293b;
+}
+
+.mock-table td{
+    padding:18px;
+    border-bottom:1px solid #edf2f7;
+    font-size:15px;
+    color:#334155;
+    vertical-align:middle;
+}
+
+.mock-table tbody tr:hover{
+    background:#f8fbff;
+}
+
+/* ==========================
+   Score Badge
+========================== */
+
+.score-badge{
+    display:inline-block;
+    padding:8px 16px;
+    border-radius:20px;
+    font-weight:700;
+    background:#dbeafe;
+    color:#2563eb;
+}
+
+/* ==========================
+   Status
+========================== */
+
+.status-completed{
+    display:inline-block;
+    padding:8px 18px;
+    border-radius:20px;
+    background:#dcfce7;
+    color:#15803d;
+    font-weight:600;
+}
+
+.status-pending{
+    display:inline-block;
+    padding:8px 18px;
+    border-radius:20px;
+    background:#fef3c7;
+    color:#d97706;
+    font-weight:600;
+}
+
+.status-failed{
+    display:inline-block;
+    padding:8px 18px;
+    border-radius:20px;
+    background:#fee2e2;
+    color:#dc2626;
+    font-weight:600;
+}
+
+/* ==========================
+   Actions
+========================== */
+
+.mock-actions{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+}
+
+.mock-btn{
+    width:40px;
+    height:40px;
+    border:none;
+    border-radius:10px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.view-btn{
+    background:#dbeafe;
+    color:#2563eb;
+}
+
+.view-btn:hover{
+    background:#2563eb;
+    color:#fff;
+}
+
+.edit-btn{
+    background:#dcfce7;
+    color:#16a34a;
+}
+
+.edit-btn:hover{
+    background:#16a34a;
+    color:#fff;
+}
+
+.delete-btn{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.delete-btn:hover{
+    background:#dc2626;
+    color:#fff;
+}
+
+/* ==========================
+   Responsive
+========================== */
+
+@media(max-width:1200px){
+
+.mock-table-card{
+    overflow-x:auto;
+}
+
+.mock-table{
+    min-width:1100px;
+}
+
+}
+
+@media(max-width:768px){
+
+.mock-header{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:20px;
+}
+
+.mock-search{
+    width:100%;
+}
+
+.mock-title h2{
+    font-size:28px;
+}
+
+.mock-page{
+    padding:20px;
+}
+
+}
