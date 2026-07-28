@@ -32,19 +32,19 @@ import Settings from "./dashboard/pages/Settings";
 
 // Layout and Dashboard
 import AdminLayout from './admin/layouts/AdminLayout';
-import AdminDashboard from './admin/pages/dashboard/Dashboard';
-import AdminUsers from "./admin/pages/dashboard/Users/Users";
-import AdminResumeReports from "./admin/pages/dashboard/ResumeReports/ResumeReports";
-import AdminCareerAssessment from "./admin/pages/dashboard/CareerAssessment/CareerAssessment";
-import AdminResumeAnalyzer from "./admin/pages/dashboard/ResumeAnalyzer/ResumeAnalyzer";
-import AdminSkillGap from "./admin/pages/dashboard/SkillGap/SkillGap";
-import AdminCareerRoadmaps from "./admin/pages/dashboard/CareerRoadmaps/CareerRoadmaps";
-import AdminMockInterviews from "./admin/pages/dashboard/MockInterviews/MockInterviews";
-import AdminLearning from "./admin/pages/dashboard/Learning/Learning";
-import AdminPayments from "./admin/pages/dashboard/Payments/Payments";
-import AdminAnalytics from "./admin/pages/dashboard/Analytics/Analytics";
-import AdminNotifications from "./admin/pages/dashboard/Notification/Notifications";
-import AdminSettings from "./admin/pages/dashboard/Settings/Settings";
+import AdminDashboard from "./admin/pages/Dashboard/Dashboard";
+import AdminUsers from "./admin/pages/Dashboard/Users/Users";
+import AdminResumeReports from "./admin/pages/Dashboard/ResumeReports/ResumeReports";
+import AdminCareerAssessment from "./admin/pages/Dashboard/CareerAssessment/CareerAssessment";
+import AdminResumeAnalyzer from "./admin/pages/Dashboard/ResumeAnalyzer/ResumeAnalyzer";
+import AdminSkillGap from "./admin/pages/Dashboard/SkillGap/SkillGap";
+import AdminCareerRoadmaps from "./admin/pages/Dashboard/CareerRoadmaps/CareerRoadmaps";
+import AdminMockInterviews from "./admin/pages/Dashboard/MockInterviews/MockInterviews";
+import AdminLearning from "./admin/pages/Dashboard/Learning/Learning";
+import AdminPayments from "./admin/pages/Dashboard/Payments/Payments";
+import AdminAnalytics from "./admin/pages/Dashboard/Analytics/Analytics";
+import AdminNotifications from "./admin/pages/Dashboard/Notification/Notifications";
+import AdminSettings from "./admin/pages/Dashboard/Settings/Settings";
 
 // Step 6 Quick Stand-in Component factory
 const createPlaceholder = (name) => () => (
