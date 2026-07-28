@@ -1,16 +1,14 @@
-const mongoose = require("mongoose");
+const dns = require("dns");
 
-const uri = process.env.MONGO_URI;
+dns.setServers([
+  "8.8.8.8",
+  "8.8.4.4"
+]);
 
-require("dotenv").config();
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("✅ Connected");
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+dns.resolveSrv(
+  "_mongodb._tcp.cluster0.opr2gq4.mongodb.net",
+  (err, addresses) => {
+    console.log(err);
+    console.log(addresses);
+  }
+);

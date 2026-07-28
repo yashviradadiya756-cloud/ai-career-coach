@@ -1,5 +1,21 @@
+const dns = require("dns");
+
+dns.setServers([
+  "8.8.8.8",
+  "8.8.4.4"
+]);
+
+dns.setDefaultResultOrder("ipv4first");
+
 require("dotenv").config();
-console.log("Gemini Key Loaded:", process.env.GEMINI_API_KEY ? "YES" : "NO");
+
+console.log(
+  "Gemini Key Loaded:",
+  process.env.GEMINI_API_KEY ? "YES" : "NO"
+);
+
+console.log("Razorpay Key:", process.env.RAZORPAY_KEY_ID);
+console.log("Secret Loaded:", !!process.env.RAZORPAY_KEY_SECRET);
 
 const express = require("express");
 const cors = require("cors");
@@ -8,7 +24,7 @@ const connectDB = require("./config/db");
 
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
-const resumeRoutes = require("./routes/resumeRoutes");  
+const resumeRoutes = require("./routes/resumeRoutes");
 const skillGapRoutes = require("./routes/skillGapRoutes");
 const roadmapRoutes = require("./routes/roadmapRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
@@ -20,7 +36,6 @@ const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
 
-// Connect Database
 connectDB();
 
 app.use(
@@ -32,14 +47,21 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true,}));
+app.use(express.urlencoded({ extended: true }));
 
 const path = require("path");
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
+
 app.get("/", (req, res) => {
   res.send("AI Career Coach Backend is Running...");
 });
+
 
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
@@ -53,10 +75,9 @@ app.use("/api/achievements", achievementRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/payment", paymentRoutes);
 
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-
