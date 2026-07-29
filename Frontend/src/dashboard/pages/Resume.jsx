@@ -1,11 +1,30 @@
-import React, { useState } from "react";
-import axios from "axios";
 import { X } from "lucide-react"; 
+import { useEffect, useState } from "react";
+import { uploadResume, getLatestResume } from "../../api/resumeApi";
 
 export default function Resume() {
   const [resume, setResume] = useState(null);
-  const [error, setError] = useState("");
+  const [resumeData, setResumeData] = useState(null);
+  const [dataLoading,setDataLoading] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  
+  const fetchResume = async()=>{
+
+  try{
+      setDataLoading(true);
+      const response = await getLatestResume();
+      console.log("LATEST RESUME RESPONSE:", response.data);
+      setResumeData(response.data.resume);
+   }catch(error){
+      console.log(error);
+   }finally{
+      setDataLoading(false);
+   }};
+
+  useEffect(() => {
+    fetchResume();
+  }, []);
 
   const tips = [
     "Use ATS-friendly keywords",
@@ -43,44 +62,34 @@ export default function Resume() {
   const input = document.getElementById("resumeUpload");
   if (input) input.value = "";
 };
-  const handleAnalyze = async () => {
-    if (!resume) {
-      alert("Please upload a PDF resume.");
-      return;
-    }
 
-    try {
-      setLoading(true);
+ const handleAnalyze = async () => {
+  if (!resume) {
+    alert("Select a PDF first");
+    return;
+  }
 
-      const formData = new FormData();
-      formData.append("resume", resume);
+  try {
+    setLoading(true);
 
-      const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("resume", resume);
 
-      const response = await axios.post(
-        "http://localhost:5000/api/resume/upload",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+    await uploadResume(formData);
 
-      alert("✅ Resume uploaded successfully!");
-      console.log(response.data);
-    } catch (err) {
-  console.log(err);
-  console.log(err.response);
-  console.log(err.response?.data);
+    alert("Resume Uploaded Successfully");
 
-  alert(err.response?.data?.message || "Resume upload failed");
-}finally {
-      setLoading(false);
-    }
-  };
+    await fetchResume();
 
+    removeFile();
+  } catch (err) {
+    console.log(err);
+
+    alert(err.response?.data?.message || "Upload Failed");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div style={styles.container}>
       {/* Header */}
@@ -96,17 +105,31 @@ export default function Resume() {
       <div style={styles.cardGrid}>
         <div style={styles.card}>
           <h3>ATS Score</h3>
-          <h1 style={{ color: "#2563eb" }}>78%</h1>
+          <h1 style={{ color: "#2563eb" }}>
+            {
+              dataLoading
+              ?
+              "Loading..."
+              :
+              resumeData?.atsScore || 0
+            }%
+          </h1>
         </div>
 
         <div style={styles.card}>
           <h3>Resume Version</h3>
-          <h1 style={{ color: "#16a34a" }}>v2.4</h1>
+          <h1 style={{ color: "#16a34a" }}>
+            {resumeData ? "Latest" : "--"}
+          </h1>
         </div>
 
         <div style={styles.card}>
           <h3>Missing Skills</h3>
-          <h1 style={{ color: "#dc2626" }}>4</h1>
+          <h1 style={{ color: "#dc2626" }}>
+            {
+              resumeData?.missingSkills?.length || 0
+            }
+          </h1>
         </div>
 
         <div style={styles.card}>
@@ -168,18 +191,55 @@ export default function Resume() {
       {/* AI Suggestions */}
       <div style={styles.section}>
         <h2>🤖 AI Suggestions</h2>
+          <ul>
+          {
+          resumeData?.suggestions?.map((item,index)=>(
+          <li key={index}>
+          ✅ {item}
+          </li>
+          ))
+          }
+          </ul>
+      </div>
+
+      <div style={styles.section}>
+        <h2>💪 Strengths</h2>
 
         <ul>
-          {tips.map((tip, index) => (
-            <li key={index} style={{ marginBottom: "10px" }}>
-              ✅ {tip}
+          {resumeData?.strengths?.map((item, index) => (
+            <li key={index}>
+              ✅ {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div style={styles.section}>
+        <h2>⚠ Weaknesses</h2>
+
+        <ul>
+          {resumeData?.weaknesses?.map((item, index) => (
+            <li key={index}>
+              ❌ {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div style={styles.section}>
+        <h2>🚀 Missing Skills</h2>
+
+        <ul>
+          {resumeData?.missingSkills?.map((item, index) => (
+            <li key={index}>
+              🔹 {item}
             </li>
           ))}
         </ul>
       </div>
 
       {/* Resume Sections */}
-      <div style={styles.section}>
+      {/* <div style={styles.section}>
         <h2>📋 Resume Sections</h2>
 
         <table style={styles.table}>
@@ -222,17 +282,22 @@ export default function Resume() {
             </tr>
           </tbody>
         </table>
-      </div>
+      </div> */}
 
       {/* Resume History */}
       <div style={styles.section}>
         <h2>🕒 Resume History</h2>
 
-        <p>Version 2.4 - July 2026</p>
-        <p>Version 2.3 - June 2026</p>
-        <p>Version 2.2 - May 2026</p>
+        <p>
+          Uploaded on:
+
+          {resumeData &&
+          new Date(resumeData.createdAt).toLocaleDateString()}
+        </p>
       </div>
     </div>
+
+    
   );
 }
 

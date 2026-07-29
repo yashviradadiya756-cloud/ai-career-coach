@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register"
+import Profile from "./dashboard/pages/Profile";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -77,6 +78,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/profile" element={<Profile />} />
       {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
 
 

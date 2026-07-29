@@ -1,10 +1,21 @@
 import api from "./axios";
 
-export const registerUser = (data) =>
-  api.post("/api/auth/register", data);
 
-export const loginUser = (data) =>
-  api.post("/api/auth/login", data);
+export const registerUser = (data)=>{
 
-export const getProfile = () =>
-  api.get("/api/auth/profile");
+    return api.post(
+        "/api/auth/register",
+        data
+    );
+
+};
+
+
+export const loginUser = (data)=>{
+
+    return api.post(
+        "/api/auth/login",
+        data
+    );
+
+};

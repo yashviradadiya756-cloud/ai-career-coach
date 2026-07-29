@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { loginUser, registerUser, getProfile } from "../api/authApi";
+import { loginUser, registerUser } from "../api/authApi";
+import { getProfile } from "../api/userApi";
 
 const AuthContext = createContext();
 
@@ -7,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Login
   const login = async (data) => {
     const res = await loginUser(data);
 
@@ -14,27 +16,38 @@ export const AuthProvider = ({ children }) => {
 
     const profile = await getProfile();
 
-    setUser(profile.data);
+    setUser(profile.data.user);
   };
 
+  // Register
   const register = async (data) => {
     await registerUser(data);
   };
 
+  // Logout
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
   };
 
+  // Load User
   useEffect(() => {
     const loadUser = async () => {
       try {
-        if (localStorage.getItem("token")) {
-          const res = await getProfile();
-          setUser(res.data);
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.log(err);
+
+        const res = await getProfile();
+
+        setUser(res.data.user);
+      } catch (error) {
+        console.log(error);
+
+        localStorage.removeItem("token");
       } finally {
         setLoading(false);
       }

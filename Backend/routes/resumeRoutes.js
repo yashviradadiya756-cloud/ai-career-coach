@@ -1,14 +1,14 @@
 const express = require("express");
 const router = express.Router();
 
-const upload = require("../middleware/uploadMiddleware");
-const { protect } = require("../middleware/authMiddleware");
-const { uploadResume } = require("../controllers/resumeController");
+const {
+  uploadResume,
+  getLatestResume
+} = require("../controllers/resumeController");
 
-console.log("protect:", typeof protect);
-console.log("upload:", typeof upload);
-console.log("upload.single:", typeof upload.single);
-console.log("uploadResume:", typeof uploadResume);
+const protect = require("../middleware/authMiddleware");
+const upload = require("../middleware/uploadMiddleware");
+
 
 router.post(
   "/upload",
@@ -16,5 +16,13 @@ router.post(
   upload.single("resume"),
   uploadResume
 );
+
+
+router.get(
+  "/latest",
+  protect,
+  getLatestResume
+);
+
 
 module.exports = router;
