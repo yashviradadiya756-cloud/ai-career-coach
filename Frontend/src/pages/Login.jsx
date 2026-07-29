@@ -1,12 +1,19 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {Mail,Lock,Eye,EyeOff,BriefcaseBusiness,} from "lucide-react";
-import { login } from "../api/authApi";
-
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  BriefcaseBusiness,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import "../styles/Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
+
+  const { login } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -15,6 +22,7 @@ export default function Login() {
     password: "",
     remember: false,
   });
+
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
 
@@ -33,13 +41,12 @@ export default function Login() {
     }
 
     try {
-      const response = await login({
+      await login({
         email: formData.email,
         password: formData.password,
       });
 
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      alert("Login Successful");
 
       navigate("/dashboard");
     } catch (error) {
@@ -47,47 +54,28 @@ export default function Login() {
     }
   };
 
-
   return (
     <div className="login-page">
-
       <div className="logo-area">
-
         <div className="logo-box">
           <BriefcaseBusiness size={28} />
         </div>
-        
 
         <div>
           <h2>CareerPilot</h2>
           <p>AI Career Coach</p>
         </div>
-
       </div>
 
       <div className="login-card">
-
-        {/* <span className="small-title">
-          Please enter your details
-        </span> */}
-
-        <h1>
-          Welcome
-        </h1>
-
-        {/* <p className="subtitle">
-          Login to continue your AI powered career journey.
-        </p> */}
+        <h1>Welcome</h1>
 
         <form onSubmit={handleSubmit}>
-
           {/* EMAIL */}
-
           <label>Email Address</label>
 
           <div className="input-box">
-
-            <Mail size={20} className="icon"/>
+            <Mail size={20} className="icon" />
 
             <input
               type="email"
@@ -96,16 +84,13 @@ export default function Login() {
               value={formData.email}
               onChange={handleChange}
             />
-
           </div>
 
           {/* PASSWORD */}
-
           <label>Password</label>
 
           <div className="input-box">
-
-            <Lock size={20} className="icon"/>
+            <Lock size={20} className="icon" />
 
             <input
               type={showPassword ? "text" : "password"}
@@ -121,36 +106,32 @@ export default function Login() {
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
-                <EyeOff size={20}/>
+                <EyeOff size={20} />
               ) : (
-                <Eye size={20}/>
+                <Eye size={20} />
               )}
             </button>
-
           </div>
 
+          {/* REMEMBER */}
           <div className="remember-row">
-
             <label className="remember">
-
               <input
                 type="checkbox"
                 name="remember"
                 checked={formData.remember}
                 onChange={handleChange}
               />
-
               Remember for 30 days
-
             </label>
 
             <Link to="/forgot-password">
               Forgot Password?
             </Link>
-
           </div>
 
-          <button className="login-btn">
+          {/* LOGIN BUTTON */}
+          <button type="submit" className="login-btn">
             Sign In
           </button>
 
@@ -158,31 +139,22 @@ export default function Login() {
             <span>OR</span>
           </div>
 
-         <button
-            type="button"
-            className="google-btn">
-        <img
-            src="https://www.svgrepo.com/show/475656/google-color.svg"
-            alt="Google"
-        />
+          {/* GOOGLE LOGIN */}
+          <button type="button" className="google-btn">
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt="Google"
+            />
+            <span>Continue with Google</span>
+          </button>
 
-        <span>Continue with Google</span>
-        </button>
-
+          {/* REGISTER */}
           <p className="register">
-
             Don't have an account?
-
-            <Link to="/register">
-              Sign Up
-            </Link>
-
+            <Link to="/register"> Sign Up</Link>
           </p>
-
         </form>
-
       </div>
-
     </div>
   );
 }

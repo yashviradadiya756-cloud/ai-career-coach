@@ -9,11 +9,13 @@ import {
   BriefcaseBusiness,
 } from "lucide-react";
 
-import { register } from "../api/authApi";
+import { useAuth } from "../context/AuthContext";
 import "../styles/Register.css";
 
 export default function Register() {
   const navigate = useNavigate();
+
+  const { register } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -25,7 +27,7 @@ export default function Register() {
     confirmPassword: "",
   });
 
-    const handleChange = (e) => {
+  const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -51,27 +53,25 @@ export default function Register() {
     }
 
     try {
-      const response = await register({
+      await register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
 
-      alert(response.data.message || "Registration Successful");
+      alert("Registration Successful");
 
       navigate("/login");
     } catch (error) {
-  console.log(error);
-  console.log(error.response);
+      console.log(error);
 
-  alert(error.response?.data?.message || error.message);
-}
+      alert(error.response?.data?.message || "Registration Failed");
+    }
   };
-    return (
+
+  return (
     <div className="login-page">
-
       <div className="logo-area">
-
         <div className="logo-box">
           <BriefcaseBusiness size={28} />
         </div>
@@ -80,15 +80,14 @@ export default function Register() {
           <h2>CareerPilot</h2>
           <p>AI Career Coach</p>
         </div>
-
       </div>
 
       <div className="login-card">
-
         <h1>Create Account</h1>
 
         <form onSubmit={handleSubmit}>
-                      <label>Full Name</label>
+          {/* NAME */}
+          <label>Full Name</label>
 
           <div className="input-box">
             <User size={20} className="icon" />
@@ -102,6 +101,7 @@ export default function Register() {
             />
           </div>
 
+          {/* EMAIL */}
           <label>Email Address</label>
 
           <div className="input-box">
@@ -115,6 +115,8 @@ export default function Register() {
               onChange={handleChange}
             />
           </div>
+
+          {/* PASSWORD */}
           <label>Password</label>
 
           <div className="input-box">
@@ -131,29 +133,20 @@ export default function Register() {
             <button
               type="button"
               className="eye-btn"
-              onClick={() =>
-                setShowPassword(!showPassword)
-              }
+              onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? (
-                <EyeOff size={20} />
-              ) : (
-                <Eye size={20} />
-              )}
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
-
           </div>
+
+          {/* CONFIRM PASSWORD */}
           <label>Confirm Password</label>
 
           <div className="input-box">
             <Lock size={20} className="icon" />
 
             <input
-              type={
-                showConfirmPassword
-                  ? "text"
-                  : "password"
-              }
+              type={showConfirmPassword ? "text" : "password"}
               name="confirmPassword"
               placeholder="Confirm password"
               value={formData.confirmPassword}
@@ -164,9 +157,7 @@ export default function Register() {
               type="button"
               className="eye-btn"
               onClick={() =>
-                setShowConfirmPassword(
-                  !showConfirmPassword
-                )
+                setShowConfirmPassword(!showConfirmPassword)
               }
             >
               {showConfirmPassword ? (
@@ -175,26 +166,18 @@ export default function Register() {
                 <Eye size={20} />
               )}
             </button>
-
           </div>
-            <button className="login-btn">
+
+          <button type="submit" className="login-btn">
             Create Account
           </button>
 
           <p className="register">
             Already have an account?
-
-            <Link to="/login">
-              Sign In
-            </Link>
+            <Link to="/login"> Sign In</Link>
           </p>
-
         </form>
-
       </div>
-
     </div>
   );
 }
-     
-        
