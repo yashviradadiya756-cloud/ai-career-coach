@@ -20,7 +20,7 @@ ${resumeText}
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-pro-preview-06-05"  ,
       contents: prompt,
     });
 
