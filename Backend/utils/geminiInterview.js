@@ -20,10 +20,10 @@ Return ONLY JSON.
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash", // Use the same working model from your project
-      contents: prompt,
-    });
+    const result = await model.generateContent({
+    model: "gemini-2.0-flash",
+    contents: prompt
+  });
 
     let text = response.text;
 

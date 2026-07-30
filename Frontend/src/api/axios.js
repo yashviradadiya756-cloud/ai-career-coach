@@ -1,22 +1,22 @@
 import axios from "axios";
 
+console.log("API URL:", import.meta.env.VITE_API_URL);
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 });
 
-
-api.interceptors.request.use((req)=>{
+api.interceptors.request.use((config) => {
+  console.log("Sending request to:", config.baseURL + config.url);
 
   const token = localStorage.getItem("token");
+  console.log("Token:", token);
 
-  if(token){
-    req.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
-  return req;
-
+  return config;
 });
-
 
 export default api;
