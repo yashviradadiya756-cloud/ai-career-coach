@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Login.css";
+import axios from "axios";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -22,6 +23,24 @@ export default function Login() {
     password: "",
     remember: false,
   });
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    try {
+        const res = await api.post("/api/auth/login", {
+            email,
+            password
+        });
+
+        console.log(res.data);
+
+        localStorage.setItem("token", res.data.token);
+
+    } catch (error) {
+        console.log(error);
+    }
+};
 
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
@@ -70,7 +89,7 @@ export default function Login() {
       <div className="login-card">
         <h1>Welcome</h1>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleLogin}>
           {/* EMAIL */}
           <label>Email Address</label>
 

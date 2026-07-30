@@ -43,7 +43,7 @@ app.use(
     origin: function (origin, callback) {
       const allowedOrigins = [
         "http://localhost:5173",
-        "https://YOUR-ACTUAL-VERCEL-APP.vercel.app",
+        "https://your-vercel-domain.vercel.app",
       ];
 
       if (!origin || allowedOrigins.includes(origin)) {
