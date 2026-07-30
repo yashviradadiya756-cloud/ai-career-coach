@@ -63,42 +63,37 @@ const uploadResume = async (req, res) => {
 
 
 // Get Latest Resume
-const getLatestResume = async (req, res) => {
-  try {
+const getLatestResume = async(req,res)=>{
 
-    console.log("Logged User:", req.user._id);
+    try{
 
-    const resume = await Resume.findOne({
-      user: req.user._id,
-    }).sort({ createdAt: -1 });
-
-
-    console.log("Resume Found:", resume);
+        const resume = await Resume.findOne({
+            user:req.user._id
+        }).sort({
+            createdAt:-1
+        });
 
 
-    if (!resume) {
-      return res.status(404).json({
-        success: false,
-        message: "Resume not found",
-      });
+        if(!resume){
+            return res.status(404).json({
+                message:"No resume found"
+            });
+        }
+
+
+        res.json({
+            success:true,
+            resume
+        });
+
+
+    }catch(error){
+
+        res.status(500).json({
+            message:error.message
+        });
+
     }
-
-
-    res.status(200).json({
-      success: true,
-      resume,
-    });
-
-
-  } catch (error) {
-
-    console.log(error);
-
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
 };
 
 // Export Controllers

@@ -17,8 +17,12 @@ export default function Resume() {
       console.log("LATEST RESUME RESPONSE:", response.data);
       setResumeData(response.data.resume);
    }catch(error){
-      console.log(error);
-   }finally{
+    if(error.response?.status === 404){
+        setResume(null);
+        return;
+    }
+    console.log(error);
+    }finally{
       setDataLoading(false);
    }};
 
