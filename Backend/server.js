@@ -70,6 +70,17 @@ app.get("/", (req, res) => {
   res.send("AI Career Coach Backend is Running...");
 });
 
+console.log("userRoutes:", typeof userRoutes);
+console.log("authRoutes:", typeof authRoutes);
+console.log("resumeRoutes:", typeof resumeRoutes);
+console.log("skillGapRoutes:", typeof skillGapRoutes);
+console.log("roadmapRoutes:", typeof roadmapRoutes);
+console.log("interviewRoutes:", typeof interviewRoutes);
+console.log("learningRoutes:", typeof learningRoutes);
+console.log("progressRoutes:", typeof progressRoutes);
+console.log("achievementRoutes:", typeof achievementRoutes);
+console.log("notificationRoutes:", typeof notificationRoutes);
+console.log("paymentRoutes:", typeof paymentRoutes);
 
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);

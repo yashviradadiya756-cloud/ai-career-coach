@@ -3,11 +3,10 @@ const router = express.Router();
 
 const { protect } = require("../middleware/authMiddleware");
 
-const controller = require("../controllers/skillGapController");
-
-
-console.log("Controller Export:", controller);
-console.log("Type:", typeof controller.analyzeSkillGapController);
+const {
+  analyzeSkillGapController,
+  getLatestSkillGap,
+} = require("../controllers/skillGapController");
 
 router.get("/test", (req, res) => {
   res.json({ message: "OK" });
@@ -16,7 +15,13 @@ router.get("/test", (req, res) => {
 router.post(
   "/analyze",
   protect,
-  controller.analyzeSkillGapController
+  analyzeSkillGapController
+);
+
+router.get(
+  "/latest",
+  protect,
+  getLatestSkillGap
 );
 
 module.exports = router;

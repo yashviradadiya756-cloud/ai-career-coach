@@ -1,7 +1,11 @@
 import api from "./axios";
 
-export const analyzeSkillGap = () =>
-  api.post("/api/skill-gap/analyze");
+export const analyzeSkillGap = (targetRole) => {
+  return api.post("/api/skillgap/analyze", {
+    targetRole,
+  });
+};
 
-export const getSkillGap = () =>
-  api.get("/api/skill-gap");
+export const getLatestSkillGap = () => {
+  return api.get("/api/skillgap/latest");
+};

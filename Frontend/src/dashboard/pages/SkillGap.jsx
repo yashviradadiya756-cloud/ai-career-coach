@@ -1,155 +1,254 @@
-import React from "react";
+import { useEffect, useState } from "react";
+import {
+  analyzeSkillGap,
+  getLatestSkillGap,
+} from "../../api/skillGapApi";
 
 export default function SkillGap() {
-  const skills = [
-    {
-      name: "React.js",
-      current: 85,
-      target: 95,
-      color: "#2563eb",
-    },
-    {
-      name: "Node.js",
-      current: 70,
-      target: 90,
-      color: "#16a34a",
-    },
-    {
-      name: "MongoDB",
-      current: 65,
-      target: 90,
-      color: "#f59e0b",
-    },
-    {
-      name: "Express.js",
-      current: 72,
-      target: 90,
-      color: "#dc2626",
-    },
-  ];
+  const [targetRole, setTargetRole] = useState("");
+  const [skillGap, setSkillGap] = useState(null);
 
-  const missingSkills = [
-    "Data Structures & Algorithms",
-    "System Design",
-    "REST API Development",
-    "Docker",
-    "AWS Basics",
-  ];
+  const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  const recommendations = [
-    "Complete MERN Stack Projects",
-    "Practice 100+ DSA Problems",
-    "Learn Docker & Deployment",
-    "Build REST APIs using Express",
-    "Practice Mock Interviews",
-  ];
+  // Fetch Latest Skill Gap
+  const fetchSkillGap = async () => {
+    try {
+      setDataLoading(true);
+
+      const res = await getLatestSkillGap();
+
+      console.log(res.data);
+
+      setSkillGap(res.data.skillGap);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSkillGap();
+  }, []);
+
+  // Analyze Skill Gap
+  const handleAnalyze = async () => {
+    if (!targetRole) {
+      alert("Please enter your target role.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await analyzeSkillGap(targetRole);
+
+      alert("Skill Gap Analysis Completed");
+
+      await fetchSkillGap();
+
+      setTargetRole("");
+    } catch (error) {
+      console.log(error);
+
+      alert(error.response?.data?.message || "Analysis Failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={styles.container}>
       {/* Header */}
+
       <div style={styles.header}>
         <h1>🧠 Skill Gap Analysis</h1>
+
         <p>
-          Compare your current skills with industry requirements and improve
-          your career readiness.
+          Compare your current skills with industry requirements and
+          receive AI-powered recommendations.
         </p>
+
+        <div style={styles.searchBox}>
+          <input
+            type="text"
+            placeholder="Target Role (Example: Full Stack Developer)"
+            value={targetRole}
+            onChange={(e) => setTargetRole(e.target.value)}
+            style={styles.input}
+          />
+
+          <button
+            onClick={handleAnalyze}
+            style={styles.button}
+          >
+            {loading ? "Analyzing..." : "Analyze"}
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
+
       <div style={styles.cards}>
         <div style={styles.card}>
-          <h3>Skill Match</h3>
-          <h1 style={{ color: "#2563eb" }}>78%</h1>
+          <h3>Career Readiness</h3>
+
+          <h1 style={{ color: "#2563eb" }}>
+            {dataLoading
+              ? "..."
+              : `${skillGap?.readinessScore || 0}%`}
+          </h1>
         </div>
 
         <div style={styles.card}>
-          <h3>Skills Learned</h3>
-          <h1 style={{ color: "#16a34a" }}>14</h1>
+          <h3>Current Skills</h3>
+
+          <h1 style={{ color: "#16a34a" }}>
+            {dataLoading
+              ? "..."
+              : skillGap?.currentSkills?.length || 0}
+          </h1>
         </div>
 
         <div style={styles.card}>
           <h3>Missing Skills</h3>
-          <h1 style={{ color: "#dc2626" }}>5</h1>
+
+          <h1 style={{ color: "#dc2626" }}>
+            {dataLoading
+              ? "..."
+              : skillGap?.missingSkills?.length || 0}
+          </h1>
         </div>
 
         <div style={styles.card}>
-          <h3>Career Readiness</h3>
-          <h1 style={{ color: "#f59e0b" }}>82%</h1>
+          <h3>Courses</h3>
+
+          <h1 style={{ color: "#f59e0b" }}>
+            {dataLoading
+              ? "..."
+              : skillGap?.recommendedCourses?.length || 0}
+          </h1>
         </div>
       </div>
 
-      {/* Progress Bars */}
+      {/* ===== PART 2 STARTS HERE ===== */}
+            {/* Skill Progress */}
+
       <div style={styles.section}>
-        <h2>📊 Skill Progress</h2>
+        <h2>📊 Current Skills</h2>
 
-        {skills.map((skill, index) => (
-          <div key={index} style={{ marginBottom: 25 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <strong>{skill.name}</strong>
-              <span>
-                {skill.current}% / {skill.target}%
-              </span>
-            </div>
-
-            <div style={styles.progressBackground}>
+        {skillGap?.currentSkills?.length > 0 ? (
+          skillGap.currentSkills.map((skill, index) => (
+            <div key={index} style={{ marginBottom: "20px" }}>
               <div
                 style={{
-                  width: `${skill.current}%`,
-                  background: skill.color,
-                  height: "100%",
-                  borderRadius: "20px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "8px",
                 }}
-              ></div>
+              >
+                <strong>{skill}</strong>
+
+                <span>Industry Ready</span>
+              </div>
+
+              <div style={styles.progressBackground}>
+                <div
+                  style={{
+                    width: "85%",
+                    height: "100%",
+                    background: "#2563eb",
+                    borderRadius: "20px",
+                  }}
+                ></div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p>No Skills Found</p>
+        )}
       </div>
 
       {/* Missing Skills */}
+
       <div style={styles.section}>
         <h2>❌ Missing Skills</h2>
 
         <ul>
-          {missingSkills.map((item, index) => (
-            <li key={index} style={styles.listItem}>
-              • {item}
-            </li>
-          ))}
+          {skillGap?.missingSkills?.length > 0 ? (
+            skillGap.missingSkills.map((item, index) => (
+              <li key={index} style={styles.listItem}>
+                ❌ {item}
+              </li>
+            ))
+          ) : (
+            <li>No Missing Skills</li>
+          )}
         </ul>
       </div>
 
-      {/* AI Recommendation */}
+      {/* Recommended Courses */}
+
       <div style={styles.section}>
-        <h2>🤖 AI Recommendations</h2>
+        <h2>📚 Recommended Courses</h2>
 
         <ul>
-          {recommendations.map((item, index) => (
-            <li key={index} style={styles.listItem}>
-              ✅ {item}
-            </li>
-          ))}
+          {skillGap?.recommendedCourses?.length > 0 ? (
+            skillGap.recommendedCourses.map((item, index) => (
+              <li key={index} style={styles.listItem}>
+                📖 {item}
+              </li>
+            ))
+          ) : (
+            <li>No Recommendations</li>
+          )}
         </ul>
       </div>
 
-      {/* Career Suggestion */}
+      {/* Roadmap */}
+
       <div style={styles.section}>
-        <h2>🎯 Suggested Career</h2>
+        <h2>🚀 Learning Roadmap</h2>
+
+        <ul>
+          {skillGap?.roadmap?.length > 0 ? (
+            skillGap.roadmap.map((item, index) => (
+              <li key={index} style={styles.listItem}>
+                🚀 {item}
+              </li>
+            ))
+          ) : (
+            <li>No Roadmap Generated</li>
+          )}
+        </ul>
+      </div>
+
+      {/* Target Role */}
+
+      <div style={styles.section}>
+        <h2>🎯 Target Career</h2>
 
         <p>
-          Based on your skills, you are best suited for a
-          <strong> Full Stack MERN Developer</strong> role. Improve Docker,
-          System Design, and AWS to become industry-ready.
+          You are preparing for the role of{" "}
+          <strong>
+            {skillGap?.targetRole || "Not Selected"}
+          </strong>
+        </p>
+
+        <p style={{ marginTop: "10px" }}>
+          Your current readiness score is{" "}
+          <strong>
+            {skillGap?.readinessScore || 0}%
+          </strong>.
+          Continue following the recommended roadmap and complete the suggested
+          courses to improve your chances of becoming job-ready.
         </p>
       </div>
+
     </div>
   );
 }
-
 const styles = {
   container: {
     padding: "20px",
@@ -163,6 +262,34 @@ const styles = {
     borderRadius: "12px",
     marginBottom: "20px",
     boxShadow: "0 2px 10px rgba(0,0,0,.08)",
+  },
+
+  searchBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: "15px",
+    marginTop: "20px",
+    flexWrap: "wrap",
+  },
+
+  input: {
+    width: "350px",
+    padding: "12px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    fontSize: "15px",
+    outline: "none",
+  },
+
+  button: {
+    padding: "12px 24px",
+    background: "#2563eb",
+    color: "#fff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontSize: "15px",
+    fontWeight: "600",
   },
 
   cards: {
@@ -191,13 +318,14 @@ const styles = {
   progressBackground: {
     width: "100%",
     height: "12px",
-    background: "#ddd",
+    background: "#e5e7eb",
     borderRadius: "20px",
-    marginTop: "8px",
+    overflow: "hidden",
   },
 
   listItem: {
     marginBottom: "12px",
     fontSize: "16px",
+    lineHeight: "1.6",
   },
 };

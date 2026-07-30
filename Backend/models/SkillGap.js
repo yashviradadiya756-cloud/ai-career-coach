@@ -31,6 +31,11 @@ const skillGapSchema = new mongoose.Schema(
       },
     ],
 
+    readinessScore: {
+      type: Number,
+      default: 0,
+    },
+
     recommendedCourses: [
       {
         type: String,
