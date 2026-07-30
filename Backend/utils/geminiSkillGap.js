@@ -1,15 +1,12 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 
 const analyzeSkillGap = async (skills, targetRole) => {
   try {
-
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-    });
-
 
     const prompt = `
 You are an AI career coach.
@@ -22,7 +19,7 @@ ${skills.join(", ")}
 Target Role:
 ${targetRole}
 
-Return ONLY JSON format:
+Return ONLY JSON:
 
 {
   "missingSkills": [],
@@ -32,11 +29,13 @@ Return ONLY JSON format:
 `;
 
 
-    const geminiResponse = await model.generateContent(prompt);
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+    });
 
 
-    const text = geminiResponse.response.text();
-
+    const text = response.text;
 
     console.log("Gemini Response:");
     console.log(text);
@@ -46,19 +45,18 @@ Return ONLY JSON format:
 
 
     if (!match) {
-      throw new Error("Invalid Gemini JSON response");
+      throw new Error("Invalid Gemini response");
     }
 
 
     const parsedResult = JSON.parse(match[0]);
-
 
     return parsedResult;
 
 
   } catch (error) {
 
-    console.log("Gemini Skill Gap Error:");
+    console.log("Skill Gap Error:");
     console.log(error.message);
 
     throw error;
