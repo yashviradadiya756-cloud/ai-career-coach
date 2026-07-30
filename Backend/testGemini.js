@@ -1,17 +1,22 @@
 const { GoogleGenAI } = require("@google/genai");
 require("dotenv").config();
 
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+
 async function test() {
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-  });
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: "Say Hello",
+    });
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: "Say hello",
-  });
-
-  console.log(response.text);
+    console.log(response.text);
+  } catch (err) {
+    console.log("Status:", err.status);
+    console.log(err);
+  }
 }
 
-test().catch(console.error);
+test();
