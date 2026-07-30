@@ -30,7 +30,7 @@ Return ONLY valid JSON.
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash", // Replace with your working Gemini model
+      model: "gemini-2.5-flash", // Replace with your working Gemini model
       contents: prompt,
     });
 

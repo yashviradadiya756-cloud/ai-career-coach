@@ -21,7 +21,7 @@ Return ONLY JSON.
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash", // Use the same working model from your project
+      model: "gemini-2.5-flash", // Use the same working model from your project
       contents: prompt,
     });
 
