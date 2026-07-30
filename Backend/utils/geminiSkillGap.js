@@ -1,126 +1,69 @@
-const { GoogleGenAI } = require("@google/genai");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-async function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
-async function analyzeSkillGap(resumeText, targetRole) {
-  const prompt = `
-You are an AI Career Coach.
+const analyzeSkillGap = async (skills, targetRole) => {
+  try {
 
-Analyze the following resume for the target role.
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+    });
 
-Resume:
-${resumeText}
+
+    const prompt = `
+You are an AI career coach.
+
+Analyze the skill gap for this user.
+
+Current Skills:
+${skills.join(", ")}
 
 Target Role:
 ${targetRole}
 
-Return ONLY valid JSON.
-
-Expected format:
+Return ONLY JSON format:
 
 {
-  "readinessScore": 78,
-  "currentSkills": [
-    "React",
-    "Node.js",
-    "Express.js",
-    "MongoDB"
-  ],
-  "missingSkills": [
-    "Docker",
-    "AWS",
-    "System Design"
-  ],
-  "recommendedCourses": [
-    "Docker Masterclass",
-    "AWS Cloud Practitioner",
-    "System Design Basics"
-  ],
-  "roadmap": [
-    "Strengthen JavaScript",
-    "Learn Docker",
-    "Learn AWS",
-    "Build Full Stack Projects",
-    "Practice Interviews"
-  ]
+  "missingSkills": [],
+  "recommendedSkills": [],
+  "learningPath": []
 }
-
-Rules:
-1. Return ONLY JSON.
-2. No markdown.
-3. No explanation.
-4. No extra text.
-5. readinessScore must be a number between 0 and 100.
 `;
 
-  let lastError;
 
-  for (let i = 0; i < 3; i++) {
-    try {
-      const result = await model.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt
-    });
+    const geminiResponse = await model.generateContent(prompt);
 
-      let text = "";
 
-      if (typeof response.text === "function") {
-        text = response.text();
-      } else {
-        text = response.text || "";
-      }
+    const text = geminiResponse.response.text();
 
-      console.log("========== GEMINI RESPONSE ==========");
-      console.log(text);
-      console.log("=====================================");
 
-      text = text
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
+    console.log("Gemini Response:");
+    console.log(text);
 
-      const match = text.match(/\{[\s\S]*\}/);
 
-      if (!match) {
-        throw new Error("Gemini did not return JSON.");
-      }
+    const match = text.match(/\{[\s\S]*\}/);
 
-      const result = JSON.parse(match[0]);
 
-      return {
-        readinessScore: result.readinessScore || 0,
-        currentSkills: result.currentSkills || [],
-        missingSkills: result.missingSkills || [],
-        recommendedCourses: result.recommendedCourses || [],
-        roadmap: result.roadmap || [],
-      };
-    } catch (err) {
-      console.log("Gemini Error:");
-      console.log(err);
-
-      lastError = err;
-
-      if (
-        err.message &&
-        (err.message.includes("503") ||
-          err.message.includes("UNAVAILABLE"))
-      ) {
-        console.log(`Retry ${i + 1}/3...`);
-        await sleep(3000);
-        continue;
-      }
-
-      throw err;
+    if (!match) {
+      throw new Error("Invalid Gemini JSON response");
     }
-  }
 
-  throw lastError;
-}
+
+    const parsedResult = JSON.parse(match[0]);
+
+
+    return parsedResult;
+
+
+  } catch (error) {
+
+    console.log("Gemini Skill Gap Error:");
+    console.log(error.message);
+
+    throw error;
+  }
+};
+
 
 module.exports = analyzeSkillGap;

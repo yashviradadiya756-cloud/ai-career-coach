@@ -101,35 +101,6 @@ const getLatestResume = async (req, res) => {
   }
 };
 
-exports.getLatestResume = async (req,res)=>{
-  try {
-
-    const resume = await Resume.findOne({
-      user:req.user._id
-    })
-    .sort({
-      createdAt:-1
-    });
-
-
-    if(!resume){
-      return res.status(404).json({
-        message:"No resume found"
-      });
-    }
-
-
-    res.status(200).json(resume);
-
-  } catch(error){
-
-    res.status(500).json({
-      message:error.message
-    });
-
-  }
-};
-
 // Export Controllers
 module.exports = {
   uploadResume,
