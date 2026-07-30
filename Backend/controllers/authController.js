@@ -86,17 +86,24 @@ exports.loginUser = async (req, res) => {
 
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("-password");
+    const user = await User.findById(req.user._id)
+      .select("-password");
 
     res.status(200).json(user);
+
   } catch (error) {
+
     res.status(500).json({
       message: error.message,
     });
+
   }
 };
 
+
+// Export Controllers
 module.exports = {
-    registerUser,
-    loginUser
+    registerUser: exports.registerUser,
+    loginUser: exports.loginUser,
+    getProfile: exports.getProfile
 };
