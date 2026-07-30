@@ -11,7 +11,10 @@ const {
     getLatestResume
 } = require("../controllers/resumeController");
 
-
+console.log("protect:", typeof protect);
+console.log("upload:", typeof upload);
+console.log("uploadResume:", typeof uploadResume);
+console.log("getLatestResume:", typeof getLatestResume);
 // Upload Resume
 router.post(
     "/upload",
