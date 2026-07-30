@@ -2,6 +2,11 @@ const Resume = require("../models/Resume");
 const SkillGap = require("../models/SkillGap");
 const analyzeSkillGap = require("../utils/geminiSkillGap");
 
+const {
+  analyzeSkillGapController,
+  getLatestSkillGap,
+} = require("../controllers/skillGapController");
+
 const analyzeSkillGapController = async (req, res) => {
   try {
     const { targetRole } = req.body;
