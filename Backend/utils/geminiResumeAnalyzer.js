@@ -28,9 +28,9 @@ Return ONLY JSON format:
 
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
+  model: "gemini-3.6-flash",
+  contents: prompt,
+});
 
 
     let responseText = response.text;
