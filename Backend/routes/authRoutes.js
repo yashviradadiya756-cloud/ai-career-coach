@@ -1,22 +1,42 @@
 const express = require("express");
-
 const router = express.Router();
 
+const protect = require("../middleware/authMiddleware");
+
 const {
-  registerUser,
-  loginUser,
-  getProfile,
+    registerUser,
+    loginUser,
+    getProfile
 } = require("../controllers/authController");
 
-const { protect } = require("../middleware/authMiddleware");
 
 console.log("AUTH CONTROLLERS:", {
     registerUser: typeof registerUser,
     loginUser: typeof loginUser,
+    getProfile: typeof getProfile
 });
 
-router.post("/register", registerUser);
-router.post("/login", loginUser);
-router.get("/profile", protect, getProfile);
+
+// Register
+router.post(
+    "/register",
+    registerUser
+);
+
+
+// Login
+router.post(
+    "/login",
+    loginUser
+);
+
+
+// Profile
+router.get(
+    "/profile",
+    protect,
+    getProfile
+);
+
 
 module.exports = router;
