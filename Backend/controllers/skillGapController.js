@@ -27,12 +27,14 @@ const analyzeSkillGapController = async (req, res) => {
     console.log("Resume User:", resume.user.toString());
 
     const analysis = await analyzeSkillGap(
-      resume.resumeText,
-      targetRole
-    );
+    resume.resumeText,
+    targetRole
+  );
 
-    console.log("Analysis Result:");
-    console.log(analysis);
+  console.log("================================");
+  console.log("Analysis:");
+  console.log(JSON.stringify(analysis, null, 2));
+  console.log("================================");
     
     const skillGap = await SkillGap.create({
     user: req.user._id,

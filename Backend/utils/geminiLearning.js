@@ -9,7 +9,9 @@ Target Role:
 ${targetRole}
 
 Missing Skills:
-${missingSkills.join(", ")}
+${Array.isArray(missingSkills)
+  ? missingSkills.join(", ")
+  : String(missingSkills)}
 
 Recommend one high-quality learning resource for each missing skill.
 

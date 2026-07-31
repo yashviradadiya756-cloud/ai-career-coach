@@ -28,6 +28,11 @@ const generateLearningController = async (req, res) => {
     }
 
     // Generate AI Learning Recommendations
+    console.log("Missing Skills:");
+    console.log(skillGap.missingSkills);
+    console.log("Type:", typeof skillGap.missingSkills);
+    console.log("Is Array:", Array.isArray(skillGap.missingSkills));
+
     const learningData = await generateLearningRecommendations(
       skillGap.missingSkills,
       targetRole
