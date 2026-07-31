@@ -5,34 +5,36 @@ const ai = new GoogleGenAI({
 });
 
 
-const analyzeSkillGap = async (skills, targetRole) => {
+const analyzeSkillGap = async (resumeText, targetRole) => {
   try {
 
     const prompt = `
-You are an AI career coach.
+    You are an AI Career Coach.
 
-Analyze the skill gap for this user.
+    Below is the user's resume.
 
-Current Skills:
-${skills.join(", ")}
+    Resume:
+    ${resumeText}
 
-Target Role:
-${targetRole}
+    Target Role:
+    ${targetRole}
 
-Return ONLY JSON:
+    Analyze the resume and return ONLY valid JSON in this format:
 
-{
-  "missingSkills": [],
-  "recommendedSkills": [],
-  "learningPath": []
-}
-`;
+    {
+      "currentSkills": [],
+      "missingSkills": [],
+      "readinessScore": 0,
+      "recommendedCourses": [],
+      "roadmap": []
+    }
+    `;
 
 
     const response = await ai.models.generateContent({
-  model: "gemini-3.6-flash",
-  contents: prompt,
-});
+    model: "gemini-3.6-flash",
+    contents: prompt,
+  });
 
 
     const text = response.text;
@@ -50,6 +52,9 @@ Return ONLY JSON:
 
 
     const parsedResult = JSON.parse(match[0]);
+
+    console.log("Parsed Result:");
+    console.log(parsedResult);
 
     return parsedResult;
 

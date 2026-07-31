@@ -23,12 +23,17 @@ const analyzeSkillGapController = async (req, res) => {
         message: "Please upload your resume first.",
       });
     }
+    console.log("Logged User:", req.user._id.toString());
+    console.log("Resume User:", resume.user.toString());
 
     const analysis = await analyzeSkillGap(
       resume.resumeText,
       targetRole
     );
 
+    console.log("Analysis Result:");
+    console.log(analysis);
+    
     const skillGap = await SkillGap.create({
     user: req.user._id,
     resume: resume._id,
@@ -40,6 +45,9 @@ const analyzeSkillGapController = async (req, res) => {
     recommendedCourses: analysis.recommendedCourses,
     roadmap: analysis.roadmap,
   });
+
+  console.log("Saved SkillGap:");
+console.log(skillGap);
 
     res.status(200).json({
       success: true,
@@ -70,34 +78,45 @@ const analyzeSkillGapController = async (req, res) => {
 };
 
 const getLatestSkillGap = async (req, res) => {
-
   try {
 
+    console.log("================================");
+    console.log("Logged User ID:", req.user._id);
+
+    const allSkillGaps = await SkillGap.find();
+
+    console.log(
+      "All SkillGap Users:",
+      allSkillGaps.map(item => item.user.toString())
+    );
+
     const skillGap = await SkillGap.findOne({
-      user: req.user._id
+      user: req.user._id,
     }).sort({ createdAt: -1 });
+
+    console.log("Found SkillGap:");
+    console.log(skillGap);
 
     if (!skillGap) {
       return res.status(404).json({
         success: false,
-        message: "Skill Gap not found"
+        message: "Skill Gap not found",
       });
     }
 
     res.json({
       success: true,
-      skillGap
+      skillGap,
     });
 
   } catch (error) {
+    console.log(error);
 
     res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
-
   }
-
 };
 
 module.exports = {
