@@ -49,7 +49,7 @@ const analyzeSkillGapController = async (req, res) => {
   });
 
   console.log("Saved SkillGap:");
-console.log(skillGap);
+  console.log(skillGap);
 
     res.status(200).json({
       success: true,

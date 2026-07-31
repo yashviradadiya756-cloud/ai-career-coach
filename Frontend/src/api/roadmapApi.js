@@ -1,7 +1,9 @@
 import api from "./axios";
 
-export const generateRoadmap = () =>
-  api.post("/api/roadmap/generate");
+export const generateRoadmap = (targetRole) =>
+  api.post("/api/roadmap/generate", {
+    targetRole,
+  });
 
 export const getRoadmap = () =>
-  api.get("/api/roadmap");
+  api.get("/api/roadmap");  

@@ -1,14 +1,15 @@
 const express = require("express");
-
 const router = express.Router();
 
-const { protect } = require("../middleware/authMiddleware"); 
+const { protect } = require("../middleware/authMiddleware");
 
 const {
   generateRoadmapController,
+  getRoadmapController,
 } = require("../controllers/roadmapController");
 
-// Generate AI Career Roadmap
 router.post("/generate", protect, generateRoadmapController);
+
+router.get("/", protect, getRoadmapController);
 
 module.exports = router;

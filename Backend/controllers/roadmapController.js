@@ -13,11 +13,17 @@ const generateRoadmapController = async (req, res) => {
         message: "Target Role is required",
       });
     }
+    console.log("Target Role:", targetRole);
+
+    const all = await SkillGap.find({
+  user: req.user._id,
+});
+
+console.log(all);
 
     // Get latest Skill Gap Analysis
     const skillGap = await SkillGap.findOne({
       user: req.user._id,
-      targetRole,
     }).sort({ createdAt: -1 });
 
     if (!skillGap) {
@@ -32,6 +38,13 @@ const generateRoadmapController = async (req, res) => {
       skillGap.missingSkills,
       targetRole
     );
+
+    console.log("======================");
+    console.log("User:", req.user._id.toString());
+    console.log("Target Role:", targetRole);
+    console.log("SkillGap:", skillGap);
+    console.log("Missing Skills:", skillGap.missingSkills);
+    console.log("======================");
 
     // Save to MongoDB
     const roadmap = await Roadmap.create({
@@ -59,6 +72,34 @@ const generateRoadmapController = async (req, res) => {
   }
 };
 
+const getRoadmapController = async (req, res) => {
+  try {
+
+    const roadmap = await Roadmap.findOne({
+      user: req.user._id,
+    }).sort({ createdAt: -1 });
+
+    if (!roadmap) {
+      return res.status(404).json({
+        success: false,
+        message: "Roadmap not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      roadmap,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   generateRoadmapController,
+  getRoadmapController,
 };

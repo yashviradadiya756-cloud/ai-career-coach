@@ -30,9 +30,13 @@ Return ONLY valid JSON.
 `;
 
     const response = await ai.models.generateContent({
-  model: "gemini-3.6-flash",
-  contents: prompt,
-});
+    model: "gemini-3.6-flash",
+    contents: prompt,
+  });
+
+  console.log("Target Role:", targetRole);
+  console.log("Missing Skills:", skillGap);
+  console.log("Prompt Length:", prompt.length);
 
     let text = response.text;
 

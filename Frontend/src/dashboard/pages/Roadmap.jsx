@@ -1,155 +1,171 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { generateRoadmap, getRoadmap } from "../../api/roadmapApi";
 
 export default function Roadmap() {
-  const roadmap = [
-    {
-      week: "Phase 1",
-      title: "Frontend Development",
-      progress: 100,
-      status: "Completed",
-      color: "#16a34a",
-    },
-    {
-      week: "Phase 2",
-      title: "Backend Development",
-      progress: 80,
-      status: "In Progress",
-      color: "#2563eb",
-    },
-    {
-      week: "Phase 3",
-      title: "Database & APIs",
-      progress: 60,
-      status: "Learning",
-      color: "#f59e0b",
-    },
-    {
-      week: "Phase 4",
-      title: "Deployment & DevOps",
-      progress: 20,
-      status: "Pending",
-      color: "#dc2626",
-    },
-  ];
+  const [roadmap, setRoadmap] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const upcoming = [
-    "Learn JWT Authentication",
-    "Build REST APIs",
-    "Deploy MERN Project",
-    "Practice DSA",
-    "Mock Interviews",
-  ];
+  useEffect(() => {
+  loadRoadmap();
+}, []);
+
+  const loadRoadmap = async () => {
+    try {
+      const res = await getRoadmap();
+
+      console.log(res.data);
+
+      setRoadmap(res.data.roadmap);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+    };
+    
+    const handleGenerate = async () => {
+    console.log("Generate button clicked");
+
+    try {
+      const role = "UI-UX";
+
+      const res = await generateRoadmap(role);
+
+      console.log(res.data);
+
+      await loadRoadmap();
+
+      alert("Roadmap Generated Successfully");
+    } catch (err) {
+      console.log(err.response?.data);
+      alert(err.response?.data?.message || "Failed");
+    }
+  };
+
+if (loading) {
+  return <h2 style={{ padding: "30px" }}>Loading Roadmap...</h2>;
+}
+
+if (!roadmap) {
+  return (
+    <div style={{ padding: "30px" }}>
+      <h2>No Roadmap Found</h2>
+
+      <button onClick={handleGenerate}>
+        Generate Roadmap
+      </button>
+    </div>
+  );
+}
+
+    
+
 
   return (
     <div style={styles.container}>
 
+      <button onClick={handleGenerate}>
+        Generate Roadmap
+      </button>
+
       {/* Header */}
       <div style={styles.header}>
-        <h1>🗺 Career Roadmap</h1>
+        <h1>{roadmap.roadmapTitle}</h1>
         <p>
-          Track your learning journey and complete every milestone to become
-          a Full Stack MERN Developer.
+          Target Role: <strong>{roadmap.targetRole}</strong>
         </p>
       </div>
 
       {/* Summary */}
-      <div style={styles.cards}>
-
-        <div style={styles.card}>
-          <h3>Total Progress</h3>
-          <h1 style={{color:"#2563eb"}}>65%</h1>
-        </div>
-
-        <div style={styles.card}>
-          <h3>Completed</h3>
-          <h1 style={{color:"#16a34a"}}>2 / 4</h1>
-        </div>
-
-        <div style={styles.card}>
-          <h3>Current Phase</h3>
-          <h1 style={{color:"#f59e0b"}}>Backend</h1>
-        </div>
-
-        <div style={styles.card}>
-          <h3>Target</h3>
-          <h1 style={{color:"#dc2626"}}>6 Months</h1>
-        </div>
-
+      <div style={styles.card}>
+        <h3>Total Phases</h3>
+        <h1>{roadmap.phases.length}</h1>
       </div>
+
+    <div style={styles.card}>
+      <h3>Target Role</h3>
+      <h1>{roadmap.targetRole}</h1>
+    </div>
+
+    <div style={styles.card}>
+      <h3>Current Phase</h3>
+      <h1>Phase 1</h1>
+    </div>
+
+    <div style={styles.card}>
+      <h3>Status</h3>
+      <h1 style={{ color: "#16a34a" }}>Started</h1>
+    </div>
 
       {/* Learning Roadmap */}
 
       <div style={styles.section}>
         <h2>📚 Learning Progress</h2>
 
-        {roadmap.map((item,index)=>(
+        {roadmap.phases.map((phase, index) => (
+        <div key={index} style={{ marginBottom: "25px" }}>
 
-          <div key={index} style={{marginBottom:"25px"}}>
+          <h3>
+            Phase {index + 1} : {phase.title}
+          </h3>
 
-            <div style={{
-              display:"flex",
-              justifyContent:"space-between",
-              marginBottom:"8px"
-            }}>
-              <strong>{item.week} - {item.title}</strong>
+          <p>
+            <strong>Duration:</strong> {phase.duration}
+          </p>
 
-              <span>{item.progress}%</span>
-            </div>
+          <h4>Topics</h4>
 
-            <div style={styles.progressBg}>
-              <div
-                style={{
-                  width:`${item.progress}%`,
-                  background:item.color,
-                  height:"100%",
-                  borderRadius:"20px"
-                }}
-              ></div>
-            </div>
+          <ul>
+            {phase.topics.map((topic, i) => (
+              <li key={i}>{topic}</li>
+            ))}
+          </ul>
 
-            <p style={{marginTop:"8px"}}>
-              Status :
-              <strong style={{color:item.color}}>
-                {" "}{item.status}
-              </strong>
-            </p>
+          <h4>Projects</h4>
 
-          </div>
+          <ul>
+            {phase.projects.map((project, i) => (
+              <li key={i}>{project}</li>
+            ))}
+          </ul>
 
-        ))}
+          <h4>Resources</h4>
+
+          <ul>
+            {phase.resources.map((resource, i) => (
+              <li key={i}>{resource}</li>
+            ))}
+          </ul>
+
+          <hr />
+
+        </div>
+      ))}
 
       </div>
 
       {/* Upcoming Tasks */}
 
       <div style={styles.section}>
-        <h2>✅ Upcoming Tasks</h2>
+      <h2>Upcoming Topics</h2>
 
-        <ul>
-
-          {upcoming.map((task,index)=>(
-
-            <li key={index} style={styles.list}>
-              📌 {task}
-            </li>
-
-          ))}
-
-        </ul>
-
-      </div>
+      <ul>
+        {roadmap.phases.flatMap((phase) =>
+          phase.topics.map((topic, index) => (
+            <li key={topic + index}>{topic}</li>
+          ))
+        )}
+      </ul>
+    </div>
 
       {/* AI Recommendation */}
 
       <div style={styles.section}>
-        <h2>🤖 AI Recommendation</h2>
+        <h2>AI Recommendation</h2>
 
         <p>
-          You have completed Frontend Development successfully.
-          Focus on Express.js, MongoDB, JWT Authentication,
-          Deployment, Docker and AWS to become placement ready.
+          Complete each phase in sequence. Finish all topics and projects before moving to the next phase.
         </p>
-
       </div>
 
       {/* Weekly Goal */}
