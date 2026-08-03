@@ -6,30 +6,14 @@ const { protect } = require("../middleware/authMiddleware");
 
 const {
   askCoachController,
-  getCoachHistoryController,
-  getCoachDashboardController,
 } = require("../controllers/coachController");
 
-
-router.post(
-  "/ask",
-  protect,
-  askCoachController
+console.log("protect:", typeof protect);
+console.log(
+  "askCoachController:",
+  typeof askCoachController
 );
 
-
-router.get(
-  "/history",
-  protect,
-  getCoachHistoryController
-);
-
-
-router.get(
-  "/dashboard",
-  protect,
-  getCoachDashboardController
-);
-
+router.post("/ask", protect, askCoachController);
 
 module.exports = router;

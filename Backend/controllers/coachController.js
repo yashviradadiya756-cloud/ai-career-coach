@@ -1,120 +1,72 @@
-const CoachChat = require("../models/CoachChat");
-const SkillGap = require("../models/SkillGap");
-const Resume = require("../models/Resume");
-const Roadmap = require("../models/Roadmap");
-const Interview = require("../models/Interview");
+const { GoogleGenAI } = require("@google/genai");
 
-const getCoachDashboardController = async (req, res) => {
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+
+const askCoachController = async (req, res) => {
   try {
+    const { message } = req.body;
 
-    const userId = req.user._id;
-
-    // =========================
-    // SKILL GAP
-    // =========================
-
-    const skillGap = await SkillGap.findOne({
-      user: userId,
-    }).sort({ createdAt: -1 });
-
-
-    // =========================
-    // RESUME
-    // =========================
-
-    const resume = await Resume.findOne({
-      user: userId,
-    }).sort({ createdAt: -1 });
-
-
-    // =========================
-    // ROADMAP
-    // =========================
-
-    const roadmap = await Roadmap.findOne({
-      user: userId,
-    }).sort({ createdAt: -1 });
-
-
-    // =========================
-    // INTERVIEW
-    // =========================
-
-    const interview = await Interview.findOne({
-      user: userId,
-    }).sort({ createdAt: -1 });
-
-
-    // =========================
-    // CALCULATE SCORES
-    // =========================
-
-    const careerScore =
-      skillGap?.readinessScore || 0;
-
-
-    const resumeScore =
-      resume?.atsScore || 0;
-
-
-    let roadmapProgress = 0;
-
-    if (roadmap?.phases?.length) {
-
-      const completedPhases =
-        roadmap.phases.filter(
-          (phase) => phase.completed === true
-        ).length;
-
-      roadmapProgress = Math.round(
-        (completedPhases / roadmap.phases.length) * 100
-      );
-
+    // Validate message
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required",
+      });
     }
 
+    const prompt = `
+You are CareerPilot AI Career Coach.
 
-    const interviewScore =
-      interview?.totalScore || 0;
+You are helping a student with career development.
 
+User Question:
+${message}
 
-    res.status(200).json({
+Give practical, personalized and easy-to-understand guidance.
 
+Focus on:
+- Career guidance
+- Resume improvement
+- Skill development
+- Learning roadmap
+- Interview preparation
+- Projects
+- Placement preparation
+
+Use the user's question to understand what they need.
+
+Do not return JSON.
+Return a normal conversational answer.
+`;
+
+    console.log("Calling Gemini AI Coach...");
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: prompt,
+    });
+
+    const answer = response.text;
+
+    console.log("AI Coach Response Received");
+
+    return res.status(200).json({
       success: true,
-
-      scores: {
-
-        careerScore,
-
-        roadmapProgress,
-
-        resumeScore,
-
-        interviewScore,
-
-      },
-
+      answer,
     });
 
   } catch (error) {
+    console.error("AI Coach Error:", error);
 
-    console.log(
-      "Coach Dashboard Error:",
-      error
-    );
-
-    res.status(500).json({
-
+    return res.status(500).json({
       success: false,
-
-      message: error.message,
-
+      message: error.message || "AI Coach failed",
     });
-
   }
 };
 
 module.exports = {
   askCoachController,
-  getCoachHistoryController,
-  getCoachDashboardController,
 };
