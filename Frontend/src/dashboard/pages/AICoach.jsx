@@ -28,140 +28,124 @@ const [scoreLoading, setScoreLoading] = useState(true);
   loadHistory();
 }, []);
 
-const loadDashboardScores = async () => {
+  const loadDashboard = async () => {
   try {
-
     setScoreLoading(true);
 
-    const res = await getCoachDashboard();
+    const response = await getCoachDashboard();
 
-    console.log("AI Coach Scores:", res.data);
+    console.log("COACH DASHBOARD:", response.data);
 
-    setScores(res.data.scores);
+    if (response.data.success) {
+      setScores(response.data.score);
+    }
 
   } catch (error) {
-
-    console.log(
+    console.error(
       "Dashboard Score Error:",
       error.response?.data || error.message
     );
 
   } finally {
-
     setScoreLoading(false);
-
   }
 };
+ 
+ const loadHistory = async () => {
+  try {
+    setHistoryLoading(true);
 
+    const response = await getCoachHistory();
 
-  const loadHistory = async () => {
-    try {
+    console.log("COACH HISTORY:", response.data);
 
-      setHistoryLoading(true);
-
-      const res = await getCoachHistory();
-
-      const chats = res.data.chats || [];
+    if (response.data.success) {
+      const history = response.data.history || [];
 
       const formattedMessages = [];
 
-      chats.forEach((chat) => {
+      history
+        .slice()
+        .reverse()
+        .forEach((item) => {
+          formattedMessages.push({
+            role: "user",
+            text: item.question,
+          });
 
-        formattedMessages.push({
-          type: "user",
-          text: chat.question,
+          formattedMessages.push({
+            role: "assistant",
+            text: item.answer,
+          });
         });
-
-        formattedMessages.push({
-          type: "ai",
-          text: chat.answer,
-        });
-
-      });
 
       setMessages(formattedMessages);
-
-    } catch (error) {
-
-      console.log(
-        "History Error:",
-        error.response?.data || error.message
-      );
-
-    } finally {
-
-      setHistoryLoading(false);
-
     }
-  };
 
+  } catch (error) {
+    console.error(
+      "History Error:",
+      error.response?.data || error.message
+    );
+
+  } finally {
+    setHistoryLoading(false);
+  }
+};
 
   // Send question
-  const handleSend = async () => {
+ const handleSend = async () => {
+  if (!question.trim()) return;
 
-    if (loading) return;
+  const userQuestion = question.trim();
 
-    if (!question.trim()) {
-      return;
-    }
+  try {
+    setLoading(true);
 
-    const userQuestion = question.trim();
+    const response = await askCoach(userQuestion);
 
-    // Show user message immediately
+    console.log("AI RESPONSE:", response.data);
+
     setMessages((prev) => [
       ...prev,
       {
-        type: "user",
+        role: "user",
         text: userQuestion,
+      },
+      {
+        role: "assistant",
+        text: response.data.answer,
       },
     ]);
 
     setQuestion("");
-    setLoading(true);
 
+  } catch (error) {
+    console.error(
+      "AI Coach Error:",
+      error.response?.data || error.message
+    );
 
-    try {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        text:
+          error.response?.data?.message ||
+          "AI Coach failed. Please try again.",
+        error: true,
+      },
+    ]);
 
-      const res = await askCoach(userQuestion);
+  } finally {
+    setLoading(false);
+  }
+};
 
-      const answer =
-        res.data.chat?.answer ||
-        "Sorry, I could not generate a response.";
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          type: "ai",
-          text: answer,
-        },
-      ]);
-
-    } catch (error) {
-
-      console.log(
-        "AI Coach Error:",
-        error.response?.data || error.message
-      );
-
-      const errorMessage =
-        error.response?.data?.message ||
-        "AI Coach is temporarily unavailable.";
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          type: "ai",
-          text: `⚠️ ${errorMessage}`,
-          error: true,
-        },
-      ]);
-
-    } finally {
-
-      setLoading(false);
-
-    }
-  };
+useEffect(() => {
+  loadDashboard();
+  loadHistory();
+}, []);
 
 
   // Enter key
@@ -367,13 +351,13 @@ const loadDashboardScores = async () => {
               <div
                 key={index}
                 style={
-                  message.type === "user"
+                  message.role === "user"
                     ? styles.userMessageRow
                     : styles.aiMessageRow
                 }
               >
 
-                {message.type === "ai" && (
+                {message.type === "assistant" && (
                   <div style={styles.smallBot}>
                     🤖
                   </div>
@@ -381,7 +365,7 @@ const loadDashboardScores = async () => {
 
                 <div
                   style={
-                    message.type === "user"
+                    message.role === "user"
                       ? styles.userBubble
                       : message.error
                       ? styles.errorBubble

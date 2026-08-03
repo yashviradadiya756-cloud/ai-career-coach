@@ -2,18 +2,37 @@ const express = require("express");
 
 const router = express.Router();
 
-const { protect } = require("../middleware/authMiddleware");
-
 const {
   askCoachController,
+  getCoachHistory,
+  getCoachDashboard,
 } = require("../controllers/coachController");
 
-console.log("protect:", typeof protect);
-console.log(
-  "askCoachController:",
-  typeof askCoachController
+const protect = require("../middleware/authMiddleware");
+
+
+// Ask AI Coach
+router.post(
+  "/ask",
+  protect,
+  askCoachController
 );
 
-router.post("/ask", protect, askCoachController);
+
+// Chat History
+router.get(
+  "/history",
+  protect,
+  getCoachHistory
+);
+
+
+// Dashboard Scores
+router.get(
+  "/dashboard",
+  protect,
+  getCoachDashboard
+);
+
 
 module.exports = router;
