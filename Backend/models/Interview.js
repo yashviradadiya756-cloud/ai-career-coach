@@ -14,35 +14,35 @@ const interviewSchema = new mongoose.Schema(
     },
 
     improvement: {
-    type: String,
-    default: "",
+      type: String,
+      default: "",
     },
 
     questions: [
-  {
-    question: String,
+      {
+        question: String,
 
-    answer: {
-      type: String,
-      default: "",
-    },
+        answer: {
+          type: String,
+          default: "",
+        },
 
-    feedback: {
-      type: String,
-      default: "",
-    },
+        feedback: {
+          type: String,
+          default: "",
+        },
 
-    improvement: {
-      type: String,
-      default: "",
-    },
+        improvement: {
+          type: String,
+          default: "",
+        },
 
-    score: {
-      type: Number,
-      default: 0,
-    },
-  },
-],
+        score: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
 
     totalScore: {
       type: Number,
