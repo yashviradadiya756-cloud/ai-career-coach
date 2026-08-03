@@ -103,7 +103,7 @@ exports.getProfile = async (req, res) => {
 
 // Export Controllers
 module.exports = {
-    registerUser: exports.registerUser,
-    loginUser: exports.loginUser,
-    getProfile: exports.getProfile
+  registerUser: exports.registerUser,
+  loginUser: exports.loginUser,
+  getProfile: exports.getProfile
 };

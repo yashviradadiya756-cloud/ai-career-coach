@@ -22,7 +22,8 @@ const protect = async (req, res, next) => {
       process.env.JWT_SECRET
     );
 
-    req.user = await User.findById(decoded.id).select("-password");
+    req.user = await User.findById(decoded.id)
+      .select("-password");
 
     if (!req.user) {
       return res.status(401).json({
@@ -34,6 +35,8 @@ const protect = async (req, res, next) => {
     next();
 
   } catch (error) {
+    console.error("Auth Middleware Error:", error);
+
     return res.status(401).json({
       success: false,
       message: "Invalid or expired token",
