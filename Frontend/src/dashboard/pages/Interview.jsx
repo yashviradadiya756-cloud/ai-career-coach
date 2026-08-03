@@ -1,202 +1,407 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import {
+  generateInterview,
+  submitInterview,
+} from "../../api/interviewApi";
 
 export default function Interview() {
-  const interviews = [
-    {
-      title: "HR Interview",
-      questions: 25,
-      duration: "20 Min",
-      status: "Ready",
-      color: "#2563eb",
-    },
-    {
-      title: "Technical Interview",
-      questions: 30,
-      duration: "45 Min",
-      status: "Ready",
-      color: "#16a34a",
-    },
-    {
-      title: "Coding Interview",
-      questions: 15,
-      duration: "60 Min",
-      status: "Ready",
-      color: "#f59e0b",
-    },
-    {
-      title: "Mock Interview",
-      questions: 20,
-      duration: "30 Min",
-      status: "AI Powered",
-      color: "#dc2626",
-    },
-  ];
+  const [targetRole, setTargetRole] = useState("");
 
-  const feedback = [
-    "Improve confidence while answering.",
-    "Explain projects with more details.",
-    "Practice Data Structures & Algorithms.",
-    "Maintain eye contact during interviews.",
-    "Improve communication skills.",
-  ];
+  const [interview, setInterview] = useState(null);
+
+  const [answers, setAnswers] = useState([]);
+
+  const [loading, setLoading] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
+
+  const [submitted, setSubmitted] = useState(false);
+
+  const [result, setResult] = useState(null);
+
+  // ---------------------------------
+  // Generate Interview
+  // ---------------------------------
+
+  const handleGenerate = async () => {
+    if (!targetRole.trim()) {
+      alert("Please enter your target role.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await generateInterview(
+        targetRole.trim()
+      );
+
+      console.log("Interview:", res.data);
+
+      const newInterview = res.data.interview;
+
+      setInterview(newInterview);
+
+      setAnswers(
+        newInterview.questions.map(() => "")
+      );
+
+      setSubmitted(false);
+
+      setResult(null);
+
+    } catch (error) {
+      console.log(
+        "Interview Generate Error:",
+        error.response?.data
+      );
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to generate interview."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ---------------------------------
+  // Answer Change
+  // ---------------------------------
+
+  const handleAnswerChange = (index, value) => {
+    const updatedAnswers = [...answers];
+
+    updatedAnswers[index] = value;
+
+    setAnswers(updatedAnswers);
+  };
+
+  // ---------------------------------
+  // Submit Interview
+  // ---------------------------------
+
+  const handleSubmit = async () => {
+    if (!interview) return;
+
+    const emptyAnswers = answers.some(
+      (answer) => !answer.trim()
+    );
+
+    if (emptyAnswers) {
+      const confirmSubmit = window.confirm(
+        "Some questions are unanswered. Do you want to submit?"
+      );
+
+      if (!confirmSubmit) return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const res = await submitInterview(
+        interview._id,
+        answers
+      );
+
+      console.log("Submit Response:", res.data);
+
+      setResult(res.data.interview);
+
+      setInterview(res.data.interview);
+
+      setSubmitted(true);
+
+      alert("Interview submitted successfully!");
+
+    } catch (error) {
+      console.log(
+        "Submit Error:",
+        error.response?.data
+      );
+
+      alert(
+        error.response?.data?.message ||
+        "Failed to submit interview."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ---------------------------------
+  // Initial Screen
+  // ---------------------------------
+
+  if (!interview) {
+    return (
+      <div style={styles.container}>
+
+        <div style={styles.heroCard}>
+
+          <div style={styles.icon}>
+            🎤
+          </div>
+
+          <h1 style={styles.heroTitle}>
+            AI Mock Interview
+          </h1>
+
+          <p style={styles.heroText}>
+            Practice realistic interviews with AI,
+            improve your communication, technical
+            knowledge and interview confidence.
+          </p>
+
+          <div style={styles.inputBox}>
+
+            <input
+              type="text"
+              placeholder="Enter target role e.g. Full Stack Developer"
+              value={targetRole}
+              onChange={(e) =>
+                setTargetRole(e.target.value)
+              }
+              style={styles.input}
+            />
+
+            <button
+              onClick={handleGenerate}
+              disabled={loading}
+              style={{
+                ...styles.generateButton,
+                opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {loading
+                ? "Generating..."
+                : "🚀 Start AI Interview"}
+            </button>
+
+          </div>
+
+        </div>
+
+        <div style={styles.infoGrid}>
+
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>🧠</div>
+            <h3>AI Questions</h3>
+            <p>
+              Get role-specific interview questions
+              generated by AI.
+            </p>
+          </div>
+
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>💬</div>
+            <h3>Practice Answers</h3>
+            <p>
+              Answer questions just like a real
+              interview.
+            </p>
+          </div>
+
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>📊</div>
+            <h3>AI Evaluation</h3>
+            <p>
+              Receive score and detailed feedback
+              for every answer.
+            </p>
+          </div>
+
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>🎯</div>
+            <h3>Improve Skills</h3>
+            <p>
+              Identify weaknesses and improve your
+              interview performance.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    );
+  }
+
+  // ---------------------------------
+  // Interview Screen
+  // ---------------------------------
 
   return (
     <div style={styles.container}>
 
       {/* Header */}
-      <div style={styles.header}>
-        <h1>🎤 AI Mock Interview</h1>
 
-        <p>
-          Practice interviews with AI and improve your confidence before real
-          placement interviews.
-        </p>
-      </div>
+      <div style={styles.topHeader}>
 
-      {/* Summary Cards */}
+        <div>
+          <span style={styles.badge}>
+            🤖 AI POWERED
+          </span>
 
-      <div style={styles.cards}>
+          <h1 style={styles.title}>
+            {interview.targetRole} Interview
+          </h1>
 
-        <div style={styles.card}>
-          <h3>Total Interviews</h3>
-          <h1 style={{ color: "#2563eb" }}>18</h1>
+          <p style={styles.subtitle}>
+            Answer each question carefully.
+            Your answers will be evaluated by AI.
+          </p>
         </div>
 
-        <div style={styles.card}>
-          <h3>Completed</h3>
-          <h1 style={{ color: "#16a34a" }}>12</h1>
-        </div>
+        <div style={styles.questionCount}>
+          <strong>
+            {interview.questions.length}
+          </strong>
 
-        <div style={styles.card}>
-          <h3>Average Score</h3>
-          <h1 style={{ color: "#f59e0b" }}>87%</h1>
-        </div>
-
-        <div style={styles.card}>
-          <h3>Confidence</h3>
-          <h1 style={{ color: "#dc2626" }}>82%</h1>
+          <span>
+            Questions
+          </span>
         </div>
 
       </div>
 
-      {/* Interview Types */}
+      {/* Questions */}
 
-      <div style={styles.section}>
+      <div>
 
-        <h2>Interview Categories</h2>
+        {interview.questions.map(
+          (question, index) => (
 
-        <div style={styles.grid}>
+            <div
+              key={index}
+              style={styles.questionCard}
+            >
 
-          {interviews.map((item, index) => (
+              <div style={styles.questionHeader}>
 
-            <div key={index} style={styles.interviewCard}>
-
-              <h3 style={{ color: item.color }}>{item.title}</h3>
-
-              <p>
-                <strong>Questions:</strong> {item.questions}
-              </p>
-
-              <p>
-                <strong>Duration:</strong> {item.duration}
-              </p>
-
-              <p>
-                <strong>Status:</strong>{" "}
-                <span style={{ color: item.color }}>
-                  {item.status}
+                <span style={styles.questionNumber}>
+                  Question {index + 1}
                 </span>
-              </p>
 
-              <button style={styles.button}>
-                Start Interview
-              </button>
+                <span style={styles.questionLabel}>
+                  {index < 3
+                    ? "Technical"
+                    : "Interview"}
+                </span>
+
+              </div>
+
+              <h2 style={styles.question}>
+                {question.question}
+              </h2>
+
+              <textarea
+                placeholder="Type your answer here..."
+                value={answers[index] || ""}
+                onChange={(e) =>
+                  handleAnswerChange(
+                    index,
+                    e.target.value
+                  )
+                }
+                disabled={submitted}
+                style={styles.textarea}
+              />
+
+              {/* Feedback */}
+
+              {submitted &&
+                question.feedback && (
+
+                  <div style={styles.feedbackBox}>
+
+                    <h4>
+                      🤖 AI Feedback
+                    </h4>
+
+                    <p>
+                      {question.feedback}
+                    </p>
+
+                    <h4>
+                      💡 Improvement
+                    </h4>
+
+                    <p>
+                      {question.improvement}
+                    </p>
+
+                    <div style={styles.score}>
+                      Score:{" "}
+                      <strong>
+                        {question.score}/100
+                      </strong>
+                    </div>
+
+                  </div>
+
+                )}
 
             </div>
 
-          ))}
+          )
+        )}
+
+      </div>
+
+      {/* Submit */}
+
+      {!submitted ? (
+
+        <div style={styles.submitArea}>
+
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            style={styles.submitButton}
+          >
+            {submitting
+              ? "🤖 Evaluating Answers..."
+              : "🚀 Submit Interview"}
+          </button>
 
         </div>
 
-      </div>
+      ) : (
 
-      {/* AI Feedback */}
+        <div style={styles.resultCard}>
 
-      <div style={styles.section}>
-
-        <h2>🤖 AI Feedback</h2>
-
-        <ul>
-
-          {feedback.map((item, index) => (
-
-            <li key={index} style={styles.list}>
-              ✅ {item}
-            </li>
-
-          ))}
-
-        </ul>
-
-      </div>
-
-      {/* Performance */}
-
-      <div style={styles.section}>
-
-        <h2>Interview Performance</h2>
-
-        <div style={{ marginBottom: 20 }}>
-          <strong>Technical Skills</strong>
-
-          <div style={styles.progress}>
-            <div style={{ ...styles.fill, width: "88%" }}></div>
+          <div style={styles.resultIcon}>
+            🏆
           </div>
-        </div>
 
-        <div style={{ marginBottom: 20 }}>
-          <strong>Communication</strong>
+          <h2>
+            Interview Completed!
+          </h2>
 
-          <div style={styles.progress}>
-            <div
-              style={{
-                ...styles.fill,
-                width: "82%",
-                background: "#16a34a",
-              }}
-            ></div>
+          <p>
+            Your AI interview score
+          </p>
+
+          <div style={styles.totalScore}>
+            {result?.totalScore || 0}
+            <span>/100</span>
           </div>
+
+          <button
+            onClick={() => {
+              setInterview(null);
+              setAnswers([]);
+              setSubmitted(false);
+              setResult(null);
+            }}
+            style={styles.newInterviewButton}
+          >
+            🔄 Start New Interview
+          </button>
+
         </div>
 
-        <div style={{ marginBottom: 20 }}>
-          <strong>Confidence</strong>
-
-          <div style={styles.progress}>
-            <div
-              style={{
-                ...styles.fill,
-                width: "78%",
-                background: "#f59e0b",
-              }}
-            ></div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* AI Recommendation */}
-
-      <div style={styles.section}>
-
-        <h2>🎯 AI Recommendation</h2>
-
-        <p>
-          Complete 5 mock interviews this week. Focus on DSA,
-          System Design, HR Questions and Project Explanation
-          to improve placement success.
-        </p>
-
-      </div>
+      )}
 
     </div>
   );
@@ -204,85 +409,235 @@ export default function Interview() {
 
 const styles = {
 
-container:{
-padding:"20px",
-background:"#f5f7fb",
-minHeight:"100vh"
-},
+  container: {
+    padding: "30px",
+    background: "#f5f7fb",
+    minHeight: "100vh",
+  },
 
-header:{
-background:"#fff",
-padding:"25px",
-borderRadius:"12px",
-marginBottom:"20px",
-boxShadow:"0 2px 10px rgba(0,0,0,.08)"
-},
+  heroCard: {
+    maxWidth: "850px",
+    margin: "30px auto",
+    padding: "55px",
+    background: "#fff",
+    borderRadius: "24px",
+    textAlign: "center",
+    boxShadow:
+      "0 15px 45px rgba(0,0,0,0.08)",
+  },
 
-cards:{
-display:"grid",
-gridTemplateColumns:"repeat(4,1fr)",
-gap:"20px",
-marginBottom:"20px"
-},
+  icon: {
+    fontSize: "65px",
+    marginBottom: "10px",
+  },
 
-card:{
-background:"#fff",
-padding:"20px",
-borderRadius:"12px",
-textAlign:"center",
-boxShadow:"0 2px 10px rgba(0,0,0,.08)"
-},
+  heroTitle: {
+    fontSize: "38px",
+    margin: "10px 0",
+    color: "#111827",
+  },
 
-section:{
-background:"#fff",
-padding:"20px",
-borderRadius:"12px",
-marginBottom:"20px",
-boxShadow:"0 2px 10px rgba(0,0,0,.08)"
-},
+  heroText: {
+    maxWidth: "650px",
+    margin: "0 auto 30px",
+    color: "#6b7280",
+    fontSize: "17px",
+    lineHeight: "1.7",
+  },
 
-grid:{
-display:"grid",
-gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))",
-gap:"20px"
-},
+  inputBox: {
+    display: "flex",
+    gap: "12px",
+    maxWidth: "650px",
+    margin: "auto",
+  },
 
-interviewCard:{
-background:"#f8fafc",
-padding:"20px",
-borderRadius:"10px",
-border:"1px solid #e5e7eb"
-},
+  input: {
+    flex: 1,
+    padding: "15px",
+    border: "1px solid #d1d5db",
+    borderRadius: "10px",
+    fontSize: "15px",
+    outline: "none",
+  },
 
-button:{
-marginTop:"15px",
-width:"100%",
-padding:"12px",
-background:"#2563eb",
-color:"#fff",
-border:"none",
-borderRadius:"8px",
-cursor:"pointer",
-fontWeight:"600"
-},
+  generateButton: {
+    padding: "15px 25px",
+    background: "#2563eb",
+    color: "#fff",
+    border: "none",
+    borderRadius: "10px",
+    fontWeight: "700",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
 
-progress:{
-height:"12px",
-background:"#ddd",
-borderRadius:"20px",
-marginTop:"8px",
-overflow:"hidden"
-},
+  infoGrid: {
+    maxWidth: "1100px",
+    margin: "30px auto",
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(220px,1fr))",
+    gap: "20px",
+  },
 
-fill:{
-height:"100%",
-background:"#2563eb",
-borderRadius:"20px"
-},
+  infoCard: {
+    background: "#fff",
+    padding: "25px",
+    borderRadius: "16px",
+    boxShadow:
+      "0 5px 20px rgba(0,0,0,0.05)",
+  },
 
-list:{
-marginBottom:"12px",
-fontSize:"16px"
-}
+  infoIcon: {
+    fontSize: "32px",
+    marginBottom: "10px",
+  },
 
+  topHeader: {
+    background: "#fff",
+    padding: "30px",
+    borderRadius: "18px",
+    marginBottom: "25px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    boxShadow:
+      "0 5px 20px rgba(0,0,0,0.05)",
+  },
+
+  badge: {
+    background: "#dbeafe",
+    color: "#2563eb",
+    padding: "6px 12px",
+    borderRadius: "20px",
+    fontSize: "12px",
+    fontWeight: "700",
+  },
+
+  title: {
+    fontSize: "30px",
+    margin: "15px 0 5px",
+  },
+
+  subtitle: {
+    color: "#6b7280",
+  },
+
+  questionCount: {
+    background: "#eff6ff",
+    padding: "18px 25px",
+    borderRadius: "15px",
+    textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+  },
+
+  questionCard: {
+    background: "#fff",
+    padding: "30px",
+    marginBottom: "20px",
+    borderRadius: "18px",
+    boxShadow:
+      "0 5px 20px rgba(0,0,0,0.05)",
+  },
+
+  questionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "15px",
+  },
+
+  questionNumber: {
+    color: "#2563eb",
+    fontWeight: "700",
+  },
+
+  questionLabel: {
+    background: "#f3f4f6",
+    padding: "6px 12px",
+    borderRadius: "20px",
+    fontSize: "12px",
+  },
+
+  question: {
+    fontSize: "20px",
+    lineHeight: "1.5",
+    marginBottom: "20px",
+  },
+
+  textarea: {
+    width: "100%",
+    minHeight: "150px",
+    padding: "15px",
+    border: "1px solid #d1d5db",
+    borderRadius: "12px",
+    fontSize: "15px",
+    resize: "vertical",
+    boxSizing: "border-box",
+    outline: "none",
+  },
+
+  feedbackBox: {
+    marginTop: "20px",
+    padding: "20px",
+    background: "#f0fdf4",
+    borderRadius: "12px",
+    borderLeft: "5px solid #16a34a",
+  },
+
+  score: {
+    marginTop: "15px",
+    fontSize: "18px",
+    color: "#2563eb",
+  },
+
+  submitArea: {
+    textAlign: "center",
+    padding: "20px",
+  },
+
+  submitButton: {
+    padding: "16px 45px",
+    background: "#16a34a",
+    color: "#fff",
+    border: "none",
+    borderRadius: "12px",
+    fontSize: "17px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+
+  resultCard: {
+    maxWidth: "600px",
+    margin: "30px auto",
+    background: "#fff",
+    padding: "40px",
+    borderRadius: "20px",
+    textAlign: "center",
+    boxShadow:
+      "0 10px 35px rgba(0,0,0,0.08)",
+  },
+
+  resultIcon: {
+    fontSize: "55px",
+  },
+
+  totalScore: {
+    fontSize: "60px",
+    fontWeight: "800",
+    color: "#2563eb",
+    margin: "15px 0",
+  },
+
+  newInterviewButton: {
+    padding: "13px 25px",
+    border: "none",
+    background: "#2563eb",
+    color: "#fff",
+    borderRadius: "10px",
+    cursor: "pointer",
+    fontWeight: "600",
+  },
 };
