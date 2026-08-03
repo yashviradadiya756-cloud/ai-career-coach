@@ -1,18 +1,28 @@
 const Interview = require("../models/Interview");
-const evaluateAnswer = require("../utils/geminiInterviewEvaluation");
+const evaluateAnswer = require("../utils/geminiEvaluate");
 
 const submitInterviewController = async (req, res) => {
   try {
     const { interviewId, answers } = req.body;
 
-    if (!interviewId || !answers) {
+    if (!interviewId) {
       return res.status(400).json({
         success: false,
-        message: "Interview ID and answers are required",
+        message: "Interview ID is required",
       });
     }
 
-    const interview = await Interview.findById(interviewId);
+    if (!Array.isArray(answers)) {
+      return res.status(400).json({
+        success: false,
+        message: "Answers must be an array",
+      });
+    }
+
+    const interview = await Interview.findOne({
+      _id: interviewId,
+      user: req.user._id,
+    });
 
     if (!interview) {
       return res.status(404).json({
@@ -23,40 +33,53 @@ const submitInterviewController = async (req, res) => {
 
     let totalScore = 0;
 
-    for (const item of answers) {
-      const question = interview.questions[item.questionIndex];
+    for (let i = 0; i < interview.questions.length; i++) {
+      const question = interview.questions[i];
 
-      if (!question) continue;
+      const submittedAnswer = answers[i] || "";
 
-      const result = await evaluateAnswer(
+      if (!submittedAnswer.trim()) {
+        question.answer = "";
+        question.feedback = "No answer provided.";
+        question.improvement =
+          "Try to provide a clear and structured answer.";
+        question.score = 0;
+
+        continue;
+      }
+
+      const evaluation = await evaluateAnswer(
         question.question,
-        item.answer
+        submittedAnswer
       );
 
-      question.answer = item.answer;
-      question.feedback = result.feedback;
-      question.improvement = result.improvement;
-      question.score = result.score;
+      question.answer = submittedAnswer;
+      question.feedback = evaluation.feedback || "";
+      question.improvement = evaluation.improvement || "";
+      question.score = Number(evaluation.score) || 0;
 
-      totalScore += result.score;
+      totalScore += question.score;
     }
 
-    interview.totalScore = totalScore;
+    interview.totalScore =
+      interview.questions.length > 0
+        ? Math.round(totalScore / interview.questions.length)
+        : 0;
 
     await interview.save();
 
     res.status(200).json({
       success: true,
-      message: "Interview Evaluated Successfully",
+      message: "Interview Submitted Successfully",
       interview,
     });
 
   } catch (error) {
-    console.log(error);
+    console.log("Submit Interview Error:", error);
 
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Interview submission failed",
     });
   }
 };

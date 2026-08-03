@@ -5,30 +5,43 @@ const generateInterviewController = async (req, res) => {
   try {
     const { targetRole } = req.body;
 
-    if (!targetRole) {
+    if (!targetRole || !targetRole.trim()) {
       return res.status(400).json({
         success: false,
         message: "Target Role is required",
       });
     }
 
-    // Generate AI Questions
-    const interviewData = await generateInterviewQuestions(targetRole);
+    console.log("Generating interview for:", targetRole);
 
-    // Format questions
+    const interviewData = await generateInterviewQuestions(
+      targetRole.trim()
+    );
+
+    if (
+      !interviewData ||
+      !Array.isArray(interviewData.questions)
+    ) {
+      return res.status(500).json({
+        success: false,
+        message: "Invalid interview questions generated",
+      });
+    }
+
     const questions = interviewData.questions.map((q) => ({
       question: q.question,
       answer: "",
       feedback: "",
+      improvement: "",
       score: 0,
     }));
 
-    // Save Interview
     const interview = await Interview.create({
       user: req.user._id,
-      targetRole,
+      targetRole: targetRole.trim(),
       questions,
       totalScore: 0,
+      improvement: "",
     });
 
     res.status(201).json({
@@ -42,7 +55,7 @@ const generateInterviewController = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Interview generation failed",
     });
   }
 };

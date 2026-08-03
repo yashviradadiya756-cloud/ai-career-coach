@@ -1,29 +1,36 @@
 const ai = require("../config/gemini");
 
-async function evaluateAnswer(question, answer) {
+async function generateInterviewQuestions(targetRole) {
   try {
     const prompt = `
-You are an expert technical interviewer.
+You are an AI technical interviewer.
 
-Question:
-${question}
+Generate 10 interview questions for the following target role:
 
-Candidate Answer:
-${answer}
+${targetRole}
 
-Return ONLY JSON.
+Questions should include:
+- Technical questions
+- Conceptual questions
+- Project-related questions
+- Problem-solving questions
+- Real-world scenario questions
+
+Return ONLY valid JSON.
 
 {
-  "score":0,
-  "feedback":"",
-  "improvement":""
+  "questions": [
+    {
+      "question": "Question here"
+    }
+  ]
 }
 `;
 
-   const response = await ai.models.generateContent({
-  model: "gemini-3.6-flash",
-  contents: prompt,
-});
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: prompt,
+    });
 
     let text = response.text;
 
@@ -32,12 +39,18 @@ Return ONLY JSON.
       .replace(/```/g, "")
       .trim();
 
-    return JSON.parse(text);
+    const match = text.match(/\{[\s\S]*\}/);
+
+    if (!match) {
+      throw new Error("Invalid Gemini interview response");
+    }
+
+    return JSON.parse(match[0]);
 
   } catch (error) {
-    console.log(error);
+    console.log("Gemini Interview Error:", error.message);
     throw error;
   }
 }
 
-module.exports = evaluateAnswer;
+module.exports = generateInterviewQuestions;
