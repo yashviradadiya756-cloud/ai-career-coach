@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+
 import {
   askCoach,
   getCoachHistory,
+  getCoachDashboard,
 } from "../../api/coachApi";
 
 export default function AICoach() {
@@ -10,12 +12,46 @@ export default function AICoach() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [scores, setScores] = useState({
+  careerScore: 0,
+  roadmapProgress: 0,
+  resumeScore: 0,
+  interviewScore: 0,
+});
+
+const [scoreLoading, setScoreLoading] = useState(true);
 
 
   // Load previous chat
   useEffect(() => {
-    loadHistory();
-  }, []);
+  loadDashboardScores();
+  loadHistory();
+}, []);
+
+const loadDashboardScores = async () => {
+  try {
+
+    setScoreLoading(true);
+
+    const res = await getCoachDashboard();
+
+    console.log("AI Coach Scores:", res.data);
+
+    setScores(res.data.scores);
+
+  } catch (error) {
+
+    console.log(
+      "Dashboard Score Error:",
+      error.response?.data || error.message
+    );
+
+  } finally {
+
+    setScoreLoading(false);
+
+  }
+};
 
 
   const loadHistory = async () => {
@@ -209,7 +245,7 @@ export default function AICoach() {
           <div>
             <h3>Career Score</h3>
             <h1 style={{ color: "#2563eb" }}>
-              84%
+              {scoreLoading ? "..." : `${scores.careerScore}%`}
             </h1>
           </div>
 
@@ -225,7 +261,7 @@ export default function AICoach() {
           <div>
             <h3>Roadmap Progress</h3>
             <h1 style={{ color: "#16a34a" }}>
-              65%
+              {scoreLoading ? "..." : `${scores.roadmapProgress}%`}
             </h1>
           </div>
 
@@ -241,7 +277,7 @@ export default function AICoach() {
           <div>
             <h3>Resume Score</h3>
             <h1 style={{ color: "#f59e0b" }}>
-              78%
+              {scoreLoading ? "..." : `${scores.resumeScore}%`}
             </h1>
           </div>
 
@@ -257,7 +293,7 @@ export default function AICoach() {
           <div>
             <h3>Interview Score</h3>
             <h1 style={{ color: "#dc2626" }}>
-              87%
+              {scoreLoading ? "..." : `${scores.interviewScore}%`}
             </h1>
           </div>
 

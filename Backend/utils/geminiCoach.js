@@ -5,43 +5,36 @@ async function askAICoach(question, context = "") {
     const prompt = `
 You are CareerPilot AI Career Coach.
 
-Your job is to help students and job seekers with:
-
+Help the user with:
 - Career guidance
 - Resume improvement
 - Skill development
-- Learning roadmaps
+- Learning roadmap
 - Interview preparation
 - Projects
 - Placement preparation
-- Job preparation
 
-User question:
+User Question:
 ${question}
 
-Additional user context:
-${context || "No additional context available."}
+User Career Context:
+${context}
 
-Give a helpful, practical and easy-to-understand answer.
+Give a practical and personalized answer.
 
-Rules:
-1. Do not return JSON.
-2. Give a normal conversational response.
-3. Use headings and bullet points when useful.
-4. Give actionable steps.
-5. Keep the answer concise but useful.
+Do not return JSON.
+Return a normal conversational answer.
 `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.6-flash",
       contents: prompt,
     });
 
     return response.text;
-  } catch (error) {
-    console.log("AI Coach Gemini Error:");
-    console.log(error.message);
 
+  } catch (error) {
+    console.log("AI Coach Error:", error.message);
     throw error;
   }
 }

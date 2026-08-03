@@ -1,85 +1,120 @@
 const CoachChat = require("../models/CoachChat");
-const askAICoach = require("../utils/geminiCoach");
+const SkillGap = require("../models/SkillGap");
+const Resume = require("../models/Resume");
+const Roadmap = require("../models/Roadmap");
+const Interview = require("../models/Interview");
 
-const askCoachController = async (req, res) => {
+const getCoachDashboardController = async (req, res) => {
   try {
-    const { question } = req.body;
 
-    if (!question || !question.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Question is required",
-      });
+    const userId = req.user._id;
+
+    // =========================
+    // SKILL GAP
+    // =========================
+
+    const skillGap = await SkillGap.findOne({
+      user: userId,
+    }).sort({ createdAt: -1 });
+
+
+    // =========================
+    // RESUME
+    // =========================
+
+    const resume = await Resume.findOne({
+      user: userId,
+    }).sort({ createdAt: -1 });
+
+
+    // =========================
+    // ROADMAP
+    // =========================
+
+    const roadmap = await Roadmap.findOne({
+      user: userId,
+    }).sort({ createdAt: -1 });
+
+
+    // =========================
+    // INTERVIEW
+    // =========================
+
+    const interview = await Interview.findOne({
+      user: userId,
+    }).sort({ createdAt: -1 });
+
+
+    // =========================
+    // CALCULATE SCORES
+    // =========================
+
+    const careerScore =
+      skillGap?.readinessScore || 0;
+
+
+    const resumeScore =
+      resume?.atsScore || 0;
+
+
+    let roadmapProgress = 0;
+
+    if (roadmap?.phases?.length) {
+
+      const completedPhases =
+        roadmap.phases.filter(
+          (phase) => phase.completed === true
+        ).length;
+
+      roadmapProgress = Math.round(
+        (completedPhases / roadmap.phases.length) * 100
+      );
+
     }
 
-    // Ask Gemini
-    const answer = await askAICoach(question.trim());
 
-    // Save chat
-    const chat = await CoachChat.create({
-      user: req.user._id,
-      question: question.trim(),
-      answer,
-    });
+    const interviewScore =
+      interview?.totalScore || 0;
+
 
     res.status(200).json({
+
       success: true,
-      message: "AI Coach response generated",
-      chat,
+
+      scores: {
+
+        careerScore,
+
+        roadmapProgress,
+
+        resumeScore,
+
+        interviewScore,
+
+      },
+
     });
+
   } catch (error) {
-    console.log("AI Coach Controller Error:", error);
 
-    // Gemini quota
-    if (error.status === 429 || error.message?.includes("429")) {
-      return res.status(429).json({
-        success: false,
-        message:
-          "AI usage limit reached. Please wait and try again later.",
-      });
-    }
-
-    // Gemini temporary unavailable
-    if (error.status === 503 || error.message?.includes("503")) {
-      return res.status(503).json({
-        success: false,
-        message:
-          "AI service is temporarily busy. Please try again shortly.",
-      });
-    }
+    console.log(
+      "Coach Dashboard Error:",
+      error
+    );
 
     res.status(500).json({
+
       success: false,
-      message: error.message || "AI Coach failed",
-    });
-  }
-};
 
-
-const getCoachHistoryController = async (req, res) => {
-  try {
-    const chats = await CoachChat.find({
-      user: req.user._id,
-    })
-      .sort({ createdAt: 1 })
-      .limit(30);
-
-    res.status(200).json({
-      success: true,
-      chats,
-    });
-  } catch (error) {
-    console.log("Coach History Error:", error);
-
-    res.status(500).json({
-      success: false,
       message: error.message,
+
     });
+
   }
 };
-
 
 module.exports = {
   askCoachController,
   getCoachHistoryController,
+  getCoachDashboardController,
 };
