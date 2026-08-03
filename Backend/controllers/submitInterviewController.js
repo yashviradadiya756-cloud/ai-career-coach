@@ -1,5 +1,5 @@
 const Interview = require("../models/Interview");
-const evaluateAnswer = require("../utils/geminiEvaluate");
+const evaluateAnswer = require("../utils/geminiInterviewEvaluation");
 
 const submitInterviewController = async (req, res) => {
   try {
