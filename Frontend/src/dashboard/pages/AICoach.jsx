@@ -8,147 +8,213 @@ import {
 
 export default function AICoach() {
 
+  // =========================
+  // STATES
+  // =========================
+
   const [question, setQuestion] = useState("");
+
   const [messages, setMessages] = useState([]);
+
   const [loading, setLoading] = useState(false);
+
   const [historyLoading, setHistoryLoading] = useState(true);
+
   const [scores, setScores] = useState({
-  careerScore: 0,
-  roadmapProgress: 0,
-  resumeScore: 0,
-  interviewScore: 0,
-});
+    careerScore: 0,
+    roadmapProgress: 0,
+    resumeScore: 0,
+    interviewScore: 0,
+  });
 
-const [scoreLoading, setScoreLoading] = useState(true);
+  const [scoreLoading, setScoreLoading] = useState(true);
 
 
-  // Load previous chat
+  // =========================
+  // LOAD DATA WHEN PAGE OPENS
+  // =========================
+
   useEffect(() => {
-  loadDashboardScores();
-  loadHistory();
-}, []);
+    loadDashboardScores();
+    loadHistory();
+  }, []);
 
-  const loadDashboard = async () => {
-  try {
-    setScoreLoading(true);
 
-    const response = await getCoachDashboard();
+  // =========================
+  // LOAD DASHBOARD SCORES
+  // =========================
 
-    console.log("COACH DASHBOARD:", response.data);
+  const loadDashboardScores = async () => {
+    try {
 
-    if (response.data.success) {
-      setScores(response.data.score);
+      setScoreLoading(true);
+
+      const response = await getCoachDashboard();
+
+      console.log("COACH DASHBOARD:", response.data);
+
+      if (response.data.success) {
+
+        setScores(
+          response.data.scores || {
+            careerScore: 0,
+            roadmapProgress: 0,
+            resumeScore: 0,
+            interviewScore: 0,
+          }
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Dashboard Score Error:",
+        error.response?.data || error.message
+      );
+
+    } finally {
+
+      setScoreLoading(false);
+
     }
+  };
 
-  } catch (error) {
-    console.error(
-      "Dashboard Score Error:",
-      error.response?.data || error.message
-    );
 
-  } finally {
-    setScoreLoading(false);
-  }
-};
- 
- const loadHistory = async () => {
-  try {
-    setHistoryLoading(true);
+  // =========================
+  // LOAD CHAT HISTORY
+  // =========================
 
-    const response = await getCoachHistory();
+  const loadHistory = async () => {
 
-    console.log("COACH HISTORY:", response.data);
+    try {
 
-    if (response.data.success) {
-      const history = response.data.history || [];
+      setHistoryLoading(true);
 
-      const formattedMessages = [];
+      const response = await getCoachHistory();
 
-      history
-        .slice()
-        .reverse()
-        .forEach((item) => {
-          formattedMessages.push({
-            role: "user",
-            text: item.question,
+      console.log("COACH HISTORY:", response.data);
+
+      if (response.data.success) {
+
+        const history = response.data.history || [];
+
+        const formattedMessages = [];
+
+        history
+          .slice()
+          .reverse()
+          .forEach((item) => {
+
+            formattedMessages.push({
+              role: "user",
+              text: item.question,
+            });
+
+            formattedMessages.push({
+              role: "assistant",
+              text: item.answer,
+            });
+
           });
 
-          formattedMessages.push({
-            role: "assistant",
-            text: item.answer,
-          });
-        });
+        setMessages(formattedMessages);
 
-      setMessages(formattedMessages);
+      }
+
+    } catch (error) {
+
+      console.error(
+        "History Error:",
+        error.response?.data || error.message
+      );
+
+    } finally {
+
+      setHistoryLoading(false);
+
+    }
+  };
+
+
+  // =========================
+  // SEND QUESTION
+  // =========================
+
+  const handleSend = async () => {
+
+    if (!question.trim()) {
+      return;
     }
 
-  } catch (error) {
-    console.error(
-      "History Error:",
-      error.response?.data || error.message
-    );
+    const userQuestion = question.trim();
 
-  } finally {
-    setHistoryLoading(false);
-  }
-};
+    try {
 
-  // Send question
- const handleSend = async () => {
-  if (!question.trim()) return;
+      setLoading(true);
 
-  const userQuestion = question.trim();
+      const response = await askCoach(userQuestion);
 
-  try {
-    setLoading(true);
+      console.log("AI RESPONSE:", response.data);
 
-    const response = await askCoach(userQuestion);
+      if (!response.data.success) {
 
-    console.log("AI RESPONSE:", response.data);
+        throw new Error(
+          response.data.message || "AI Coach failed"
+        );
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        text: userQuestion,
-      },
-      {
-        role: "assistant",
-        text: response.data.answer,
-      },
-    ]);
+      }
 
-    setQuestion("");
+      setMessages((prev) => [
 
-  } catch (error) {
-    console.error(
-      "AI Coach Error:",
-      error.response?.data || error.message
-    );
+        ...prev,
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        text:
-          error.response?.data?.message ||
-          "AI Coach failed. Please try again.",
-        error: true,
-      },
-    ]);
+        {
+          role: "user",
+          text: userQuestion,
+        },
 
-  } finally {
-    setLoading(false);
-  }
-};
+        {
+          role: "assistant",
+          text: response.data.answer,
+        },
 
-useEffect(() => {
-  loadDashboard();
-  loadHistory();
-}, []);
+      ]);
+
+      setQuestion("");
+
+    } catch (error) {
+
+      console.error("AI Coach Error:", error);
+
+      setMessages((prev) => [
+
+        ...prev,
+
+        {
+          role: "assistant",
+          text:
+            error.response?.data?.message ||
+            error.message ||
+            "AI Coach failed. Please try again.",
+          error: true,
+        },
+
+      ]);
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
 
 
-  // Enter key
+  // =========================
+  // ENTER KEY
+  // =========================
+
   const handleKeyDown = (e) => {
 
     if (e.key === "Enter" && !e.shiftKey) {
@@ -162,7 +228,10 @@ useEffect(() => {
   };
 
 
-  // Quick question
+  // =========================
+  // QUICK QUESTION
+  // =========================
+
   const handleQuickQuestion = (text) => {
 
     setQuestion(text);
@@ -348,40 +417,40 @@ useEffect(() => {
 
             messages.map((message, index) => (
 
+            <div
+              key={index}
+              style={
+                message.role === "user"
+                  ? styles.userMessageRow
+                  : styles.aiMessageRow
+              }
+            >
+
+              {message.role === "assistant" && (
+                <div style={styles.smallBot}>
+                  🤖
+                </div>
+              )}
+
               <div
-                key={index}
                 style={
                   message.role === "user"
-                    ? styles.userMessageRow
-                    : styles.aiMessageRow
+                    ? styles.userBubble
+                    : message.error
+                    ? styles.errorBubble
+                    : styles.aiBubble
                 }
               >
 
-                {message.type === "assistant" && (
-                  <div style={styles.smallBot}>
-                    🤖
-                  </div>
-                )}
-
-                <div
-                  style={
-                    message.role === "user"
-                      ? styles.userBubble
-                      : message.error
-                      ? styles.errorBubble
-                      : styles.aiBubble
-                  }
-                >
-
-                  <div style={styles.messageText}>
-                    {message.text}
-                  </div>
-
+                <div style={styles.messageText}>
+                  {message.text}
                 </div>
 
               </div>
 
-            ))
+            </div>
+
+          ))
 
           )}
 

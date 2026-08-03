@@ -2,37 +2,30 @@ const express = require("express");
 
 const router = express.Router();
 
-const {
-  askCoachController,
-  getCoachHistory,
-  getCoachDashboard,
-} = require("../controllers/coachController");
-
 const protect = require("../middleware/authMiddleware");
 
+const {
+  askCoachController,
+  getCoachHistoryController,
+  getCoachDashboardController,
+} = require("../controllers/coachController");
 
-// Ask AI Coach
 router.post(
   "/ask",
   protect,
   askCoachController
 );
 
-
-// Chat History
 router.get(
   "/history",
   protect,
-  getCoachHistory
+  getCoachHistoryController
 );
 
-
-// Dashboard Scores
 router.get(
   "/dashboard",
   protect,
-  getCoachDashboard
+  getCoachDashboardController
 );
-
 
 module.exports = router;
