@@ -1,9 +1,4 @@
 import api from "./axios";
-import {
-  askCoach,
-  getCoachHistory,
-  getCoachDashboard,
-} from "./api/coachApi";
 
 export const askCoach = (question) => {
   return api.post("/api/coach/ask", {
