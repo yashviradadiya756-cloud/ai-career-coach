@@ -6,12 +6,16 @@ export const generateInterview = (targetRole) => {
   });
 };
 
-export const submitInterview = (
+export const submitInterviewAnswer = (
   interviewId,
-  answers
+  questionIndex,
+  question,
+  answer
 ) => {
   return api.post("/api/interview/submit", {
     interviewId,
-    answers,
+    questionIndex,
+    question,
+    answer,
   });
 };

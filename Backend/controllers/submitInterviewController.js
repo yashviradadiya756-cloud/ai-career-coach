@@ -3,7 +3,13 @@ const evaluateAnswer = require("../utils/geminiInterviewEvaluation");
 
 const submitInterviewController = async (req, res) => {
   try {
-    const { interviewId, answers } = req.body;
+
+    const {
+      interviewId,
+      questionIndex,
+      question,
+      answer,
+    } = req.body;
 
     if (!interviewId) {
       return res.status(400).json({
@@ -12,10 +18,10 @@ const submitInterviewController = async (req, res) => {
       });
     }
 
-    if (!Array.isArray(answers)) {
+    if (!answer || !answer.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Answers must be an array",
+        message: "Answer is required",
       });
     }
 
@@ -31,55 +37,59 @@ const submitInterviewController = async (req, res) => {
       });
     }
 
+    // AI evaluates spoken answer
+    const evaluation = await evaluateAnswer(
+      question,
+      answer
+    );
+
+    // Save answer
+    interview.questions[questionIndex].answer =
+      answer;
+
+    interview.questions[questionIndex].score =
+      evaluation.score;
+
+    interview.questions[questionIndex].feedback =
+      evaluation.feedback;
+
+    interview.questions[questionIndex].improvement =
+      evaluation.improvement;
+
+    // Calculate total score
     let totalScore = 0;
 
-    for (let i = 0; i < interview.questions.length; i++) {
-      const question = interview.questions[i];
+    interview.questions.forEach((q) => {
+      totalScore += q.score || 0;
+    });
 
-      const submittedAnswer = answers[i] || "";
-
-      if (!submittedAnswer.trim()) {
-        question.answer = "";
-        question.feedback = "No answer provided.";
-        question.improvement =
-          "Try to provide a clear and structured answer.";
-        question.score = 0;
-
-        continue;
-      }
-
-      const evaluation = await evaluateAnswer(
-        question.question,
-        submittedAnswer
-      );
-
-      question.answer = submittedAnswer;
-      question.feedback = evaluation.feedback || "";
-      question.improvement = evaluation.improvement || "";
-      question.score = Number(evaluation.score) || 0;
-
-      totalScore += question.score;
-    }
-
-    interview.totalScore =
-      interview.questions.length > 0
-        ? Math.round(totalScore / interview.questions.length)
-        : 0;
+    interview.totalScore = totalScore;
 
     await interview.save();
 
     res.status(200).json({
       success: true,
-      message: "Interview Submitted Successfully",
+
+      message: "Answer evaluated successfully",
+
+      evaluation,
+
       interview,
     });
 
   } catch (error) {
-    console.log("Submit Interview Error:", error);
+
+    console.log(
+      "Submit Interview Error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
-      message: error.message || "Interview submission failed",
+      message:
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to evaluate answer",
     });
   }
 };

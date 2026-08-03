@@ -1,264 +1,378 @@
-import React, { useState } from "react";
-import {
-  generateInterview,
-  submitInterview,
-} from "../../api/interviewApi";
+import React, { useEffect, useState, useRef } from "react";
+import axios from "../../api/axios";
 
 export default function Interview() {
-  const [targetRole, setTargetRole] = useState("");
-
   const [interview, setInterview] = useState(null);
 
-  const [answers, setAnswers] = useState([]);
-
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [targetRole, setTargetRole] = useState("Full Stack Developer");
 
   const [loading, setLoading] = useState(false);
+  const [starting, setStarting] = useState(false);
 
-  const [submitting, setSubmitting] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const [result, setResult] = useState(null);
+  const [answer, setAnswer] = useState("");
 
-  // ===============================
-  // START INTERVIEW
-  // ===============================
+  const [listening, setListening] = useState(false);
 
-  const handleStartInterview = async () => {
+  const [feedback, setFeedback] = useState(null);
+
+  const [completed, setCompleted] = useState(false);
+
+  const recognitionRef = useRef(null);
+
+  // =====================================================
+  // CHECK BROWSER SPEECH SUPPORT
+  // =====================================================
+
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  // =====================================================
+  // SPEAK QUESTION
+  // =====================================================
+
+  const speakQuestion = (question) => {
+    if (!window.speechSynthesis) {
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const speech = new SpeechSynthesisUtterance(question);
+
+    speech.lang = "en-US";
+    speech.rate = 0.9;
+    speech.pitch = 1;
+
+    window.speechSynthesis.speak(speech);
+  };
+
+  // =====================================================
+  // GENERATE INTERVIEW
+  // =====================================================
+
+  const startInterview = async () => {
     if (!targetRole.trim()) {
-      alert("Please enter your target role.");
+      alert("Please enter target role");
+      return;
+    }
+
+    try {
+      setStarting(true);
+
+      const res = await axios.post("/api/interview/generate", {
+        targetRole: targetRole.trim(),
+      });
+
+      console.log("Interview:", res.data);
+
+      setInterview(res.data.interview);
+
+      setCurrentIndex(0);
+
+      setAnswer("");
+
+      setFeedback(null);
+
+      setCompleted(false);
+
+      // Speak first question
+      setTimeout(() => {
+        speakQuestion(res.data.interview.questions[0].question);
+      }, 500);
+
+    } catch (error) {
+      console.log(error);
+
+      alert(
+        error.response?.data?.message ||
+          "Unable to start interview"
+      );
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  // =====================================================
+  // START SPEAKING
+  // =====================================================
+
+  const startListening = () => {
+    if (!SpeechRecognition) {
+      alert(
+        "Speech recognition is not supported in this browser. Please use Google Chrome."
+      );
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "en-US";
+
+    recognition.continuous = true;
+
+    recognition.interimResults = true;
+
+    recognitionRef.current = recognition;
+
+    let finalTranscript = answer;
+
+    recognition.onstart = () => {
+      setListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      let interimTranscript = "";
+
+      for (
+        let i = event.resultIndex;
+        i < event.results.length;
+        i++
+      ) {
+        const transcript =
+          event.results[i][0].transcript;
+
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + " ";
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      setAnswer(
+        finalTranscript + interimTranscript
+      );
+    };
+
+    recognition.onerror = (event) => {
+      console.log("Speech error:", event.error);
+      setListening(false);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+
+    recognition.start();
+  };
+
+  // =====================================================
+  // STOP SPEAKING
+  // =====================================================
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
+    setListening(false);
+  };
+
+  // =====================================================
+  // SUBMIT ANSWER
+  // =====================================================
+
+  const submitAnswer = async () => {
+    if (!answer.trim()) {
+      alert("Please answer the question first.");
       return;
     }
 
     try {
       setLoading(true);
 
-      const res = await generateInterview(
-        targetRole.trim()
+      stopListening();
+
+      const currentQuestion =
+        interview.questions[currentIndex];
+
+      const res = await axios.post(
+        "/api/interview/submit",
+        {
+          interviewId: interview._id,
+
+          questionIndex: currentIndex,
+
+          question: currentQuestion.question,
+
+          answer: answer.trim(),
+        }
       );
 
-      console.log("Interview generated:", res.data);
+      console.log("Evaluation:", res.data);
 
-      const newInterview = res.data.interview;
+      setFeedback(res.data.evaluation);
 
-      setInterview(newInterview);
+      // Update current question locally
+      const updatedQuestions = [
+        ...interview.questions,
+      ];
 
-      setAnswers(
-        newInterview.questions.map(() => "")
-      );
+      updatedQuestions[currentIndex] = {
+        ...updatedQuestions[currentIndex],
+        answer: answer.trim(),
+        score: res.data.evaluation.score,
+        feedback: res.data.evaluation.feedback,
+        improvement:
+          res.data.evaluation.improvement,
+      };
 
-      setCurrentQuestion(0);
-
-      setResult(null);
+      setInterview({
+        ...interview,
+        questions: updatedQuestions,
+      });
 
     } catch (error) {
-      console.log(
-        "Interview Error:",
-        error.response?.data
-      );
+      console.log(error);
 
       alert(
         error.response?.data?.message ||
-        "Unable to start interview."
+          "Unable to evaluate answer"
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // ===============================
-  // ANSWER CHANGE
-  // ===============================
-
-  const handleAnswerChange = (value) => {
-    const updatedAnswers = [...answers];
-
-    updatedAnswers[currentQuestion] = value;
-
-    setAnswers(updatedAnswers);
-  };
-
-  // ===============================
+  // =====================================================
   // NEXT QUESTION
-  // ===============================
+  // =====================================================
 
-  const handleNext = () => {
-    if (!answers[currentQuestion]?.trim()) {
-      alert("Please answer the question first.");
-      return;
-    }
+  const nextQuestion = () => {
+    const nextIndex = currentIndex + 1;
 
     if (
-      currentQuestion <
-      interview.questions.length - 1
+      nextIndex >= interview.questions.length
     ) {
-      setCurrentQuestion(
-        currentQuestion + 1
-      );
-    }
-  };
+      setCompleted(true);
 
-  // ===============================
-  // PREVIOUS QUESTION
-  // ===============================
+      window.speechSynthesis.cancel();
 
-  const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(
-        currentQuestion - 1
-      );
-    }
-  };
-
-  // ===============================
-  // FINISH INTERVIEW
-  // ===============================
-
-  const handleFinish = async () => {
-    if (!answers[currentQuestion]?.trim()) {
-      alert("Please answer the current question.");
       return;
     }
 
-    const unanswered = answers.some(
-      (answer) => !answer.trim()
+    setCurrentIndex(nextIndex);
+
+    setAnswer("");
+
+    setFeedback(null);
+
+    setTimeout(() => {
+      speakQuestion(
+        interview.questions[nextIndex].question
+      );
+    }, 300);
+  };
+
+  // =====================================================
+  // REPEAT QUESTION
+  // =====================================================
+
+  const repeatQuestion = () => {
+    if (!interview) return;
+
+    speakQuestion(
+      interview.questions[currentIndex].question
     );
-
-    if (unanswered) {
-      alert(
-        "Please answer all interview questions before finishing."
-      );
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-
-      const res = await submitInterview(
-        interview._id,
-        answers
-      );
-
-      console.log(
-        "Interview Result:",
-        res.data
-      );
-
-      setResult(res.data.interview);
-
-    } catch (error) {
-      console.log(
-        "Submit Error:",
-        error.response?.data
-      );
-
-      alert(
-        error.response?.data?.message ||
-        "Interview evaluation failed."
-      );
-    } finally {
-      setSubmitting(false);
-    }
   };
 
-  // ===============================
-  // WELCOME SCREEN
-  // ===============================
+  // =====================================================
+  // CLEANUP
+  // =====================================================
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  // =====================================================
+  // START SCREEN
+  // =====================================================
 
   if (!interview) {
     return (
       <div style={styles.container}>
 
-        <div style={styles.welcomeCard}>
+        <div style={styles.startCard}>
 
-          <div style={styles.bigIcon}>
-            🎤
+          <div style={styles.robot}>
+            🤖
           </div>
 
-          <div style={styles.aiBadge}>
-            🤖 AI POWERED
-          </div>
-
-          <h1 style={styles.welcomeTitle}>
+          <h1>
             AI Mock Interview
           </h1>
 
-          <p style={styles.welcomeText}>
+          <p style={styles.subtitle}>
             Practice a real interview with your
-            AI interviewer. Answer questions one
-            by one and receive personalized
-            feedback at the end.
+            AI interviewer.
           </p>
+
+          <div style={styles.infoGrid}>
+
+            <div style={styles.infoCard}>
+              🎙️
+              <h3>Speak Your Answer</h3>
+              <p>
+                Answer questions using your voice.
+              </p>
+            </div>
+
+            <div style={styles.infoCard}>
+              🔊
+              <h3>AI Speaks</h3>
+              <p>
+                Questions are asked by voice.
+              </p>
+            </div>
+
+            <div style={styles.infoCard}>
+              🧠
+              <h3>AI Evaluation</h3>
+              <p>
+                Get score and feedback.
+              </p>
+            </div>
+
+          </div>
 
           <div style={styles.roleBox}>
 
-            <label style={styles.label}>
+            <label>
               Target Job Role
             </label>
 
             <input
-              type="text"
               value={targetRole}
               onChange={(e) =>
                 setTargetRole(e.target.value)
               }
               placeholder="Example: Full Stack Developer"
-              style={styles.roleInput}
+              style={styles.input}
             />
 
-            <button
-              onClick={handleStartInterview}
-              disabled={loading}
-              style={styles.startButton}
-            >
-              {loading
-                ? "🤖 Preparing Interview..."
-                : "🎤 Start Mock Interview"}
-            </button>
-
           </div>
 
-        </div>
+          <button
+            onClick={startInterview}
+            disabled={starting}
+            style={styles.startButton}
+          >
+            {starting
+              ? "Preparing Interview..."
+              : "🎤 Start AI Interview"}
+          </button>
 
-        <div style={styles.featureGrid}>
-
-          <div style={styles.featureCard}>
-            <div style={styles.featureIcon}>
-              💬
-            </div>
-
-            <h3>Real Interview</h3>
-
-            <p>
-              Answer one question at a time
-              just like an actual interview.
-            </p>
-          </div>
-
-          <div style={styles.featureCard}>
-            <div style={styles.featureIcon}>
-              🧠
-            </div>
-
-            <h3>AI Questions</h3>
-
-            <p>
-              Questions are generated according
-              to your target career.
-            </p>
-          </div>
-
-          <div style={styles.featureCard}>
-            <div style={styles.featureIcon}>
-              📊
-            </div>
-
-            <h3>AI Evaluation</h3>
-
-            <p>
-              Get your performance score and
-              detailed improvement suggestions.
-            </p>
-          </div>
+          <p style={styles.tip}>
+            💡 Use Google Chrome and allow microphone
+            permission when asked.
+          </p>
 
         </div>
 
@@ -266,140 +380,94 @@ export default function Interview() {
     );
   }
 
-  // ===============================
-  // RESULT SCREEN
-  // ===============================
+  // =====================================================
+  // COMPLETED SCREEN
+  // =====================================================
 
-  if (result) {
+  if (completed) {
+
+    const answeredQuestions =
+      interview.questions.filter(
+        (q) => q.answer
+      );
+
+    const totalScore =
+      answeredQuestions.reduce(
+        (sum, q) => sum + (q.score || 0),
+        0
+      );
+
+    const averageScore =
+      answeredQuestions.length > 0
+        ? Math.round(
+            totalScore /
+              answeredQuestions.length
+          )
+        : 0;
+
     return (
       <div style={styles.container}>
 
         <div style={styles.resultCard}>
 
-          <div style={styles.trophy}>
-            🏆
-          </div>
-
-          <div style={styles.aiBadge}>
-            INTERVIEW COMPLETED
+          <div style={styles.successIcon}>
+            🎉
           </div>
 
           <h1>
-            Great Job!
+            Interview Completed!
           </h1>
 
-          <p style={styles.resultSubtitle}>
-            Your AI interview has been evaluated.
+          <p>
+            Great job completing your AI mock
+            interview.
           </p>
 
           <div style={styles.scoreCircle}>
-            {result.totalScore || 0}
-            <span>/100</span>
+            <span>
+              {averageScore}
+            </span>
+            <small>/100</small>
           </div>
 
           <h2>
             Overall Interview Score
           </h2>
 
-          <div style={styles.resultGrid}>
+          <div style={styles.reviewBox}>
 
-            <div style={styles.resultBox}>
+            <h3>
+              🤖 AI Interview Review
+            </h3>
+
+            <p>
+              You completed{" "}
               <strong>
-                {result.questions?.length || 0}
-              </strong>
-
-              <span>
-                Questions
-              </span>
-            </div>
-
-            <div style={styles.resultBox}>
+                {answeredQuestions.length}
+              </strong>{" "}
+              questions for the role of{" "}
               <strong>
-                {result.targetRole}
-              </strong>
+                {interview.targetRole}
+              </strong>.
+            </p>
 
-              <span>
-                Target Role
-              </span>
-            </div>
-
-            <div style={styles.resultBox}>
-              <strong>
-                AI
-              </strong>
-
-              <span>
-                Evaluation
-              </span>
-            </div>
-
-          </div>
-
-          <div style={styles.feedbackSection}>
-
-            <h2>
-              🤖 AI Feedback
-            </h2>
-
-            {result.questions?.map(
-              (question, index) => (
-
-                <div
-                  key={index}
-                  style={styles.feedbackCard}
-                >
-
-                  <h3>
-                    Question {index + 1}
-                  </h3>
-
-                  <p>
-                    <strong>
-                      {question.question}
-                    </strong>
-                  </p>
-
-                  <p>
-                    <strong>
-                      Your Answer:
-                    </strong>{" "}
-                    {question.answer}
-                  </p>
-
-                  <p>
-                    <strong>
-                      AI Feedback:
-                    </strong>{" "}
-                    {question.feedback}
-                  </p>
-
-                  <p>
-                    <strong>
-                      Improvement:
-                    </strong>{" "}
-                    {question.improvement}
-                  </p>
-
-                  <div style={styles.questionScore}>
-                    Score: {question.score}/100
-                  </div>
-
-                </div>
-
-              )
-            )}
+            <p>
+              Continue practicing communication,
+              technical concepts, project
+              explanations and confidence.
+            </p>
 
           </div>
 
           <button
+            style={styles.startButton}
             onClick={() => {
               setInterview(null);
-              setAnswers([]);
-              setCurrentQuestion(0);
-              setResult(null);
-              setTargetRole("");
+              setCompleted(false);
+              setCurrentIndex(0);
+              setAnswer("");
+              setFeedback(null);
             }}
-            style={styles.newInterviewButton}
           >
             🔄 Start New Interview
           </button>
@@ -410,166 +478,200 @@ export default function Interview() {
     );
   }
 
-  // ===============================
-  // MOCK INTERVIEW SCREEN
-  // ===============================
+  // =====================================================
+  // INTERVIEW SCREEN
+  // =====================================================
 
-  const question =
-    interview.questions[currentQuestion];
-
-  const totalQuestions =
-    interview.questions.length;
+  const currentQuestion =
+    interview.questions[currentIndex];
 
   const progress =
-    ((currentQuestion + 1) /
-      totalQuestions) *
+    ((currentIndex + 1) /
+      interview.questions.length) *
     100;
-
-  const isLastQuestion =
-    currentQuestion ===
-    totalQuestions - 1;
 
   return (
     <div style={styles.container}>
 
-      {/* TOP BAR */}
+      <div style={styles.interviewContainer}>
 
-      <div style={styles.interviewHeader}>
+        {/* Header */}
 
-        <div>
+        <div style={styles.interviewHeader}>
 
-          <div style={styles.aiBadge}>
-            🎤 LIVE MOCK INTERVIEW
+          <div>
+
+            <span style={styles.badge}>
+              🤖 AI Interviewer
+            </span>
+
+            <h1>
+              {interview.targetRole}
+            </h1>
+
           </div>
 
-          <h1>
-            {interview.targetRole}
-          </h1>
-
-          <p>
-            AI Interview Session
-          </p>
+          <div style={styles.questionCounter}>
+            Question{" "}
+            {currentIndex + 1} /{" "}
+            {interview.questions.length}
+          </div>
 
         </div>
 
-        <div style={styles.progressText}>
-          Question{" "}
-          <strong>
-            {currentQuestion + 1}
-          </strong>{" "}
-          / {totalQuestions}
+        {/* Progress */}
+
+        <div style={styles.progressBackground}>
+          <div
+            style={{
+              ...styles.progressFill,
+              width: `${progress}%`,
+            }}
+          />
         </div>
 
-      </div>
+        {/* Question */}
 
-      {/* PROGRESS */}
+        <div style={styles.questionCard}>
 
-      <div style={styles.progressBackground}>
+          <div style={styles.questionIcon}>
+            🤖
+          </div>
 
-        <div
-          style={{
-            ...styles.progressFill,
-            width: `${progress}%`,
-          }}
-        />
+          <div style={{ flex: 1 }}>
 
-      </div>
+            <span style={styles.aiLabel}>
+              AI INTERVIEWER
+            </span>
 
-      {/* INTERVIEWER */}
+            <h2>
+              {currentQuestion.question}
+            </h2>
 
-      <div style={styles.interviewerCard}>
-
-        <div style={styles.avatar}>
-          🤖
-        </div>
-
-        <div>
-
-          <strong>
-            AI Interviewer
-          </strong>
-
-          <p>
-            Take your time and answer clearly.
-          </p>
-
-        </div>
-
-      </div>
-
-      {/* QUESTION */}
-
-      <div style={styles.questionCard}>
-
-        <div style={styles.questionNumber}>
-          Question {currentQuestion + 1}
-        </div>
-
-        <h2 style={styles.questionText}>
-          {question.question}
-        </h2>
-
-        <textarea
-          value={
-            answers[currentQuestion] || ""
-          }
-          onChange={(e) =>
-            handleAnswerChange(
-              e.target.value
-            )
-          }
-          placeholder="Type your answer here..."
-          style={styles.answerBox}
-        />
-
-        <div style={styles.answerHint}>
-          💡 Tip: Explain your answer clearly
-          and provide examples from your projects
-          or experience when possible.
-        </div>
-
-      </div>
-
-      {/* CONTROLS */}
-
-      <div style={styles.controls}>
-
-        <button
-          onClick={handlePrevious}
-          disabled={currentQuestion === 0}
-          style={{
-            ...styles.previousButton,
-            opacity:
-              currentQuestion === 0
-                ? 0.5
-                : 1,
-          }}
-        >
-          ← Previous
-        </button>
-
-        {!isLastQuestion ? (
+          </div>
 
           <button
-            onClick={handleNext}
-            style={styles.nextButton}
+            onClick={repeatQuestion}
+            style={styles.repeatButton}
           >
-            Next Question →
+            🔊 Repeat
           </button>
 
-        ) : (
+        </div>
 
-          <button
-            onClick={handleFinish}
-            disabled={submitting}
-            style={styles.finishButton}
-          >
-            {submitting
-              ? "🤖 Evaluating..."
-              : "🏁 Finish Interview"}
-          </button>
+        {/* Answer */}
+
+        <div style={styles.answerCard}>
+
+          <h2>
+            🎙️ Your Answer
+          </h2>
+
+          <p style={styles.answerHint}>
+            Click the microphone and speak your
+            answer naturally.
+          </p>
+
+          <textarea
+            value={answer}
+            onChange={(e) =>
+              setAnswer(e.target.value)
+            }
+            placeholder="Your spoken answer will appear here..."
+            style={styles.textarea}
+          />
+
+          <div style={styles.voiceControls}>
+
+            {!listening ? (
+              <button
+                onClick={startListening}
+                style={styles.micButton}
+              >
+                🎙️ Start Speaking
+              </button>
+            ) : (
+              <button
+                onClick={stopListening}
+                style={styles.stopButton}
+              >
+                ⏹ Stop Speaking
+              </button>
+            )}
+
+            <button
+              onClick={submitAnswer}
+              disabled={
+                loading || !answer.trim()
+              }
+              style={styles.submitButton}
+            >
+              {loading
+                ? "🤖 AI Evaluating..."
+                : "✅ Submit Answer"}
+            </button>
+
+          </div>
+
+          {listening && (
+            <div style={styles.listening}>
+              🔴 Listening... Speak now
+            </div>
+          )}
+
+        </div>
+
+        {/* AI Feedback */}
+
+        {feedback && (
+
+          <div style={styles.feedbackCard}>
+
+            <h2>
+              🤖 AI Evaluation
+            </h2>
+
+            <div style={styles.feedbackScore}>
+              {feedback.score}/100
+            </div>
+
+            <h3>
+              💬 Feedback
+            </h3>
+
+            <p>
+              {feedback.feedback}
+            </p>
+
+            <h3>
+              📈 How to Improve
+            </h3>
+
+            <p>
+              {feedback.improvement}
+            </p>
+
+            <button
+              onClick={nextQuestion}
+              style={styles.nextButton}
+            >
+              {currentIndex + 1 >=
+              interview.questions.length
+                ? "🏆 Finish Interview"
+                : "➡️ Next Question"}
+            </button>
+
+          </div>
 
         )}
+
+        {/* Tip */}
+
+        <div style={styles.tipBox}>
+          💡 Speak clearly and explain your
+          answer with examples from your
+          projects or experience.
+        </div>
 
       </div>
 
@@ -577,108 +679,93 @@ export default function Interview() {
   );
 }
 
+// =====================================================
+// STYLES
+// =====================================================
+
 const styles = {
 
   container: {
     minHeight: "100vh",
-    background: "#f5f7fb",
     padding: "30px",
+    background:
+      "linear-gradient(135deg,#f8fafc,#eef2ff)",
   },
 
-  welcomeCard: {
-    maxWidth: "800px",
-    margin: "30px auto",
-    background: "#ffffff",
-    padding: "50px",
-    borderRadius: "24px",
+  startCard: {
+    maxWidth: "900px",
+    margin: "40px auto",
+    background: "#fff",
+    padding: "45px",
+    borderRadius: "25px",
     textAlign: "center",
     boxShadow:
-      "0 15px 40px rgba(0,0,0,.08)",
+      "0 20px 60px rgba(15,23,42,.12)",
   },
 
-  bigIcon: {
+  robot: {
     fontSize: "70px",
     marginBottom: "10px",
   },
 
-  aiBadge: {
-    display: "inline-block",
-    background: "#dbeafe",
-    color: "#2563eb",
-    padding: "7px 14px",
-    borderRadius: "20px",
-    fontSize: "12px",
-    fontWeight: "700",
-    letterSpacing: ".5px",
+  subtitle: {
+    color: "#64748b",
+    fontSize: "18px",
   },
 
-  welcomeTitle: {
-    fontSize: "38px",
-    margin: "18px 0 10px",
-    color: "#111827",
+  infoGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(200px,1fr))",
+    gap: "20px",
+    marginTop: "35px",
+    marginBottom: "35px",
   },
 
-  welcomeText: {
-    color: "#6b7280",
-    fontSize: "17px",
-    lineHeight: "1.7",
-    maxWidth: "650px",
-    margin: "auto",
+  infoCard: {
+    padding: "25px",
+    borderRadius: "16px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    fontSize: "30px",
   },
 
   roleBox: {
-    marginTop: "35px",
     textAlign: "left",
+    marginBottom: "25px",
   },
 
-  label: {
-    display: "block",
-    marginBottom: "8px",
-    fontWeight: "600",
-  },
-
-  roleInput: {
+  input: {
     width: "100%",
-    padding: "15px",
-    border: "1px solid #d1d5db",
-    borderRadius: "10px",
-    fontSize: "16px",
     boxSizing: "border-box",
+    padding: "15px",
+    marginTop: "8px",
+    borderRadius: "10px",
+    border: "1px solid #cbd5e1",
+    fontSize: "16px",
   },
 
   startButton: {
     width: "100%",
-    marginTop: "15px",
-    padding: "15px",
-    background: "#2563eb",
-    color: "#fff",
+    padding: "16px",
     border: "none",
-    borderRadius: "10px",
-    fontSize: "16px",
+    borderRadius: "12px",
+    background:
+      "linear-gradient(135deg,#2563eb,#4f46e5)",
+    color: "#fff",
+    fontSize: "17px",
     fontWeight: "700",
     cursor: "pointer",
   },
 
-  featureGrid: {
+  tip: {
+    color: "#64748b",
+    marginTop: "20px",
+  },
+
+  interviewContainer: {
     maxWidth: "1000px",
-    margin: "30px auto",
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit,minmax(220px,1fr))",
-    gap: "20px",
-  },
-
-  featureCard: {
-    background: "#fff",
-    padding: "25px",
-    borderRadius: "16px",
-    textAlign: "center",
-    boxShadow:
-      "0 5px 20px rgba(0,0,0,.05)",
-  },
-
-  featureIcon: {
-    fontSize: "35px",
+    margin: "0 auto",
   },
 
   interviewHeader: {
@@ -688,211 +775,223 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: "20px",
     boxShadow:
-      "0 5px 20px rgba(0,0,0,.05)",
+      "0 8px 30px rgba(15,23,42,.08)",
   },
 
-  progressText: {
-    fontSize: "18px",
-    color: "#374151",
+  badge: {
+    background: "#eef2ff",
+    color: "#4338ca",
+    padding: "7px 12px",
+    borderRadius: "20px",
+    fontSize: "13px",
+    fontWeight: "700",
+  },
+
+  questionCounter: {
+    fontWeight: "700",
+    color: "#475569",
   },
 
   progressBackground: {
-    height: "10px",
-    background: "#e5e7eb",
+    height: "8px",
+    background: "#e2e8f0",
     borderRadius: "20px",
-    margin: "20px 0",
+    margin: "15px 0 25px",
     overflow: "hidden",
   },
 
   progressFill: {
     height: "100%",
-    background: "#2563eb",
+    background:
+      "linear-gradient(90deg,#2563eb,#7c3aed)",
     borderRadius: "20px",
     transition: "width .3s ease",
   },
 
-  interviewerCard: {
-    maxWidth: "800px",
-    margin: "25px auto",
+  questionCard: {
+    background:
+      "linear-gradient(135deg,#eef2ff,#f8fafc)",
+    padding: "30px",
+    borderRadius: "20px",
     display: "flex",
     alignItems: "center",
-    gap: "15px",
-    background: "#eff6ff",
-    padding: "18px 25px",
-    borderRadius: "15px",
+    gap: "20px",
+    marginBottom: "20px",
   },
 
-  avatar: {
-    width: "50px",
-    height: "50px",
+  questionIcon: {
+    width: "55px",
+    height: "55px",
     borderRadius: "50%",
-    background: "#2563eb",
+    background: "#4f46e5",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    fontSize: "25px",
+    fontSize: "27px",
   },
 
-  questionCard: {
-    maxWidth: "850px",
-    margin: "20px auto",
+  aiLabel: {
+    fontSize: "12px",
+    fontWeight: "800",
+    color: "#4f46e5",
+  },
+
+  repeatButton: {
+    padding: "10px 15px",
+    border: "1px solid #cbd5e1",
     background: "#fff",
-    padding: "40px",
-    borderRadius: "20px",
-    boxShadow:
-      "0 10px 30px rgba(0,0,0,.07)",
-  },
-
-  questionNumber: {
-    color: "#2563eb",
-    fontWeight: "700",
-    marginBottom: "15px",
-  },
-
-  questionText: {
-    fontSize: "25px",
-    lineHeight: "1.5",
-    color: "#111827",
-  },
-
-  answerBox: {
-    width: "100%",
-    minHeight: "180px",
-    marginTop: "20px",
-    padding: "16px",
-    border: "1px solid #d1d5db",
-    borderRadius: "12px",
-    fontSize: "16px",
-    resize: "vertical",
-    boxSizing: "border-box",
-  },
-
-  answerHint: {
-    marginTop: "12px",
-    padding: "12px",
-    background: "#fffbeb",
-    borderRadius: "10px",
-    color: "#92400e",
-    fontSize: "14px",
-  },
-
-  controls: {
-    maxWidth: "850px",
-    margin: "20px auto",
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "15px",
-  },
-
-  previousButton: {
-    padding: "13px 25px",
-    background: "#fff",
-    border: "1px solid #d1d5db",
     borderRadius: "10px",
     cursor: "pointer",
     fontWeight: "600",
   },
 
-  nextButton: {
-    marginLeft: "auto",
-    padding: "13px 30px",
+  answerCard: {
+    background: "#fff",
+    padding: "30px",
+    borderRadius: "20px",
+    boxShadow:
+      "0 8px 30px rgba(15,23,42,.08)",
+  },
+
+  answerHint: {
+    color: "#64748b",
+  },
+
+  textarea: {
+    width: "100%",
+    minHeight: "180px",
+    boxSizing: "border-box",
+    padding: "18px",
+    borderRadius: "14px",
+    border: "2px solid #e2e8f0",
+    fontSize: "16px",
+    resize: "vertical",
+    outline: "none",
+  },
+
+  voiceControls: {
+    display: "flex",
+    gap: "15px",
+    marginTop: "20px",
+    flexWrap: "wrap",
+  },
+
+  micButton: {
+    flex: 1,
+    padding: "15px",
+    border: "none",
+    borderRadius: "12px",
     background: "#2563eb",
     color: "#fff",
-    border: "none",
-    borderRadius: "10px",
+    fontWeight: "700",
+    fontSize: "16px",
     cursor: "pointer",
+  },
+
+  stopButton: {
+    flex: 1,
+    padding: "15px",
+    border: "none",
+    borderRadius: "12px",
+    background: "#dc2626",
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: "16px",
+    cursor: "pointer",
+  },
+
+  submitButton: {
+    flex: 1,
+    padding: "15px",
+    border: "none",
+    borderRadius: "12px",
+    background: "#16a34a",
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: "16px",
+    cursor: "pointer",
+  },
+
+  listening: {
+    marginTop: "15px",
+    color: "#dc2626",
     fontWeight: "700",
   },
 
-  finishButton: {
-    marginLeft: "auto",
-    padding: "13px 30px",
-    background: "#16a34a",
-    color: "#fff",
+  feedbackCard: {
+    marginTop: "20px",
+    background: "#fff",
+    padding: "30px",
+    borderRadius: "20px",
+    border: "2px solid #bbf7d0",
+    boxShadow:
+      "0 8px 30px rgba(15,23,42,.08)",
+  },
+
+  feedbackScore: {
+    fontSize: "40px",
+    fontWeight: "800",
+    color: "#16a34a",
+    margin: "15px 0",
+  },
+
+  nextButton: {
+    marginTop: "20px",
+    width: "100%",
+    padding: "15px",
     border: "none",
-    borderRadius: "10px",
-    cursor: "pointer",
+    borderRadius: "12px",
+    background: "#4f46e5",
+    color: "#fff",
+    fontSize: "16px",
     fontWeight: "700",
+    cursor: "pointer",
+  },
+
+  tipBox: {
+    marginTop: "20px",
+    background: "#fff7ed",
+    color: "#9a3412",
+    padding: "15px",
+    borderRadius: "12px",
   },
 
   resultCard: {
-    maxWidth: "900px",
-    margin: "30px auto",
+    maxWidth: "750px",
+    margin: "50px auto",
     background: "#fff",
     padding: "45px",
-    borderRadius: "24px",
+    borderRadius: "25px",
     textAlign: "center",
     boxShadow:
-      "0 10px 35px rgba(0,0,0,.08)",
+      "0 20px 60px rgba(15,23,42,.12)",
   },
 
-  trophy: {
-    fontSize: "65px",
-  },
-
-  resultSubtitle: {
-    color: "#6b7280",
+  successIcon: {
+    fontSize: "70px",
   },
 
   scoreCircle: {
     width: "150px",
     height: "150px",
     borderRadius: "50%",
-    background: "#eff6ff",
-    color: "#2563eb",
+    background:
+      "linear-gradient(135deg,#2563eb,#7c3aed)",
+    color: "#fff",
     margin: "30px auto",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    fontSize: "45px",
-    fontWeight: "800",
-  },
-
-  resultGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(3,1fr)",
-    gap: "15px",
-    margin: "30px 0",
-  },
-
-  resultBox: {
-    padding: "20px",
-    background: "#f8fafc",
-    borderRadius: "12px",
-    display: "flex",
     flexDirection: "column",
-    gap: "5px",
   },
 
-  feedbackSection: {
+  reviewBox: {
     textAlign: "left",
-    marginTop: "35px",
-  },
-
-  feedbackCard: {
     padding: "20px",
     background: "#f8fafc",
-    borderRadius: "12px",
-    marginBottom: "15px",
-    borderLeft: "4px solid #2563eb",
-  },
-
-  questionScore: {
-    fontWeight: "700",
-    color: "#2563eb",
-    marginTop: "10px",
-  },
-
-  newInterviewButton: {
-    marginTop: "25px",
-    padding: "14px 30px",
-    background: "#2563eb",
-    color: "#fff",
-    border: "none",
-    borderRadius: "10px",
-    cursor: "pointer",
-    fontWeight: "700",
+    borderRadius: "15px",
+    marginBottom: "25px",
   },
 };
