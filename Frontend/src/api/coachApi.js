@@ -1,17 +1,19 @@
 import api from "./axios";
-
+import {
+  askCoach,
+  getCoachHistory,
+  getCoachDashboard,
+} from "./api/coachApi";
 
 export const askCoach = (question) => {
-  api.post("/api/coach/ask", {
-  message: input
-});
+  return api.post("/api/coach/ask", {
+    message: question,
+  });
 };
-
 
 export const getCoachHistory = () => {
   return api.get("/api/coach/history");
 };
-
 
 export const getCoachDashboard = () => {
   return api.get("/api/coach/dashboard");
@@ -20,28 +22,34 @@ export const getCoachDashboard = () => {
 const handleSend = async () => {
   if (!input.trim()) return;
 
+  const userMessage = input.trim();
+
   try {
-    const response = await api.post("/api/coach/ask", {
-      message: input,
-    });
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        text: userMessage,
+      },
+    ]);
+
+    setInput("");
+
+    const response = await askCoach(userMessage);
 
     console.log("AI RESPONSE:", response.data);
 
     setMessages((prev) => [
       ...prev,
       {
-        role: "user",
-        text: input,
-      },
-      {
         role: "assistant",
         text: response.data.answer,
       },
     ]);
-
-    setInput("");
   } catch (error) {
     console.error("AI Coach Error:", error);
+    console.error("Status:", error.response?.status);
+    console.error("Data:", error.response?.data);
 
     setMessages((prev) => [
       ...prev,
@@ -49,7 +57,7 @@ const handleSend = async () => {
         role: "assistant",
         text:
           error.response?.data?.message ||
-          "AI Coach failed. Please try again.",
+          "AI Coach is temporarily unavailable.",
       },
     ]);
   }
