@@ -34,29 +34,36 @@ export default function SkillGap() {
 
   // Analyze Skill Gap
   const handleAnalyze = async () => {
-    if (!targetRole) {
-      alert("Please enter your target role.");
-      return;
-    }
+  if (loading) return;
 
-    try {
-      setLoading(true);
+  if (!targetRole.trim()) {
+    alert("Please enter your target role.");
+    return;
+  }
 
-      await analyzeSkillGap(targetRole);
+  try {
+    setLoading(true);
 
-      alert("Skill Gap Analysis Completed");
+    const res = await analyzeSkillGap(targetRole.trim());
 
-      await fetchSkillGap();
+    console.log(res.data);
 
-      setTargetRole("");
-    } catch (error) {
-      console.log(error);
+    await fetchSkillGap();
 
-      alert(error.response?.data?.message || "Analysis Failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+    alert("Skill Gap Analysis Completed");
+
+    setTargetRole("");
+  } catch (error) {
+    console.log(error.response?.data);
+
+    alert(
+      error.response?.data?.message ||
+      "Analysis Failed. Please try again."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div style={styles.container}>
@@ -82,6 +89,7 @@ export default function SkillGap() {
           <button
             onClick={handleAnalyze}
             style={styles.button}
+            disabled={loading}
           >
             {loading ? "Analyzing..." : "Analyze"}
           </button>
@@ -282,15 +290,15 @@ const styles = {
   },
 
   button: {
-    padding: "12px 24px",
-    background: "#2563eb",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "15px",
-    fontWeight: "600",
-  },
+  padding: "12px 24px",
+  background: "#2563eb",
+  color: "#fff",
+  border: "none",
+  borderRadius: "8px",
+  cursor: "pointer",
+  fontSize: "15px",
+  fontWeight: "600",
+},
 
   cards: {
     display: "grid",

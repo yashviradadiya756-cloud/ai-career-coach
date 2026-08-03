@@ -24,42 +24,58 @@ export default function Roadmap() {
     };
     
     const handleGenerate = async () => {
-    console.log("Generate button clicked");
 
-    try {
-      const role = "UI-UX";
+  try {
 
-      const res = await generateRoadmap(role);
+    const skillGap = await getLatestSkillGap();
 
-      console.log(res.data);
+    const role = skillGap.data.skillGap.targetRole;
 
-      await loadRoadmap();
+    await generateRoadmap(role);
 
-      alert("Roadmap Generated Successfully");
-    } catch (err) {
-      console.log(err.response?.data);
-      alert(err.response?.data?.message || "Failed");
-    }
-  };
+    await loadRoadmap();
+
+    alert("Roadmap Generated Successfully");
+
+  } catch (err) {
+    alert(err.response?.data?.message);
+  }
+
+};
 
 if (loading) {
   return <h2 style={{ padding: "30px" }}>Loading Roadmap...</h2>;
-}
+}    
 
 if (!roadmap) {
   return (
-    <div style={{ padding: "30px" }}>
-      <h2>No Roadmap Found</h2>
+    <div style={styles.emptyContainer}>
+      <div style={styles.emptyCard}>
 
-      <button onClick={handleGenerate}>
-        Generate Roadmap
-      </button>
+        <div style={styles.icon}>🗺</div>
+
+        <h1>AI Career Roadmap</h1>
+
+        <p style={styles.text}>
+          Your Skill Gap Analysis is complete.
+          Click the button below to generate a personalized
+          learning roadmap powered by AI.
+        </p>
+
+        <button
+          style={styles.generateButton}
+          onClick={handleGenerate}
+          disabled={loading}
+        >
+          {loading
+            ? "Generating Roadmap..."
+            : "Generate AI Roadmap"}
+        </button>
+
+      </div>
     </div>
   );
 }
-
-    
-
 
   return (
     <div style={styles.container}>
@@ -234,6 +250,46 @@ overflow:"hidden"
 list:{
 marginBottom:"12px",
 fontSize:"16px"
+},
+emptyContainer: {
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  minHeight: "80vh",
+  background: "#f5f7fb",
+},
+
+emptyCard: {
+  width: "600px",
+  background: "#fff",
+  borderRadius: "20px",
+  padding: "50px",
+  textAlign: "center",
+  boxShadow: "0 15px 40px rgba(0,0,0,.08)",
+},
+
+icon: {
+  fontSize: "70px",
+  marginBottom: "20px",
+},
+
+text: {
+  color: "#666",
+  fontSize: "17px",
+  lineHeight: "28px",
+  marginTop: "15px",
+  marginBottom: "35px",
+},
+
+generateButton: {
+  background: "#2563eb",
+  color: "#fff",
+  padding: "15px 40px",
+  borderRadius: "12px",
+  border: "none",
+  fontSize: "18px",
+  fontWeight: "600",
+  cursor: "pointer",
 }
 
 };
