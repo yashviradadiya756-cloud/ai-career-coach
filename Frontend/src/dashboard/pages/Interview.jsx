@@ -727,7 +727,7 @@ const styles = {
     borderRadius: "16px",
     background: "#f8fafc",
     border: "1px solid #e2e8f0",
-    fontSize: "30px",
+    fontSize: "15px",
   },
 
   roleBox: {
