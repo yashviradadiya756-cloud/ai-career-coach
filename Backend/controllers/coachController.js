@@ -184,7 +184,6 @@ const getCoachDashboardController = async (req, res) => {
       resumeScore
     );
 
-
     // ==================================================
     // 3. ROADMAP PROGRESS
     // ==================================================
@@ -201,26 +200,18 @@ const getCoachDashboardController = async (req, res) => {
       latestRoadmap.phases.length > 0
     ) {
 
-      const totalPhases =
-        latestRoadmap.phases.length;
+      const totalPhases = latestRoadmap.phases.length;
 
-      const completedPhases =
-        latestRoadmap.phases.filter(
-          (phase) =>
-            phase.completed === true
-        ).length;
+      const completedPhases = latestRoadmap.phases.filter(
+        (phase) => phase.completed === true
+      ).length;
 
       roadmapProgress = Math.round(
         (completedPhases / totalPhases) * 100
       );
 
       console.log(
-        "ROADMAP:",
-        completedPhases,
-        "/",
-        totalPhases,
-        "=",
-        roadmapProgress + "%"
+        `ROADMAP: ${completedPhases}/${totalPhases} = ${roadmapProgress}%`
       );
 
     } else {
@@ -231,62 +222,55 @@ const getCoachDashboardController = async (req, res) => {
 
     }
 
-
     // ==================================================
     // 4. INTERVIEW SCORE
     // ==================================================
 
-    const latestInterview =
-      await Interview.findOne({
-        user: userId,
-      }).sort({
-        createdAt: -1,
-      });
+    const latestInterview = await Interview.findOne({
+      user: userId,
+    }).sort({
+      createdAt: -1,
+    });
 
     if (latestInterview) {
 
-      // First use totalScore
-      let calculatedInterviewScore =
-        Number(
-          latestInterview.totalScore
-        ) || 0;
+      let calculatedInterviewScore = 0;
 
-
-      // If totalScore is 0,
-      // calculate it from question scores
+      // Calculate directly from question scores
       if (
-        calculatedInterviewScore === 0 &&
-        Array.isArray(
-          latestInterview.questions
-        ) &&
+        Array.isArray(latestInterview.questions) &&
         latestInterview.questions.length > 0
       ) {
 
-        const scores =
-          latestInterview.questions
-            .map(
-              (question) =>
-                Number(question.score) || 0
-            )
-            .filter(
-              (score) => score >= 0
-            );
+        const scores = latestInterview.questions
+          .map((question) => Number(question.score))
+          .filter(
+            (score) =>
+              Number.isFinite(score) &&
+              score >= 0
+          );
 
         if (scores.length > 0) {
 
           const total = scores.reduce(
-            (sum, score) =>
-              sum + score,
+            (sum, score) => sum + score,
             0
           );
 
-          calculatedInterviewScore =
-            Math.round(
-              total / scores.length
-            );
+          calculatedInterviewScore = Math.round(
+            total / scores.length
+          );
         }
       }
 
+      // Fallback to totalScore
+      if (
+        calculatedInterviewScore === 0 &&
+        Number(latestInterview.totalScore) > 0
+      ) {
+        calculatedInterviewScore =
+          Number(latestInterview.totalScore);
+      }
 
       interviewScore = Math.min(
         Math.max(
@@ -296,10 +280,14 @@ const getCoachDashboardController = async (req, res) => {
         100
       );
 
+      console.log(
+        "INTERVIEW QUESTIONS:",
+        latestInterview.questions.length
+      );
 
       console.log(
         "INTERVIEW SCORE:",
-        interviewScore
+        interviewScore + "%"
       );
 
     } else {
@@ -309,7 +297,6 @@ const getCoachDashboardController = async (req, res) => {
       );
 
     }
-
 
     // ==================================================
     // 5. SAVE SCORES

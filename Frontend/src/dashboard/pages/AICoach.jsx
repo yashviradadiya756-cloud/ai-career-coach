@@ -51,7 +51,10 @@ export default function AICoach() {
 
       const response = await getCoachDashboard();
 
-      console.log("COACH DASHBOARD:", response.data);
+      console.log(
+        "COACH DASHBOARD:",
+        JSON.stringify(response.data, null, 2)
+      );
 
       if (response.data.success) {
 
@@ -93,7 +96,10 @@ export default function AICoach() {
 
       const response = await getCoachHistory();
 
-      console.log("COACH HISTORY:", response.data);
+      console.log(
+        "COACH HISTORY:",
+        JSON.stringify(response.data, null, 2)
+      );
 
       if (response.data.success) {
 
