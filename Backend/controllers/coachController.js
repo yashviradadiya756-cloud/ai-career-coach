@@ -119,18 +119,16 @@ const getCoachHistoryController = async (req, res) => {
 
 const getCoachDashboardController = async (req, res) => {
   try {
-
     const userId = req.user._id;
 
     console.log("================================");
-    console.log("Loading Coach Dashboard");
-    console.log("User:", userId);
+    console.log("COACH DASHBOARD");
+    console.log("User ID:", userId.toString());
     console.log("================================");
 
-
-    // ==================================================
-    // INITIAL SCORES
-    // ==================================================
+    // ============================================
+    // DEFAULT SCORES
+    // ============================================
 
     let careerScore = 0;
     let roadmapProgress = 0;
@@ -138,28 +136,28 @@ const getCoachDashboardController = async (req, res) => {
     let interviewScore = 0;
 
 
-    // ==================================================
-    // 1. CAREER SCORE
-    // ==================================================
+    // ============================================
+    // 1. CAREER / SKILL GAP SCORE
+    // ============================================
 
     const latestSkillGap = await SkillGap.findOne({
       user: userId,
-    }).sort({
-      createdAt: -1,
-    });
-
-    console.log("SKILL GAP DATA:", latestSkillGap);
+    })
+      .sort({ createdAt: -1 });
 
     console.log(
-      "Latest Skill Gap:",
-      latestSkillGap ? latestSkillGap._id : "NONE"
+      "LATEST SKILL GAP:",
+      latestSkillGap
+        ? latestSkillGap._id.toString()
+        : "NOT FOUND"
     );
 
-    if (
-      latestSkillGap &&
-      latestSkillGap.readinessScore !== undefined &&
-      latestSkillGap.readinessScore !== null
-    ) {
+    if (latestSkillGap) {
+
+      console.log(
+        "READINESS SCORE:",
+        latestSkillGap.readinessScore
+      );
 
       careerScore = Math.min(
         Math.max(
@@ -171,26 +169,28 @@ const getCoachDashboardController = async (req, res) => {
     }
 
 
-    // ==================================================
+    // ============================================
     // 2. RESUME SCORE
-    // ==================================================
+    // ============================================
 
     const latestResume = await Resume.findOne({
       user: userId,
-    }).sort({
-      createdAt: -1,
-    });
+    })
+      .sort({ createdAt: -1 });
 
     console.log(
-      "Latest Resume:",
-      latestResume ? latestResume._id : "NONE"
+      "LATEST RESUME:",
+      latestResume
+        ? latestResume._id.toString()
+        : "NOT FOUND"
     );
 
-    if (
-      latestResume &&
-      latestResume.atsScore !== undefined &&
-      latestResume.atsScore !== null
-    ) {
+    if (latestResume) {
+
+      console.log(
+        "ATS SCORE:",
+        latestResume.atsScore
+      );
 
       resumeScore = Math.min(
         Math.max(
@@ -202,22 +202,30 @@ const getCoachDashboardController = async (req, res) => {
     }
 
 
-    // ==================================================
+    // ============================================
     // 3. ROADMAP PROGRESS
-    // ==================================================
+    // ============================================
 
     const roadmap = await Roadmap.findOne({
       user: userId,
-    }).sort({
-      createdAt: -1,
-    });
-    
-    console.log("ROADMAP DATA:", roadmap);
+    })
+      .sort({ createdAt: -1 });
 
     console.log(
-      "Latest Roadmap:",
-      roadmap ? roadmap._id : "NONE"
+      "LATEST ROADMAP:",
+      roadmap
+        ? roadmap._id.toString()
+        : "NOT FOUND"
     );
+
+    /*
+      Your current Roadmap model does not have
+      completed/progress fields.
+
+      So for now we calculate roadmap progress
+      based on completed phases only if that
+      field exists.
+    */
 
     if (
       roadmap &&
@@ -228,7 +236,7 @@ const getCoachDashboardController = async (req, res) => {
       const totalPhases = roadmap.phases.length;
 
       const completedPhases = roadmap.phases.filter(
-        (phase) => phase.completed === true
+        phase => phase.completed === true
       ).length;
 
       roadmapProgress = Math.round(
@@ -236,38 +244,38 @@ const getCoachDashboardController = async (req, res) => {
       );
 
       console.log(
-        "Roadmap:",
+        "ROADMAP PROGRESS:",
         completedPhases,
         "/",
         totalPhases,
         "=",
-        roadmapProgress + "%"
+        roadmapProgress
       );
     }
 
 
-    // ==================================================
+    // ============================================
     // 4. INTERVIEW SCORE
-    // ==================================================
+    // ============================================
 
     const latestInterview = await Interview.findOne({
       user: userId,
-    }).sort({
-      createdAt: -1,
-    });
-
-    console.log("INTERVIEW DATA:", latestInterview);
+    })
+      .sort({ createdAt: -1 });
 
     console.log(
-      "Latest Interview:",
-      latestInterview ? latestInterview._id : "NONE"
+      "LATEST INTERVIEW:",
+      latestInterview
+        ? latestInterview._id.toString()
+        : "NOT FOUND"
     );
 
-    if (
-      latestInterview &&
-      latestInterview.totalScore !== undefined &&
-      latestInterview.totalScore !== null
-    ) {
+    if (latestInterview) {
+
+      console.log(
+        "INTERVIEW TOTAL SCORE:",
+        latestInterview.totalScore
+      );
 
       interviewScore = Math.min(
         Math.max(
@@ -279,9 +287,9 @@ const getCoachDashboardController = async (req, res) => {
     }
 
 
-    // ==================================================
+    // ============================================
     // 5. SAVE SCORES
-    // ==================================================
+    // ============================================
 
     const savedScore = await CoachScore.findOneAndUpdate(
       {
@@ -302,7 +310,7 @@ const getCoachDashboardController = async (req, res) => {
     );
 
     console.log("================================");
-    console.log("Coach Scores Saved:");
+    console.log("FINAL SCORES");
     console.log({
       careerScore,
       roadmapProgress,
@@ -312,12 +320,11 @@ const getCoachDashboardController = async (req, res) => {
     console.log("================================");
 
 
-    // ==================================================
-    // 6. SEND TO FRONTEND
-    // ==================================================
+    // ============================================
+    // 6. RESPONSE
+    // ============================================
 
     return res.status(200).json({
-
       success: true,
 
       scores: {
@@ -326,7 +333,6 @@ const getCoachDashboardController = async (req, res) => {
         resumeScore,
         interviewScore,
       },
-
     });
 
   } catch (error) {
@@ -337,13 +343,10 @@ const getCoachDashboardController = async (req, res) => {
     );
 
     return res.status(500).json({
-
       success: false,
-
       message:
         error.message ||
         "Failed to load dashboard",
-
     });
   }
 };
