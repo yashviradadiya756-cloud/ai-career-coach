@@ -19,37 +19,67 @@ export default function Roadmap() {
   // ======================================================
 
   const loadRoadmap = async () => {
+
   try {
+
     setLoading(true);
 
-    const res = await getRoadmap();
+    console.log(
+      "STEP 1: Loading saved roadmap..."
+    );
 
-    console.log("Roadmap API Response:", res.data);
+    const response = await getRoadmap();
 
-    if (res.data?.success && res.data?.roadmap) {
-      setRoadmap(res.data.roadmap);
+    console.log(
+      "STEP 2: Saved roadmap response:",
+      response.data
+    );
+
+    if (
+      response.data?.success &&
+      response.data?.roadmap
+    ) {
+
+      console.log(
+        "STEP 3: Saved roadmap found:",
+        response.data.roadmap
+      );
+
+      setRoadmap(
+        response.data.roadmap
+      );
+
     } else {
+
+      console.log(
+        "STEP 3: No saved roadmap found"
+      );
+
       setRoadmap(null);
     }
 
   } catch (error) {
-    console.log(
-      "Get Roadmap Error:",
-      error.response?.status,
-      error.response?.data || error.message
+
+    console.error(
+      "GET ROADMAP ERROR:",
+      error.response?.data ||
+      error.message
     );
 
-    // 404 simply means there is no saved roadmap yet
-    if (error.response?.status === 404) {
-      setRoadmap(null);
-    } else {
-      setRoadmap(null);
-    }
+    setRoadmap(null);
 
   } finally {
+
     setLoading(false);
   }
 };
+
+
+useEffect(() => {
+
+  loadRoadmap();
+
+}, []);
 
   // ======================================================
   // INITIAL LOAD

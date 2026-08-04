@@ -1,4 +1,5 @@
 const express = require("express");
+
 const router = express.Router();
 
 const {
@@ -10,16 +11,21 @@ const protect = require("../middleware/authMiddleware");
 
 console.log("✅ roadmapRoutes.js loaded");
 
-router.get("/", protect, (req, res, next) => {
-  console.log("🔥 GET /api/roadmap reached");
-  next();
-}, getRoadmapController);
 
-router.post("/generate", protect, (req, res, next) => {
-  console.log("🔥 POST /api/roadmap/generate reached");
-  console.log("BODY:", req.body);
-  console.log("USER:", req.user?._id);
-  next();
-}, generateRoadmapController);
+// GET SAVED ROADMAP
+router.get(
+  "/",
+  protect,
+  getRoadmapController
+);
+
+
+// GENERATE + SAVE ROADMAP
+router.post(
+  "/generate",
+  protect,
+  generateRoadmapController
+);
+
 
 module.exports = router;

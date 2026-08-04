@@ -1,8 +1,5 @@
-const SkillGap = require("../models/SkillGap");
 const Roadmap = require("../models/Roadmap");
-
-const generateRoadmap = require("../utils/geminiRoadmap");
-
+const generateRoadmap = require("../utils/geminiRoadmapGenerator");
 
 // ======================================================
 // GENERATE ROADMAP
@@ -10,79 +7,164 @@ const generateRoadmap = require("../utils/geminiRoadmap");
 
 const generateRoadmapController = async (req, res) => {
   try {
+    console.log("====================================");
+    console.log("🚀 GENERATE ROADMAP STARTED");
+    console.log("User:", req.user?._id);
+    console.log("Body:", req.body);
+
     const { targetRole } = req.body;
 
     if (!targetRole) {
       return res.status(400).json({
         success: false,
-        message: "Target Role is required",
+        message: "Target role is required",
       });
     }
 
-    const skillGap = await SkillGap.findOne({
-      user: req.user._id,
-    }).sort({
-      createdAt: -1,
-    });
+    // ==================================================
+    // 1. GENERATE ROADMAP USING GEMINI
+    // ==================================================
 
-    if (!skillGap) {
-      return res.status(404).json({
-        success: false,
-        message: "Please complete Skill Gap Analysis first.",
-      });
-    }
+    console.log("🤖 Generating roadmap for:", targetRole);
 
-    const roadmapData = await generateRoadmap(
-      skillGap.missingSkills,
-      targetRole
+    const generatedRoadmap = await generateRoadmap(targetRole);
+
+    console.log("✅ Gemini roadmap generated");
+    console.log(
+      "Generated roadmap:",
+      JSON.stringify(generatedRoadmap, null, 2)
     );
 
-    const roadmap = await Roadmap.create({
-      user: req.user._id,
-      skillGap: skillGap._id,
+    if (!generatedRoadmap) {
+      return res.status(500).json({
+        success: false,
+        message: "AI failed to generate roadmap",
+      });
+    }
+
+    // ==================================================
+    // 2. PREPARE DATA
+    // ==================================================
+
+    const roadmapData = {
       targetRole: targetRole,
 
-      roadmapTitle: roadmapData.roadmapTitle,
-      phases: roadmapData.phases,
-    });
+      roadmapTitle:
+        generatedRoadmap.roadmapTitle ||
+        `AI Roadmap for ${targetRole}`,
 
-    return res.status(201).json({
+      phases: Array.isArray(generatedRoadmap.phases)
+        ? generatedRoadmap.phases.map((phase) => ({
+            title: phase.title || "",
+            duration: phase.duration || "",
+            topics: Array.isArray(phase.topics)
+              ? phase.topics
+              : [],
+            projects: Array.isArray(phase.projects)
+              ? phase.projects
+              : [],
+            resources: Array.isArray(phase.resources)
+              ? phase.resources
+              : [],
+            completed: Boolean(phase.completed),
+          }))
+        : [],
+    };
+
+    console.log(
+      "💾 Data going to MongoDB:",
+      JSON.stringify(roadmapData, null, 2)
+    );
+
+    // ==================================================
+    // 3. SAVE / UPDATE ROADMAP
+    // ==================================================
+    //
+    // IMPORTANT:
+    // One user = one current roadmap.
+    //
+    // If roadmap already exists:
+    // UPDATE it.
+    //
+    // If roadmap does not exist:
+    // CREATE it.
+    //
+    // ==================================================
+
+    const roadmap = await Roadmap.findOneAndUpdate(
+      {
+        user: req.user._id,
+      },
+      {
+        $set: roadmapData,
+      },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+      }
+    );
+
+    console.log("====================================");
+    console.log("✅ ROADMAP SAVED TO MONGODB");
+    console.log("Roadmap ID:", roadmap._id);
+    console.log("User ID:", roadmap.user);
+    console.log("Target Role:", roadmap.targetRole);
+    console.log("Phases:", roadmap.phases.length);
+    console.log("====================================");
+
+    // ==================================================
+    // 4. RETURN SAVED ROADMAP
+    // ==================================================
+
+    return res.status(200).json({
       success: true,
-      message: "Roadmap Generated Successfully",
+      message: "Roadmap generated and saved successfully",
       roadmap,
     });
 
   } catch (error) {
-    console.error("Roadmap Error:", error);
+    console.error("====================================");
+    console.error("❌ GENERATE ROADMAP ERROR");
+    console.error(error);
+    console.error("====================================");
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Failed to generate roadmap",
     });
   }
 };
 
 
 // ======================================================
-// GET LATEST ROADMAP
+// GET SAVED ROADMAP
 // ======================================================
 
 const getRoadmapController = async (req, res) => {
   try {
+    console.log("====================================");
+    console.log("📥 GET ROADMAP");
+    console.log("User:", req.user?._id);
+
     const roadmap = await Roadmap.findOne({
       user: req.user._id,
-    }).sort({
-      createdAt: -1,
     });
 
+    // No roadmap yet
     if (!roadmap) {
+      console.log("ℹ️ No roadmap found for user");
+
       return res.status(200).json({
         success: true,
         roadmap: null,
       });
     }
 
-    console.log("ROADMAP FOUND:", roadmap);
+    console.log("✅ Roadmap found");
+    console.log("Roadmap ID:", roadmap._id);
+    console.log("Target Role:", roadmap.targetRole);
+    console.log("Phases:", roadmap.phases.length);
 
     return res.status(200).json({
       success: true,
@@ -90,7 +172,7 @@ const getRoadmapController = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("GET ROADMAP ERROR:", error);
+    console.error("❌ GET ROADMAP ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -100,95 +182,7 @@ const getRoadmapController = async (req, res) => {
 };
 
 
-// ======================================================
-// UPDATE ROADMAP PHASE
-// ======================================================
-
-const updateRoadmapPhaseController = async (req, res) => {
-  try {
-    const { phaseIndex } = req.params;
-    const { completed } = req.body;
-
-    const index = Number(phaseIndex);
-
-    if (Number.isNaN(index)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid phase index",
-      });
-    }
-
-    const roadmap = await Roadmap.findOne({
-      user: req.user._id,
-    }).sort({
-      createdAt: -1,
-    });
-
-    if (!roadmap) {
-      return res.status(404).json({
-        success: false,
-        message: "Roadmap not found",
-      });
-    }
-
-    if (
-      !roadmap.phases ||
-      index < 0 ||
-      index >= roadmap.phases.length
-    ) {
-      return res.status(404).json({
-        success: false,
-        message: "Roadmap phase not found",
-      });
-    }
-
-    roadmap.phases[index].completed =
-      completed === true;
-
-    await roadmap.save();
-
-    // Calculate progress
-    const totalPhases = roadmap.phases.length;
-
-    const completedPhases =
-      roadmap.phases.filter(
-        (phase) => phase.completed === true
-      ).length;
-
-    const progress =
-      totalPhases > 0
-        ? Math.round(
-            (completedPhases / totalPhases) * 100
-          )
-        : 0;
-
-    return res.status(200).json({
-      success: true,
-      message: "Roadmap phase updated",
-      progress,
-      roadmap,
-    });
-
-  } catch (error) {
-    console.error(
-      "Update Roadmap Phase Error:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-
-// ======================================================
-// EXPORT
-// ======================================================
-
 module.exports = {
   generateRoadmapController,
   getRoadmapController,
-  updateRoadmapPhaseController,
 };
