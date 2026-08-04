@@ -8,16 +8,13 @@ const {
   getProfile,
 } = require("../controllers/userController");
 
-
 console.log("USER getProfile:", typeof getProfile);
 console.log("USER protect:", typeof protect);
-
 
 router.get(
   "/profile",
   protect,
   getProfile
 );
-
 
 module.exports = router;
