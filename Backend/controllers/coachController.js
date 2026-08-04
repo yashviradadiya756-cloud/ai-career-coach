@@ -28,27 +28,27 @@ const askCoachController = async (req, res) => {
     }
 
     const prompt = `
-You are CareerPilot AI Career Coach.
+    You are CareerPilot AI Career Coach.
 
-You are helping a student with career development.
+    You are helping a student with career development.
 
-User Question:
-${message}
+    User Question:
+    ${message}
 
-Give practical, personalized and easy-to-understand guidance.
+    Give practical, personalized and easy-to-understand guidance.
 
-Focus on:
-- Career guidance
-- Resume improvement
-- Skill development
-- Learning roadmap
-- Interview preparation
-- Projects
-- Placement preparation
+    Focus on:
+    - Career guidance
+    - Resume improvement
+    - Skill development
+    - Learning roadmap
+    - Interview preparation
+    - Projects
+    - Placement preparation
 
-Do not return JSON.
-Return a normal conversational answer.
-`;
+    Do not return JSON.
+    Return a normal conversational answer.
+    `;
 
     console.log("Calling Gemini AI Coach...");
 
@@ -122,8 +122,25 @@ const getCoachDashboardController = async (req, res) => {
     const userId = req.user._id;
 
     console.log("================================");
-    console.log("COACH DASHBOARD");
-    console.log("User ID:", userId.toString());
+    console.log("USER ID FROM JWT:", userId.toString());
+
+    const testSkillGaps = await SkillGap.find({});
+
+    console.log("TOTAL SKILL GAP RECORDS:", testSkillGaps.length);
+
+    testSkillGaps.forEach((item, index) => {
+      console.log(`SKILL GAP ${index + 1}:`);
+      console.log("ID:", item._id.toString());
+      console.log("USER:", item.user.toString());
+      console.log("READINESS:", item.readinessScore);
+      console.log("ROLE:", item.targetRole);
+    });
+
+    const matchingSkillGap = await SkillGap.findOne({
+      user: userId,
+    });
+
+    console.log("MATCHING SKILL GAP:", matchingSkillGap);
     console.log("================================");
 
     // ============================================
@@ -144,6 +161,46 @@ const getCoachDashboardController = async (req, res) => {
       user: userId,
     })
       .sort({ createdAt: -1 });
+
+      console.log("================================");
+console.log("SKILL GAP DEBUG");
+console.log("Logged-in User ID:", userId.toString());
+
+console.log(
+  "All SkillGap records:",
+  await SkillGap.find({}).select("user readinessScore targetRole createdAt")
+);
+
+console.log(
+  "User SkillGap records:",
+  await SkillGap.find({ user: userId }).select(
+    "user readinessScore targetRole createdAt"
+  )
+);
+
+console.log(
+  "Latest SkillGap:",
+  latestSkillGap
+);
+
+if (latestSkillGap) {
+  console.log(
+    "Latest SkillGap user:",
+    latestSkillGap.user.toString()
+  );
+
+  console.log(
+    "Latest SkillGap readinessScore:",
+    latestSkillGap.readinessScore
+  );
+
+  console.log(
+    "Readiness type:",
+    typeof latestSkillGap.readinessScore
+  );
+}
+
+console.log("================================");
 
     console.log(
       "LATEST SKILL GAP:",
