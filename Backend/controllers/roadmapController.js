@@ -71,17 +71,18 @@ const getRoadmapController = async (req, res) => {
   try {
     const roadmap = await Roadmap.findOne({
       user: req.user._id,
-    })
-      .sort({
-        createdAt: -1,
-      });
+    }).sort({
+      createdAt: -1,
+    });
 
     if (!roadmap) {
-      return res.status(404).json({
-        success: false,
-        message: "Roadmap not found",
+      return res.status(200).json({
+        success: true,
+        roadmap: null,
       });
     }
+
+    console.log("ROADMAP FOUND:", roadmap);
 
     return res.status(200).json({
       success: true,
@@ -89,11 +90,11 @@ const getRoadmapController = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Get Roadmap Error:", error);
+    console.error("GET ROADMAP ERROR:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Failed to get roadmap",
     });
   }
 };

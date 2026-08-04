@@ -1,49 +1,25 @@
 const express = require("express");
-
 const router = express.Router();
-
-const protect = require("../middleware/authMiddleware");
 
 const {
   generateRoadmapController,
   getRoadmapController,
-  updateRoadmapPhaseController,
 } = require("../controllers/roadmapController");
 
-console.log("================================");
-console.log("ROADMAP ROUTES LOADED");
-console.log("generate:", typeof generateRoadmapController);
-console.log("get:", typeof getRoadmapController);
-console.log("update:", typeof updateRoadmapPhaseController);
-console.log("================================");
+const protect = require("../middleware/authMiddleware");
 
-// TEST ROUTE
-router.get("/test", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Roadmap route is working",
-  });
-});
+console.log("✅ roadmapRoutes.js loaded");
 
-// GET latest roadmap
-router.get(
-  "/latest",
-  protect,
-  getRoadmapController
-);
+router.get("/", protect, (req, res, next) => {
+  console.log("🔥 GET /api/roadmap reached");
+  next();
+}, getRoadmapController);
 
-// Generate roadmap
-router.post(
-  "/generate",
-  protect,
-  generateRoadmapController
-);
-
-// Update roadmap phase
-router.put(
-  "/phase/:phaseIndex",
-  protect,
-  updateRoadmapPhaseController
-);
+router.post("/generate", protect, (req, res, next) => {
+  console.log("🔥 POST /api/roadmap/generate reached");
+  console.log("BODY:", req.body);
+  console.log("USER:", req.user?._id);
+  next();
+}, generateRoadmapController);
 
 module.exports = router;
