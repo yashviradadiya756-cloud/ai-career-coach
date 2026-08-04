@@ -5,7 +5,9 @@ const analyzeResume = require("../utils/geminiResumeAnalyzer");
 
 // Upload Resume
 const uploadResume = async (req, res) => {
+
   try {
+
     console.log("Step 1: File received");
 
     if (!req.file) {
@@ -32,72 +34,91 @@ const uploadResume = async (req, res) => {
     console.log("Step 6: Saving MongoDB");
 
     const resume = await Resume.create({
+
       user: req.user._id,
+
       fileName: req.file.originalname,
+
       filePath: req.file.path,
+
       resumeText,
+
       atsScore: analysis.atsScore,
+
       strengths: analysis.strengths,
+
       weaknesses: analysis.weaknesses,
+
       missingSkills: analysis.missingSkills,
+
       suggestions: analysis.suggestions,
+
     });
 
     console.log("Step 7: Saved");
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       resume,
     });
 
   } catch (error) {
+
     console.error("UPLOAD ERROR:");
     console.error(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
+
   }
+
 };
 
 
 // Get Latest Resume
-const getLatestResume = async(req,res)=>{
+const getLatestResume = async (req, res) => {
 
-    try{
+  try {
 
-        const resume = await Resume.findOne({
-            user:req.user._id
-        }).sort({
-            createdAt:-1
-        });
-
-
-        if(!resume){
-            return res.status(404).json({
-                message:"No resume found"
-            });
-        }
+    const resume = await Resume.findOne({
+      user: req.user._id,
+    }).sort({
+      createdAt: -1,
+    });
 
 
-        res.json({
-            success:true,
-            resume
-        });
+    if (!resume) {
 
-
-    }catch(error){
-
-        res.status(500).json({
-            message:error.message
-        });
+      return res.status(404).json({
+        success: false,
+        message: "No resume found",
+      });
 
     }
+
+
+    return res.status(200).json({
+      success: true,
+      resume,
+    });
+
+  } catch (error) {
+
+    console.error("Get Latest Resume Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+
+  }
+
 };
 
-// Export Controllers
+
 module.exports = {
   uploadResume,
-  getLatestResume
+  getLatestResume,
 };

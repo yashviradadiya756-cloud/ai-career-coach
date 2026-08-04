@@ -3,6 +3,7 @@ const User = require("../models/User");
 
 const protect = async (req, res, next) => {
   try {
+
     const authHeader = req.headers.authorization;
 
     if (
@@ -35,12 +36,14 @@ const protect = async (req, res, next) => {
     next();
 
   } catch (error) {
-    console.error("Auth Middleware Error:", error);
+
+    console.error("Auth Middleware Error:", error.message);
 
     return res.status(401).json({
       success: false,
       message: "Invalid or expired token",
     });
+
   }
 };
 
