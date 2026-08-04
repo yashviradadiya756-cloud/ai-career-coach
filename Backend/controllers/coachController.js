@@ -148,6 +148,8 @@ const getCoachDashboardController = async (req, res) => {
       createdAt: -1,
     });
 
+    console.log("SKILL GAP DATA:", latestSkillGap);
+
     console.log(
       "Latest Skill Gap:",
       latestSkillGap ? latestSkillGap._id : "NONE"
@@ -209,6 +211,8 @@ const getCoachDashboardController = async (req, res) => {
     }).sort({
       createdAt: -1,
     });
+    
+    console.log("ROADMAP DATA:", roadmap);
 
     console.log(
       "Latest Roadmap:",
@@ -251,6 +255,8 @@ const getCoachDashboardController = async (req, res) => {
     }).sort({
       createdAt: -1,
     });
+
+    console.log("INTERVIEW DATA:", latestInterview);
 
     console.log(
       "Latest Interview:",
