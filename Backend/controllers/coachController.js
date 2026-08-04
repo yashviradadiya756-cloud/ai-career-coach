@@ -110,245 +110,222 @@ const getCoachHistoryController = async (req, res) => {
 
 
 // ======================================================
-// GET COACH DASHBOARD
+// GET COACH DASHBOARD SCORES
 // ======================================================
 
 const getCoachDashboardController = async (req, res) => {
   try {
-    console.log("\n========================================");
-    console.log("🔥 COACH DASHBOARD START");
-    console.log("========================================");
-
-    // ==========================================
-    // 1. GET LOGGED-IN USER
-    // ==========================================
-
     const userId = req.user._id;
 
-    console.log("JWT USER ID:", String(userId));
+    console.log("================================");
+    console.log("COACH DASHBOARD");
+    console.log("USER ID:", userId.toString());
+    console.log("================================");
 
-    // ==========================================
-    // 2. GET ALL SKILL GAPS
-    // ==========================================
 
-    const allSkillGaps = await SkillGap.find({}).lean();
-
-    console.log(
-      "TOTAL SKILL GAP RECORDS:",
-      allSkillGaps.length
-    );
-
-    allSkillGaps.forEach((item, index) => {
-      console.log(
-        `SKILL GAP ${index + 1}:`,
-        {
-          id: String(item._id),
-          user: String(item.user),
-          readinessScore: item.readinessScore,
-          targetRole: item.targetRole,
-        }
-      );
-    });
-
-    // ==========================================
-    // 3. FIND USER'S SKILL GAP
-    // ==========================================
-
-    const userSkillGaps = allSkillGaps.filter(
-      item =>
-        String(item.user) === String(userId)
-    );
-
-    console.log(
-      "MATCHING USER SKILL GAPS:",
-      userSkillGaps.length
-    );
-
-    // Latest SkillGap
-    const latestSkillGap = userSkillGaps
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt) -
-          new Date(a.createdAt)
-      )[0];
-
-    console.log(
-      "LATEST USER SKILL GAP:",
-      latestSkillGap
-    );
-
-    // ==========================================
-    // 4. CAREER SCORE
-    // ==========================================
+    // ==================================================
+    // DEFAULT VALUES
+    // ==================================================
 
     let careerScore = 0;
+    let roadmapProgress = 0;
+    let resumeScore = 0;
+    let interviewScore = 0;
+
+
+    // ==================================================
+    // 1. CAREER SCORE
+    // ==================================================
+
+    const latestSkillGap = await SkillGap.findOne({
+      user: userId,
+    }).sort({
+      createdAt: -1,
+    });
 
     if (latestSkillGap) {
-
-      console.log(
-        "RAW READINESS SCORE:",
-        latestSkillGap.readinessScore
-      );
-
-      console.log(
-        "READINESS SCORE TYPE:",
-        typeof latestSkillGap.readinessScore
-      );
-
-      careerScore = Number(
-        latestSkillGap.readinessScore
-      );
-
-      if (!Number.isFinite(careerScore)) {
-        careerScore = 0;
-      }
-
-      careerScore = Math.max(
-        0,
-        Math.min(100, careerScore)
+      careerScore = Math.min(
+        Math.max(
+          Number(latestSkillGap.readinessScore) || 0,
+          0
+        ),
+        100
       );
     }
 
     console.log(
-      "🔥 CALCULATED CAREER SCORE:",
+      "CAREER SCORE:",
       careerScore
     );
 
-    // ==========================================
-    // 5. RESUME SCORE
-    // ==========================================
 
-    let resumeScore = 0;
+    // ==================================================
+    // 2. RESUME SCORE
+    // ==================================================
 
     const latestResume = await Resume.findOne({
       user: userId,
-    })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    console.log(
-      "LATEST RESUME:",
-      latestResume
-        ? String(latestResume._id)
-        : "NOT FOUND"
-    );
+    }).sort({
+      createdAt: -1,
+    });
 
     if (latestResume) {
-
-      resumeScore = Number(
-        latestResume.atsScore
-      );
-
-      if (!Number.isFinite(resumeScore)) {
-        resumeScore = 0;
-      }
-
-      resumeScore = Math.max(
-        0,
-        Math.min(100, resumeScore)
+      resumeScore = Math.min(
+        Math.max(
+          Number(latestResume.atsScore) || 0,
+          0
+        ),
+        100
       );
     }
 
-    // ==========================================
-    // 6. ROADMAP PROGRESS
-    // ==========================================
-
-    let roadmapProgress = 0;
-
-    const roadmap = await Roadmap.findOne({
-      user: userId,
-    })
-      .sort({ createdAt: -1 })
-      .lean();
-
     console.log(
-      "LATEST ROADMAP:",
-      roadmap
-        ? String(roadmap._id)
-        : "NOT FOUND"
+      "RESUME SCORE:",
+      resumeScore
     );
 
+
+    // ==================================================
+    // 3. ROADMAP PROGRESS
+    // ==================================================
+
+    const latestRoadmap = await Roadmap.findOne({
+      user: userId,
+    }).sort({
+      createdAt: -1,
+    });
+
     if (
-      roadmap &&
-      Array.isArray(roadmap.phases) &&
-      roadmap.phases.length > 0
+      latestRoadmap &&
+      Array.isArray(latestRoadmap.phases) &&
+      latestRoadmap.phases.length > 0
     ) {
 
       const totalPhases =
-        roadmap.phases.length;
+        latestRoadmap.phases.length;
 
       const completedPhases =
-        roadmap.phases.filter(
-          phase => phase.completed === true
+        latestRoadmap.phases.filter(
+          (phase) =>
+            phase.completed === true
         ).length;
 
       roadmapProgress = Math.round(
         (completedPhases / totalPhases) * 100
       );
+
+      console.log(
+        "ROADMAP:",
+        completedPhases,
+        "/",
+        totalPhases,
+        "=",
+        roadmapProgress + "%"
+      );
+
+    } else {
+
+      console.log(
+        "ROADMAP: Not found or no phases"
+      );
+
     }
 
-    // ==========================================
-    // 7. INTERVIEW SCORE
-    // ==========================================
 
-    let interviewScore = 0;
+    // ==================================================
+    // 4. INTERVIEW SCORE
+    // ==================================================
 
     const latestInterview =
       await Interview.findOne({
         user: userId,
-      })
-        .sort({ createdAt: -1 })
-        .lean();
-
-    console.log(
-      "LATEST INTERVIEW:",
-      latestInterview
-        ? String(latestInterview._id)
-        : "NOT FOUND"
-    );
+      }).sort({
+        createdAt: -1,
+      });
 
     if (latestInterview) {
 
-      interviewScore = Number(
-        latestInterview.totalScore
-      );
+      // First use totalScore
+      let calculatedInterviewScore =
+        Number(
+          latestInterview.totalScore
+        ) || 0;
 
-      if (!Number.isFinite(interviewScore)) {
-        interviewScore = 0;
+
+      // If totalScore is 0,
+      // calculate it from question scores
+      if (
+        calculatedInterviewScore === 0 &&
+        Array.isArray(
+          latestInterview.questions
+        ) &&
+        latestInterview.questions.length > 0
+      ) {
+
+        const scores =
+          latestInterview.questions
+            .map(
+              (question) =>
+                Number(question.score) || 0
+            )
+            .filter(
+              (score) => score >= 0
+            );
+
+        if (scores.length > 0) {
+
+          const total = scores.reduce(
+            (sum, score) =>
+              sum + score,
+            0
+          );
+
+          calculatedInterviewScore =
+            Math.round(
+              total / scores.length
+            );
+        }
       }
 
-      interviewScore = Math.max(
-        0,
-        Math.min(100, interviewScore)
+
+      interviewScore = Math.min(
+        Math.max(
+          calculatedInterviewScore,
+          0
+        ),
+        100
       );
+
+
+      console.log(
+        "INTERVIEW SCORE:",
+        interviewScore
+      );
+
+    } else {
+
+      console.log(
+        "INTERVIEW: No interview found"
+      );
+
     }
 
-    // ==========================================
-    // 8. FINAL SCORES
-    // ==========================================
 
-    const finalScores = {
-      careerScore,
-      roadmapProgress,
-      resumeScore,
-      interviewScore,
-    };
-
-    console.log("\n========================================");
-    console.log("🔥 FINAL COACH SCORES");
-    console.log(finalScores);
-    console.log("========================================\n");
-
-    // ==========================================
-    // 9. SAVE SCORE
-    // ==========================================
+    // ==================================================
+    // 5. SAVE SCORES
+    // ==================================================
 
     await CoachScore.findOneAndUpdate(
       {
         user: userId,
       },
       {
-        $set: finalScores,
+        $set: {
+          careerScore,
+          roadmapProgress,
+          resumeScore,
+          interviewScore,
+        },
       },
       {
         upsert: true,
@@ -356,19 +333,37 @@ const getCoachDashboardController = async (req, res) => {
       }
     );
 
-    // ==========================================
-    // 10. RESPONSE
-    // ==========================================
+
+    // ==================================================
+    // 6. FINAL RESULT
+    // ==================================================
+
+    console.log("================================");
+    console.log("FINAL COACH SCORES");
+    console.log({
+      careerScore,
+      roadmapProgress,
+      resumeScore,
+      interviewScore,
+    });
+    console.log("================================");
+
 
     return res.status(200).json({
       success: true,
-      scores: finalScores,
+
+      scores: {
+        careerScore,
+        roadmapProgress,
+        resumeScore,
+        interviewScore,
+      },
     });
 
   } catch (error) {
 
     console.error(
-      "❌ COACH DASHBOARD ERROR:",
+      "COACH DASHBOARD ERROR:",
       error
     );
 

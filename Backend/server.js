@@ -88,6 +88,24 @@ app.use("/api/auth", authRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/skillgap", skillGapRoutes);
 app.use("/api/roadmap", roadmapRoutes);
+console.log("================================");
+console.log("REGISTERED EXPRESS ROUTES");
+
+if (app.router && app.router.stack) {
+  app.router.stack.forEach((layer) => {
+    if (layer.route) {
+      console.log(
+        layer.route.stack
+          ? `${Object.keys(layer.route.methods).join(",").toUpperCase()} ${layer.route.path}`
+          : layer.route.path
+      );
+    } else if (layer.name === "router") {
+      console.log("ROUTER:", layer.regexp);
+    }
+  });
+}
+
+console.log("================================");
 app.use("/api/interview", interviewRoutes);
 app.use("/api/coach", coachRoutes);
 app.use("/api/learning", learningRoutes);

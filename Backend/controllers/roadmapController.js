@@ -3,6 +3,11 @@ const Roadmap = require("../models/Roadmap");
 
 const generateRoadmap = require("../utils/geminiRoadmap");
 
+
+// ======================================================
+// GENERATE ROADMAP
+// ======================================================
+
 const generateRoadmapController = async (req, res) => {
   try {
     const { targetRole } = req.body;
@@ -13,18 +18,12 @@ const generateRoadmapController = async (req, res) => {
         message: "Target Role is required",
       });
     }
-    console.log("Target Role:", targetRole);
 
-    const all = await SkillGap.find({
-  user: req.user._id,
-});
-
-console.log(all);
-
-    // Get latest Skill Gap Analysis
     const skillGap = await SkillGap.findOne({
       user: req.user._id,
-    }).sort({ createdAt: -1 });
+    }).sort({
+      createdAt: -1,
+    });
 
     if (!skillGap) {
       return res.status(404).json({
@@ -33,51 +32,49 @@ console.log(all);
       });
     }
 
-    // Generate AI Roadmap
     const roadmapData = await generateRoadmap(
       skillGap.missingSkills,
       targetRole
     );
 
-    console.log("======================");
-    console.log("User:", req.user._id.toString());
-    console.log("Target Role:", targetRole);
-    console.log("SkillGap:", skillGap);
-    console.log("Missing Skills:", skillGap.missingSkills);
-    console.log("======================");
-
-    // Save to MongoDB
     const roadmap = await Roadmap.create({
       user: req.user._id,
       skillGap: skillGap._id,
-      targetRole,
+      targetRole: targetRole,
 
       roadmapTitle: roadmapData.roadmapTitle,
       phases: roadmapData.phases,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Roadmap Generated Successfully",
       roadmap,
     });
 
   } catch (error) {
-    console.log("Roadmap Error:", error);
+    console.error("Roadmap Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
+
+// ======================================================
+// GET LATEST ROADMAP
+// ======================================================
+
 const getRoadmapController = async (req, res) => {
   try {
-
     const roadmap = await Roadmap.findOne({
       user: req.user._id,
-    }).sort({ createdAt: -1 });
+    })
+      .sort({
+        createdAt: -1,
+      });
 
     if (!roadmap) {
       return res.status(404).json({
@@ -86,20 +83,111 @@ const getRoadmapController = async (req, res) => {
       });
     }
 
-    res.json({
+    return res.status(200).json({
       success: true,
       roadmap,
     });
 
   } catch (error) {
-    res.status(500).json({
+    console.error("Get Roadmap Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
+
+// ======================================================
+// UPDATE ROADMAP PHASE
+// ======================================================
+
+const updateRoadmapPhaseController = async (req, res) => {
+  try {
+    const { phaseIndex } = req.params;
+    const { completed } = req.body;
+
+    const index = Number(phaseIndex);
+
+    if (Number.isNaN(index)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid phase index",
+      });
+    }
+
+    const roadmap = await Roadmap.findOne({
+      user: req.user._id,
+    }).sort({
+      createdAt: -1,
+    });
+
+    if (!roadmap) {
+      return res.status(404).json({
+        success: false,
+        message: "Roadmap not found",
+      });
+    }
+
+    if (
+      !roadmap.phases ||
+      index < 0 ||
+      index >= roadmap.phases.length
+    ) {
+      return res.status(404).json({
+        success: false,
+        message: "Roadmap phase not found",
+      });
+    }
+
+    roadmap.phases[index].completed =
+      completed === true;
+
+    await roadmap.save();
+
+    // Calculate progress
+    const totalPhases = roadmap.phases.length;
+
+    const completedPhases =
+      roadmap.phases.filter(
+        (phase) => phase.completed === true
+      ).length;
+
+    const progress =
+      totalPhases > 0
+        ? Math.round(
+            (completedPhases / totalPhases) * 100
+          )
+        : 0;
+
+    return res.status(200).json({
+      success: true,
+      message: "Roadmap phase updated",
+      progress,
+      roadmap,
+    });
+
+  } catch (error) {
+    console.error(
+      "Update Roadmap Phase Error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// ======================================================
+// EXPORT
+// ======================================================
+
 module.exports = {
   generateRoadmapController,
   getRoadmapController,
+  updateRoadmapPhaseController,
 };
