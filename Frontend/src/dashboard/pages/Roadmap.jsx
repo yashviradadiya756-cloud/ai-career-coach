@@ -11,134 +11,173 @@ import {
 
 export default function Roadmap() {
   const [roadmap, setRoadmap] = useState(null);
-
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  // =========================
-  // LOAD ROADMAP
-  // =========================
+  // ======================================================
+  // LOAD EXISTING ROADMAP
+  // ======================================================
+
   const loadRoadmap = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const res = await getRoadmap();
+    const res = await getRoadmap();
 
-      console.log("Roadmap API Response:", res.data);
+    console.log("Roadmap API Response:", res.data);
 
-      setRoadmap(res.data?.roadmap || null);
-    } catch (error) {
-      console.log(
-        "Get Roadmap Error:",
-        error.response?.data || error.message
-      );
-
+    if (res.data?.success && res.data?.roadmap) {
+      setRoadmap(res.data.roadmap);
+    } else {
       setRoadmap(null);
-    } finally {
-      setLoading(false);
     }
-  };
 
-  // =========================
+  } catch (error) {
+    console.log(
+      "Get Roadmap Error:",
+      error.response?.status,
+      error.response?.data || error.message
+    );
+
+    // 404 simply means there is no saved roadmap yet
+    if (error.response?.status === 404) {
+      setRoadmap(null);
+    } else {
+      setRoadmap(null);
+    }
+
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // ======================================================
   // INITIAL LOAD
-  // =========================
+  // ======================================================
+
   useEffect(() => {
-    loadRoadmap();
-  }, []);
+  setLoading(false);
+}, []);
 
-  // =========================
+  // ======================================================
   // GENERATE ROADMAP
-  // =========================
+  // ======================================================
+
   const handleGenerate = async () => {
-    if (generating) return;
+  if (generating) return;
 
-    try {
-      setGenerating(true);
+  try {
+    setGenerating(true);
 
-      // Get latest skill gap
-      const skillGapResponse = await getLatestSkillGap();
+    console.log("STEP 1: Getting latest skill gap...");
 
+    const skillGapResponse = await getLatestSkillGap();
+
+    console.log(
+      "STEP 1 RESPONSE:",
+      skillGapResponse.data
+    );
+
+    const latestSkillGap =
+      skillGapResponse.data?.skillGap;
+
+    if (!latestSkillGap) {
+      alert("Please complete Skill Gap Analysis first.");
+      return;
+    }
+
+    const role = latestSkillGap.targetRole;
+
+    if (!role) {
+      alert(
+        "Target role not found. Please analyze your Skill Gap again."
+      );
+      return;
+    }
+
+    console.log("STEP 2: Target Role:", role);
+
+    console.log("STEP 3: Calling roadmap generate API...");
+
+    const response = await generateRoadmap(role);
+
+    console.log(
+      "STEP 4: Generate API response:",
+      response.data
+    );
+
+    if (
+      response.data?.success &&
+      response.data?.roadmap
+    ) {
       console.log(
-        "Skill Gap Response:",
-        skillGapResponse.data
+        "STEP 5: ROADMAP SUCCESS:",
+        response.data.roadmap
       );
 
-      const latestSkillGap =
-        skillGapResponse.data?.skillGap;
+      setRoadmap(response.data.roadmap);
 
-      if (!latestSkillGap) {
-        alert(
-          "Please complete Skill Gap Analysis first."
-        );
-        return;
-      }
-
-      const role = latestSkillGap.targetRole;
-
-      if (!role) {
-        alert(
-          "Target role not found. Please analyze your Skill Gap again."
-        );
-        return;
-      }
-
-      console.log(
-        "Generating roadmap for:",
-        role
-      );
-
-      // Generate roadmap
-      const response = await generateRoadmap(role);
-
-      console.log(
-        "Generate Roadmap Response:",
+      alert("Roadmap Generated Successfully!");
+    } else {
+      console.error(
+        "Roadmap missing:",
         response.data
       );
 
-      // Reload roadmap
-      await loadRoadmap();
-
-      alert("Roadmap Generated Successfully!");
-
-    } catch (error) {
-      console.log(
-        "Generate Roadmap Error:",
-        error.response?.data || error.message
-      );
-
       alert(
-        error.response?.data?.message ||
-        "Failed to generate roadmap. Please try again."
+        response.data?.message ||
+        "Roadmap generated but no roadmap data was returned."
       );
-
-    } finally {
-      setGenerating(false);
     }
-  };
 
-  // =========================
+  } catch (error) {
+
+    console.error("========== ROADMAP ERROR ==========");
+    console.error("Status:", error.response?.status);
+    console.error("Backend:", error.response?.data);
+    console.error("Message:", error.message);
+    console.error("===================================");
+
+    alert(
+      error.response?.data?.message ||
+      error.message ||
+      "Failed to generate roadmap."
+    );
+
+  } finally {
+    setGenerating(false);
+  }
+};
+
+  // ======================================================
   // PAGE LOADING
-  // =========================
+  // ======================================================
+
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
         <div style={styles.loadingCard}>
-          <div style={styles.spinner}>⏳</div>
+          <div style={styles.spinner}>
+            ⏳
+          </div>
 
-          <h2>Loading Your Roadmap...</h2>
+          <h2>
+            Loading Your Roadmap...
+          </h2>
 
           <p>
-            Please wait while we load your personalized
-            career roadmap.
+            Please wait while we load your
+            personalized career roadmap.
           </p>
         </div>
       </div>
     );
   }
 
-  // =========================
+  // ======================================================
   // NO ROADMAP
-  // =========================
+  // ======================================================
+
   if (!roadmap) {
     return (
       <div style={styles.emptyContainer}>
@@ -182,9 +221,9 @@ export default function Roadmap() {
     );
   }
 
-  // =========================
+  // ======================================================
   // ROADMAP DATA
-  // =========================
+  // ======================================================
 
   const phases = Array.isArray(roadmap.phases)
     ? roadmap.phases
@@ -208,26 +247,28 @@ export default function Roadmap() {
     0
   );
 
-  // =========================
+  // ======================================================
   // MAIN UI
-  // =========================
+  // ======================================================
 
   return (
     <div style={styles.container}>
 
-      {/* ================================= */}
-      {/* HERO HEADER */}
-      {/* ================================= */}
+      {/* ================================================= */}
+      {/* HERO */}
+      {/* ================================================= */}
 
       <div style={styles.hero}>
 
         <div>
+
           <div style={styles.heroIcon}>
             🗺️
           </div>
 
           <h1 style={styles.heroTitle}>
             {roadmap.roadmapTitle ||
+              roadmap.title ||
               "Your AI Career Roadmap"}
           </h1>
 
@@ -239,9 +280,11 @@ export default function Roadmap() {
           <div style={styles.roleBadge}>
             🎯 Target Role:{" "}
             <strong>
-              {roadmap.targetRole || "Career Goal"}
+              {roadmap.targetRole ||
+                "Career Goal"}
             </strong>
           </div>
+
         </div>
 
         <button
@@ -261,13 +304,14 @@ export default function Roadmap() {
 
       </div>
 
-      {/* ================================= */}
+      {/* ================================================= */}
       {/* SUMMARY CARDS */}
-      {/* ================================= */}
+      {/* ================================================= */}
 
       <div style={styles.cards}>
 
         <div style={styles.card}>
+
           <div style={styles.cardIcon}>
             📚
           </div>
@@ -281,9 +325,11 @@ export default function Roadmap() {
               {phases.length}
             </h2>
           </div>
+
         </div>
 
         <div style={styles.card}>
+
           <div style={styles.cardIcon}>
             📝
           </div>
@@ -297,9 +343,11 @@ export default function Roadmap() {
               {totalTopics}
             </h2>
           </div>
+
         </div>
 
         <div style={styles.card}>
+
           <div style={styles.cardIcon}>
             💻
           </div>
@@ -313,9 +361,11 @@ export default function Roadmap() {
               {totalProjects}
             </h2>
           </div>
+
         </div>
 
         <div style={styles.card}>
+
           <div style={styles.cardIcon}>
             🚀
           </div>
@@ -334,191 +384,302 @@ export default function Roadmap() {
               Started
             </h2>
           </div>
+
         </div>
 
       </div>
 
-      {/* ================================= */}
+      {/* ================================================= */}
       {/* LEARNING ROADMAP */}
-      {/* ================================= */}
+      {/* ================================================= */}
 
       <div style={styles.section}>
 
         <div style={styles.sectionHeader}>
+
           <div>
+
             <h2 style={styles.sectionTitle}>
               📚 Learning Roadmap
             </h2>
 
             <p style={styles.sectionSubtitle}>
-              Follow each phase step-by-step to build
-              your career skills.
+              Follow each phase step-by-step to
+              build your career skills.
             </p>
+
           </div>
+
         </div>
 
         <div style={styles.timeline}>
 
-          {phases.map((phase, index) => {
+          {phases.length === 0 ? (
 
-            const topics = Array.isArray(
-              phase.topics
-            )
-              ? phase.topics
-              : [];
+            <div style={styles.noPhase}>
 
-            const projects = Array.isArray(
-              phase.projects
-            )
-              ? phase.projects
-              : [];
+              <h3>
+                No phases available
+              </h3>
 
-            const resources = Array.isArray(
-              phase.resources
-            )
-              ? phase.resources
-              : [];
+              <p>
+                The AI generated a roadmap,
+                but no phases were returned.
+              </p>
 
-            return (
-              <div
-                key={index}
-                style={styles.phaseCard}
-              >
+              <details style={styles.debugDetails}>
+                <summary>
+                  View roadmap data
+                </summary>
 
-                {/* Phase Number */}
+                <pre style={styles.debugPre}>
+                  {JSON.stringify(
+                    roadmap,
+                    null,
+                    2
+                  )}
+                </pre>
+              </details>
 
-                <div style={styles.phaseNumber}>
-                  {index + 1}
-                </div>
+            </div>
 
-                <div style={styles.phaseContent}>
+          ) : (
 
-                  <div style={styles.phaseHeader}>
+            phases.map((phase, index) => {
 
-                    <div>
-                      <span style={styles.phaseLabel}>
-                        PHASE {index + 1}
+              const topics =
+                Array.isArray(phase.topics)
+                  ? phase.topics
+                  : [];
+
+              const projects =
+                Array.isArray(phase.projects)
+                  ? phase.projects
+                  : [];
+
+              const resources =
+                Array.isArray(phase.resources)
+                  ? phase.resources
+                  : [];
+
+              return (
+                <div
+                  key={
+                    phase._id || index
+                  }
+                  style={styles.phaseCard}
+                >
+
+                  {/* PHASE NUMBER */}
+
+                  <div style={styles.phaseNumber}>
+                    {index + 1}
+                  </div>
+
+                  <div style={styles.phaseContent}>
+
+                    {/* PHASE HEADER */}
+
+                    <div style={styles.phaseHeader}>
+
+                      <div>
+
+                        <span
+                          style={styles.phaseLabel}
+                        >
+                          PHASE {index + 1}
+                        </span>
+
+                        <h3 style={styles.phaseTitle}>
+                          {phase.title ||
+                            `Learning Phase ${index + 1}`}
+                        </h3>
+
+                      </div>
+
+                      <div style={styles.duration}>
+                        ⏱️{" "}
+                        {phase.duration ||
+                          "Flexible"}
+                      </div>
+
+                    </div>
+
+                    {/* TOPICS */}
+
+                    <div style={styles.phaseSection}>
+
+                      <h4 style={styles.subTitle}>
+                        📖 Topics to Learn
+                      </h4>
+
+                      {topics.length > 0 ? (
+
+                        <div
+                          style={
+                            styles.tagContainer
+                          }
+                        >
+
+                          {topics.map(
+                            (topic, i) => (
+
+                              <span
+                                key={i}
+                                style={
+                                  styles.topicTag
+                                }
+                              >
+                                ✓ {topic}
+                              </span>
+
+                            )
+                          )}
+
+                        </div>
+
+                      ) : (
+
+                        <p style={styles.mutedText}>
+                          No topics available.
+                        </p>
+
+                      )}
+
+                    </div>
+
+                    {/* PROJECTS */}
+
+                    <div style={styles.phaseSection}>
+
+                      <h4 style={styles.subTitle}>
+                        💻 Projects
+                      </h4>
+
+                      {projects.length > 0 ? (
+
+                        <ul style={styles.list}>
+
+                          {projects.map(
+                            (project, i) => (
+
+                              <li
+                                key={i}
+                                style={
+                                  styles.listItem
+                                }
+                              >
+
+                                <span>
+                                  🚀
+                                </span>
+
+                                <span>
+                                  {project}
+                                </span>
+
+                              </li>
+
+                            )
+                          )}
+
+                        </ul>
+
+                      ) : (
+
+                        <p style={styles.mutedText}>
+                          No projects available.
+                        </p>
+
+                      )}
+
+                    </div>
+
+                    {/* RESOURCES */}
+
+                    <div style={styles.phaseSection}>
+
+                      <h4 style={styles.subTitle}>
+                        🔗 Learning Resources
+                      </h4>
+
+                      {resources.length > 0 ? (
+
+                        <ul style={styles.list}>
+
+                          {resources.map(
+                            (resource, i) => (
+
+                              <li
+                                key={i}
+                                style={
+                                  styles.listItem
+                                }
+                              >
+
+                                <span>
+                                  📘
+                                </span>
+
+                                <span>
+                                  {resource}
+                                </span>
+
+                              </li>
+
+                            )
+                          )}
+
+                        </ul>
+
+                      ) : (
+
+                        <p style={styles.mutedText}>
+                          No resources available.
+                        </p>
+
+                      )}
+
+                    </div>
+
+                    {/* COMPLETION STATUS */}
+
+                    <div style={styles.completedBox}>
+
+                      <span
+                        style={{
+                          ...styles.completedDot,
+                          background:
+                            phase.completed
+                              ? "#16a34a"
+                              : "#94a3b8",
+                        }}
+                      />
+
+                      <span>
+                        {phase.completed
+                          ? "Phase Completed"
+                          : "Phase Not Completed"}
                       </span>
 
-                      <h3 style={styles.phaseTitle}>
-                        {phase.title ||
-                          `Learning Phase ${index + 1}`}
-                      </h3>
                     </div>
-
-                    <div style={styles.duration}>
-                      ⏱️{" "}
-                      {phase.duration ||
-                        "Flexible"}
-                    </div>
-
-                  </div>
-
-                  {/* Topics */}
-
-                  <div style={styles.phaseSection}>
-
-                    <h4 style={styles.subTitle}>
-                      📖 Topics to Learn
-                    </h4>
-
-                    {topics.length > 0 ? (
-                      <div style={styles.tagContainer}>
-                        {topics.map(
-                          (topic, i) => (
-                            <span
-                              key={i}
-                              style={styles.topicTag}
-                            >
-                              ✓ {topic}
-                            </span>
-                          )
-                        )}
-                      </div>
-                    ) : (
-                      <p style={styles.mutedText}>
-                        No topics available.
-                      </p>
-                    )}
-
-                  </div>
-
-                  {/* Projects */}
-
-                  <div style={styles.phaseSection}>
-
-                    <h4 style={styles.subTitle}>
-                      💻 Projects
-                    </h4>
-
-                    {projects.length > 0 ? (
-                      <ul style={styles.list}>
-                        {projects.map(
-                          (project, i) => (
-                            <li
-                              key={i}
-                              style={styles.listItem}
-                            >
-                              <span>
-                                🚀
-                              </span>
-                              {project}
-                            </li>
-                          )
-                        )}
-                      </ul>
-                    ) : (
-                      <p style={styles.mutedText}>
-                        No projects available.
-                      </p>
-                    )}
-
-                  </div>
-
-                  {/* Resources */}
-
-                  <div style={styles.phaseSection}>
-
-                    <h4 style={styles.subTitle}>
-                      🔗 Learning Resources
-                    </h4>
-
-                    {resources.length > 0 ? (
-                      <ul style={styles.list}>
-                        {resources.map(
-                          (resource, i) => (
-                            <li
-                              key={i}
-                              style={styles.listItem}
-                            >
-                              <span>
-                                📘
-                              </span>
-                              {resource}
-                            </li>
-                          )
-                        )}
-                      </ul>
-                    ) : (
-                      <p style={styles.mutedText}>
-                        No resources available.
-                      </p>
-                    )}
 
                   </div>
 
                 </div>
-              </div>
-            );
-          })}
+              );
+
+            })
+
+          )}
 
         </div>
 
       </div>
 
-      {/* ================================= */}
+      {/* ================================================= */}
       {/* UPCOMING TOPICS */}
-      {/* ================================= */}
+      {/* ================================================= */}
 
       <div style={styles.section}>
 
@@ -527,39 +688,47 @@ export default function Roadmap() {
         </h2>
 
         <p style={styles.sectionSubtitle}>
-          Topics included in your complete career
-          learning journey.
+          Topics included in your complete
+          career learning journey.
         </p>
 
         <div style={styles.upcomingGrid}>
 
-          {phases.flatMap(
-            (phase) =>
-              Array.isArray(phase.topics)
-                ? phase.topics
-                : []
-          ).map((topic, index) => (
+          {phases
+            .flatMap(
+              (phase) =>
+                Array.isArray(phase.topics)
+                  ? phase.topics
+                  : []
+            )
+            .map((topic, index) => (
 
-            <div
-              key={index}
-              style={styles.upcomingCard}
-            >
-              <span style={styles.checkIcon}>
-                ✓
-              </span>
+              <div
+                key={index}
+                style={styles.upcomingCard}
+              >
 
-              <span>{topic}</span>
-            </div>
+                <span
+                  style={styles.checkIcon}
+                >
+                  ✓
+                </span>
 
-          ))}
+                <span>
+                  {topic}
+                </span>
+
+              </div>
+
+            ))}
 
         </div>
 
       </div>
 
-      {/* ================================= */}
+      {/* ================================================= */}
       {/* AI RECOMMENDATION */}
-      {/* ================================= */}
+      {/* ================================================= */}
 
       <div style={styles.aiCard}>
 
@@ -568,24 +737,26 @@ export default function Roadmap() {
         </div>
 
         <div>
+
           <h2 style={styles.aiTitle}>
             AI Career Recommendation
           </h2>
 
           <p style={styles.aiText}>
             Follow the roadmap phase by phase.
-            Complete the learning topics and projects
-            before moving to the next stage. Building
-            practical projects alongside learning will
-            help improve your job readiness.
+            Complete the learning topics and
+            projects before moving to the next stage.
+            Building practical projects alongside
+            learning will help improve your job readiness.
           </p>
+
         </div>
 
       </div>
 
-      {/* ================================= */}
+      {/* ================================================= */}
       {/* WEEKLY GOAL */}
-      {/* ================================= */}
+      {/* ================================================= */}
 
       <div style={styles.weeklyCard}>
 
@@ -601,8 +772,8 @@ export default function Roadmap() {
 
           <p style={styles.weeklyText}>
             Focus on completing the current phase,
-            practice the recommended topics, and build
-            at least one practical project.
+            practice the recommended topics, and
+            build at least one practical project.
           </p>
 
         </div>
@@ -612,7 +783,6 @@ export default function Roadmap() {
     </div>
   );
 }
-
 
 // ======================================================
 // STYLES
@@ -629,9 +799,9 @@ const styles = {
       "Arial, Helvetica, sans-serif",
   },
 
-  // ================================
+  // ====================================================
   // LOADING
-  // ================================
+  // ====================================================
 
   loadingContainer: {
     minHeight: "80vh",
@@ -655,9 +825,9 @@ const styles = {
     marginBottom: "15px",
   },
 
-  // ================================
-  // EMPTY ROADMAP
-  // ================================
+  // ====================================================
+  // EMPTY
+  // ====================================================
 
   emptyContainer: {
     minHeight: "80vh",
@@ -723,9 +893,9 @@ const styles = {
     fontSize: "13px",
   },
 
-  // ================================
+  // ====================================================
   // HERO
-  // ================================
+  // ====================================================
 
   hero: {
     background:
@@ -760,7 +930,8 @@ const styles = {
 
   roleBadge: {
     display: "inline-block",
-    background: "rgba(255,255,255,.15)",
+    background:
+      "rgba(255,255,255,.15)",
     padding: "10px 16px",
     borderRadius: "10px",
     fontSize: "14px",
@@ -777,9 +948,9 @@ const styles = {
     whiteSpace: "nowrap",
   },
 
-  // ================================
-  // SUMMARY CARDS
-  // ================================
+  // ====================================================
+  // CARDS
+  // ====================================================
 
   cards: {
     display: "grid",
@@ -823,9 +994,9 @@ const styles = {
     color: "#111827",
   },
 
-  // ================================
+  // ====================================================
   // SECTIONS
-  // ================================
+  // ====================================================
 
   section: {
     background: "#fff",
@@ -853,9 +1024,9 @@ const styles = {
     color: "#6b7280",
   },
 
-  // ================================
-  // PHASE
-  // ================================
+  // ====================================================
+  // TIMELINE
+  // ====================================================
 
   timeline: {
     display: "flex",
@@ -955,7 +1126,8 @@ const styles = {
     gap: "10px",
     alignItems: "flex-start",
     padding: "10px 0",
-    borderBottom: "1px solid #f1f5f9",
+    borderBottom:
+      "1px solid #f1f5f9",
     color: "#374151",
     lineHeight: "1.5",
   },
@@ -964,9 +1136,51 @@ const styles = {
     color: "#9ca3af",
   },
 
-  // ================================
+  noPhase: {
+    textAlign: "center",
+    padding: "40px",
+    background: "#f8fafc",
+    borderRadius: "15px",
+    color: "#64748b",
+  },
+
+  completedBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginTop: "20px",
+    paddingTop: "15px",
+    borderTop:
+      "1px solid #e5e7eb",
+    fontSize: "14px",
+    color: "#475569",
+    fontWeight: "600",
+  },
+
+  completedDot: {
+    width: "10px",
+    height: "10px",
+    borderRadius: "50%",
+    display: "inline-block",
+  },
+
+  debugDetails: {
+    marginTop: "20px",
+    textAlign: "left",
+  },
+
+  debugPre: {
+    background: "#111827",
+    color: "#e5e7eb",
+    padding: "15px",
+    borderRadius: "10px",
+    overflowX: "auto",
+    fontSize: "12px",
+  },
+
+  // ====================================================
   // UPCOMING
-  // ================================
+  // ====================================================
 
   upcomingGrid: {
     display: "grid",
@@ -983,7 +1197,8 @@ const styles = {
     padding: "14px",
     background: "#f8fafc",
     borderRadius: "10px",
-    border: "1px solid #e5e7eb",
+    border:
+      "1px solid #e5e7eb",
   },
 
   checkIcon: {
@@ -998,9 +1213,9 @@ const styles = {
     fontWeight: "bold",
   },
 
-  // ================================
+  // ====================================================
   // AI CARD
-  // ================================
+  // ====================================================
 
   aiCard: {
     background:
@@ -1029,9 +1244,9 @@ const styles = {
     lineHeight: "1.6",
   },
 
-  // ================================
+  // ====================================================
   // WEEKLY GOAL
-  // ================================
+  // ====================================================
 
   weeklyCard: {
     background: "#fff",

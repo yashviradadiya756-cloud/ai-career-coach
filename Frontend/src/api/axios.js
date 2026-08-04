@@ -10,7 +10,7 @@ api.interceptors.request.use((config) => {
   console.log("Sending request to:", config.baseURL + config.url);
 
   const token = localStorage.getItem("token");
-  console.log("Token:", token);
+  console.log("Token exists:", !!token);
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
