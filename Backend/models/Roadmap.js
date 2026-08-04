@@ -6,6 +6,11 @@ const phaseSchema = new mongoose.Schema({
   topics: [String],
   projects: [String],
   resources: [String],
+
+  completed: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const roadmapSchema = new mongoose.Schema(
