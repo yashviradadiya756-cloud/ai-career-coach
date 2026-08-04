@@ -1,9 +1,4 @@
-
 import api from "./axios";
-
-// ==========================================
-// GENERATE ROADMAP
-// ==========================================
 
 export const generateRoadmap = async (targetRole) => {
   if (!targetRole) {
@@ -12,7 +7,7 @@ export const generateRoadmap = async (targetRole) => {
 
   console.log("generateRoadmap() targetRole:", targetRole);
 
-  const response = await api.post("/roadmap/generate", {
+  const response = await api.post("/api/roadmap/generate", {
     targetRole,
   });
 
@@ -21,15 +16,10 @@ export const generateRoadmap = async (targetRole) => {
   return response;
 };
 
-
-// ==========================================
-// GET LATEST ROADMAP
-// ==========================================
-
 export const getRoadmap = async () => {
   console.log("getRoadmap() called");
 
-  const response = await api.get("/roadmap");
+  const response = await api.get("/api/roadmap");
 
   console.log("getRoadmap() response:", response.data);
 
