@@ -5,6 +5,14 @@ async function generateLearningRecommendations(
   targetRole
 ) {
   try {
+    const skills = Array.isArray(missingSkills)
+      ? missingSkills
+      : [];
+
+    if (skills.length === 0) {
+      throw new Error("No missing skills provided");
+    }
+
     const prompt = `
 You are an AI Career Coach.
 
@@ -12,51 +20,52 @@ Target Role:
 ${targetRole}
 
 Missing Skills:
-${
-  Array.isArray(missingSkills)
-    ? missingSkills.join(", ")
-    : String(missingSkills)
-}
+${skills.join(", ")}
 
-Recommend one high-quality learning resource for each missing skill.
+Recommend one high-quality learning resource for EACH missing skill.
 
 Return ONLY valid JSON.
+Do not use markdown.
+Do not use code fences.
+
+Expected format:
 
 {
   "recommendations": [
     {
-      "skill": "",
-      "course": "",
-      "platform": "",
-      "duration": "",
-      "level": "",
-      "url": ""
+      "skill": "Express.js",
+      "course": "Course name",
+      "platform": "Platform name",
+      "duration": "4 weeks",
+      "level": "Beginner",
+      "url": "https://example.com"
     }
   ]
 }
-`;
 
-    console.log("Calling Gemini for Learning Recommendations...");
-    console.log("Target Role:", targetRole);
-    console.log("Missing Skills:", missingSkills);
+Rules:
+- Create exactly one recommendation for each missing skill.
+- Use real learning platforms where possible.
+- Keep URLs valid.
+- Keep course names specific.
+- Return JSON only.
+`;
 
     const response = await generateContent(prompt);
 
     let text = response.text;
 
-    if (!text) {
-      throw new Error("Gemini returned empty response");
-    }
+    console.log("===== GEMINI RAW LEARNING RESPONSE =====");
+    console.log(text);
 
     text = text
-      .replace(/```json/g, "")
+      .replace(/```json/gi, "")
       .replace(/```/g, "")
       .trim();
 
-    console.log("Gemini Learning Response:");
-    console.log(text);
+    const result = JSON.parse(text);
 
-    return JSON.parse(text);
+    return result;
 
   } catch (error) {
     console.error("Learning AI Error:", error);

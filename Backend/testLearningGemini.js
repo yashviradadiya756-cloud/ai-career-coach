@@ -1,24 +1,43 @@
 require("dotenv").config();
 
-const { GoogleGenAI } = require("@google/genai");
+const generateLearningRecommendations =
+  require("./utils/geminiLearning");
 
 async function test() {
   try {
-    const ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-    });
+    const missingSkills = [
+      "Express.js",
+      "TypeScript",
+      "Git & GitHub",
+      "RESTful APIs",
+      "State Management (Redux / Context API)",
+      "Data Structures & Algorithms (DSA)",
+      "Authentication & Security (JWT, OAuth)",
+      "Testing (Jest, Cypress)",
+      "DevOps & Deployment (Docker, Vercel, AWS/Render)"
+    ];
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: "Say hello in one sentence.",
-    });
+    const targetRole = "Full stack developer";
 
-    console.log("Gemini Response:");
-    console.log(response.text);
+    const result =
+      await generateLearningRecommendations(
+        missingSkills,
+        targetRole
+      );
+
+    console.log(
+      "===== FINAL RESULT ====="
+    );
+
+    console.log(
+      JSON.stringify(result, null, 2)
+    );
 
   } catch (error) {
-    console.error("Gemini Test Error:");
-    console.error(error);
+    console.error(
+      "TEST FAILED:",
+      error
+    );
   }
 }
 
