@@ -75,6 +75,14 @@ app.get("/", (req, res) => {
   res.send("AI Career Coach Backend is Running...");
 });
 
+app.get("/api/learning-test", (req, res) => {
+  res.json({
+    success: true,
+    message: "Learning API is deployed correctly",
+    version: "2026-08-06"
+  });
+});
+
 console.log("================================");
 console.log("CHECKING ROUTES");
 

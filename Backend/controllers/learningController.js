@@ -3,22 +3,31 @@ const Learning = require("../models/Learning");
 
 const generateLearningRecommendations = require("../utils/geminiLearning");
 
+// ============================================
+// GENERATE LEARNING RECOMMENDATIONS
+// ============================================
+
 const generateLearningController = async (req, res) => {
   try {
-    const { targetRole } = req.body;
+    let { targetRole } = req.body;
 
-    if (!targetRole) {
-      return res.status(400).json({
-        success: false,
-        message: "Target Role is required",
-      });
+    // Find latest Skill Gap for logged-in user
+    let skillGap;
+
+    if (targetRole) {
+      skillGap = await SkillGap.findOne({
+        user: req.user._id,
+        targetRole,
+      }).sort({ createdAt: -1 });
+    } else {
+      skillGap = await SkillGap.findOne({
+        user: req.user._id,
+      }).sort({ createdAt: -1 });
+
+      if (skillGap) {
+        targetRole = skillGap.targetRole;
+      }
     }
-
-    // Get latest Skill Gap
-    const skillGap = await SkillGap.findOne({
-      user: req.user._id,
-      targetRole,
-    }).sort({ createdAt: -1 });
 
     if (!skillGap) {
       return res.status(404).json({
@@ -27,12 +36,13 @@ const generateLearningController = async (req, res) => {
       });
     }
 
-    // Generate AI Learning Recommendations
-    console.log("Missing Skills:");
-    console.log(skillGap.missingSkills);
-    console.log("Type:", typeof skillGap.missingSkills);
-    console.log("Is Array:", Array.isArray(skillGap.missingSkills));
+    console.log("================================");
+    console.log("LEARNING GENERATION");
+    console.log("Target Role:", targetRole);
+    console.log("Missing Skills:", skillGap.missingSkills);
+    console.log("================================");
 
+    // Generate AI recommendations
     const learningData = await generateLearningRecommendations(
       skillGap.missingSkills,
       targetRole
@@ -46,7 +56,7 @@ const generateLearningController = async (req, res) => {
       recommendations: learningData.recommendations,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Learning Recommendations Generated Successfully",
       learning,
@@ -55,14 +65,18 @@ const generateLearningController = async (req, res) => {
   } catch (error) {
     console.log("Learning Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-// Get latest learning recommendations
+
+// ============================================
+// GET LATEST LEARNING
+// ============================================
+
 const getLearningController = async (req, res) => {
   try {
     const learning = await Learning.findOne({
@@ -78,18 +92,21 @@ const getLearningController = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       learning,
     });
 
   } catch (error) {
-    res.status(500).json({
+    console.log("Get Learning Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
+
 
 module.exports = {
   generateLearningController,

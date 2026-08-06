@@ -1,6 +1,9 @@
 const ai = require("../config/gemini");
 
-async function generateLearningRecommendations(missingSkills, targetRole) {
+async function generateLearningRecommendations(
+  missingSkills,
+  targetRole
+) {
   try {
     const prompt = `
 You are an AI Career Coach.
@@ -9,9 +12,11 @@ Target Role:
 ${targetRole}
 
 Missing Skills:
-${Array.isArray(missingSkills)
-  ? missingSkills.join(", ")
-  : String(missingSkills)}
+${
+  Array.isArray(missingSkills)
+    ? missingSkills.join(", ")
+    : String(missingSkills)
+}
 
 Recommend one high-quality learning resource for each missing skill.
 
@@ -32,14 +37,19 @@ Return ONLY valid JSON.
 `;
 
     const response = await ai.models.generateContent({
-  model: "gemini-3.6-flash",
-  contents: prompt,
-});
+      model: "gemini-3.6-flash",
+      contents: prompt,
+    });
 
-    let text = response.text
+    let text = response.text;
+
+    text = text
       .replace(/```json/g, "")
       .replace(/```/g, "")
       .trim();
+
+    console.log("Gemini Learning Response:");
+    console.log(text);
 
     return JSON.parse(text);
 
