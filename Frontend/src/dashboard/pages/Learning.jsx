@@ -17,34 +17,44 @@ export default function Learning() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  // Load existing learning + skill gap
   useEffect(() => {
-    loadLearning();
+    loadLearningData();
   }, []);
 
-  const loadLearning = async () => {
+  const loadLearningData = async () => {
     try {
       setLoading(true);
       setError("");
 
-      // First try existing learning recommendations
+      // Get existing learning recommendations
       try {
         const learningResponse = await getLearning();
 
-        if (learningResponse.success) {
+        console.log("Learning API response:", learningResponse);
+
+        if (learningResponse.success && learningResponse.learning) {
           setLearning(learningResponse.learning);
         }
       } catch (error) {
-        // 404 means learning hasn't been generated yet
-        if (error.response?.status !== 404) {
-          throw error;
+        if (error.response?.status === 404) {
+          console.log("No learning recommendations yet.");
+          setLearning(null);
+        } else {
+          console.error(
+            "Learning API Error:",
+            error.response?.data || error.message
+          );
         }
       }
 
-      // Get latest Skill Gap
+      // Get latest skill gap
       try {
         const skillGapResponse = await getLatestSkillGap();
 
-        if (skillGapResponse.success) {
+        console.log("Skill Gap response:", skillGapResponse);
+
+        if (skillGapResponse.success && skillGapResponse.skillGap) {
           setSkillGap(skillGapResponse.skillGap);
         }
       } catch (error) {
@@ -54,45 +64,47 @@ export default function Learning() {
         );
       }
     } catch (error) {
-      console.error(
-        "Learning API Error:",
-        error.response?.data || error.message
-      );
+      console.error("Learning Error:", error);
 
-      setError(
-        error.response?.data?.message ||
-        "Failed to load learning dashboard"
-      );
+      setError("Failed to load learning dashboard");
     } finally {
       setLoading(false);
     }
   };
 
+  // IMPORTANT:
+  // Get target role from existing learning first,
+  // otherwise get it from Skill Gap.
+  const targetRole =
+    learning?.targetRole ||
+    skillGap?.targetRole ||
+    "";
+
+  // Generate learning plan
   const handleGenerateLearning = async () => {
+    if (!targetRole) {
+      setError(
+        "Target role not found. Please complete Skill Gap Analysis first."
+      );
+      return;
+    }
+
     try {
       setGenerating(true);
       setError("");
       setMessage("");
 
-      // Get target role from latest Skill Gap
-      const targetRole = skillGap?.targetRole;
-
-      if (!targetRole) {
-        setError(
-          "Please complete Skill Gap Analysis first and select a target role."
-        );
-        return;
-      }
-
       console.log("Generating learning for:", targetRole);
 
-      const response = await generateLearning(targetRole);
+      const data = await generateLearning(targetRole);
 
-      if (response.success) {
-        setLearning(response.learning);
+      console.log("Generated Learning:", data);
+
+      if (data.success) {
+        setLearning(data.learning);
 
         setMessage(
-          "Learning recommendations generated successfully!"
+          "Learning plan generated successfully!"
         );
       }
     } catch (error) {
@@ -103,7 +115,7 @@ export default function Learning() {
 
       setError(
         error.response?.data?.message ||
-        "Failed to generate learning recommendations"
+        "Failed to generate learning plan."
       );
     } finally {
       setGenerating(false);
@@ -123,16 +135,10 @@ export default function Learning() {
   const recommendations =
     learning?.recommendations || [];
 
-  const targetRole =
-    learning?.targetRole ||
-    skillGap?.targetRole ||
-    "";
-
   return (
     <div style={styles.container}>
 
       {/* Header */}
-
       <div style={styles.header}>
         <h1>📚 Learning Center</h1>
 
@@ -144,13 +150,13 @@ export default function Learning() {
 
         {targetRole && (
           <p>
-            <strong>Target Role:</strong> {targetRole}
+            <strong>Target Role:</strong>{" "}
+            {targetRole}
           </p>
         )}
       </div>
 
       {/* Error */}
-
       {error && (
         <div style={styles.error}>
           {error}
@@ -158,7 +164,6 @@ export default function Learning() {
       )}
 
       {/* Success */}
-
       {message && (
         <div style={styles.success}>
           {message}
@@ -166,7 +171,6 @@ export default function Learning() {
       )}
 
       {/* Dashboard Cards */}
-
       <div style={styles.cards}>
 
         <div style={styles.card}>
@@ -200,7 +204,6 @@ export default function Learning() {
       </div>
 
       {/* Generate */}
-
       <div style={styles.generateBox}>
 
         <div>
@@ -210,15 +213,22 @@ export default function Learning() {
             Generate personalized learning resources
             based on your Skill Gap Analysis.
           </p>
+
+          {!targetRole && (
+            <p style={{ color: "#dc2626" }}>
+              Please complete Skill Gap Analysis first.
+            </p>
+          )}
         </div>
 
         <button
           style={{
             ...styles.button,
-            opacity: generating ? 0.6 : 1,
+            opacity:
+              generating || !targetRole ? 0.6 : 1,
           }}
           onClick={handleGenerateLearning}
-          disabled={generating}
+          disabled={generating || !targetRole}
         >
           {generating
             ? "Generating..."
@@ -228,7 +238,6 @@ export default function Learning() {
       </div>
 
       {/* Recommendations */}
-
       <div style={styles.section}>
 
         <h2>🚀 Recommended Courses</h2>
@@ -236,6 +245,7 @@ export default function Learning() {
         {recommendations.length === 0 ? (
 
           <div style={styles.empty}>
+
             <p>
               No learning recommendations found.
             </p>
@@ -312,7 +322,6 @@ export default function Learning() {
       </div>
 
       {/* AI Recommendation */}
-
       <div style={styles.section}>
 
         <h2>🤖 AI Recommendation</h2>
