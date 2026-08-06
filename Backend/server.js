@@ -39,6 +39,8 @@ const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
 
+console.log("ASSESSMENT API VERSION: 2026-08-06");
+
 connectDB();
 
 app.use(
