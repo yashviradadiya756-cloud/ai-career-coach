@@ -35,6 +35,8 @@ const achievementRoutes = require("./routes/achievementRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 
+const dashboardRoutes = require("./routes/dashboardRoutes");
+
 const app = express();
 
 connectDB();
@@ -114,6 +116,7 @@ app.use("/api/achievements", achievementRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/payment", paymentRoutes);
 
+app.use("/api/dashboard", dashboardRoutes);
 
 const PORT = process.env.PORT || 5000;
 

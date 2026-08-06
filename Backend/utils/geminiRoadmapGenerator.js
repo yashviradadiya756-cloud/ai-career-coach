@@ -1,3 +1,4 @@
+const { generateContent } = require("../config/gemini");
 const { GoogleGenAI } = require("@google/genai");
 
 const ai = new GoogleGenAI({
@@ -10,46 +11,72 @@ const generateRoadmap = async (targetRole) => {
     console.log("Target Role:", targetRole);
 
     const prompt = `
-You are an expert career roadmap generator.
+    You are a career roadmap generator.
 
-Create a detailed learning roadmap for this target role:
+    TARGET ROLE:
+    "${targetRole}"
 
-${targetRole}
+    IMPORTANT:
+    The target role is EXACTLY "${targetRole}".
 
-Return ONLY valid JSON.
+    Generate a roadmap ONLY for "${targetRole}".
 
-Use exactly this structure:
+    Do not change, reinterpret, replace, or generalize the target role.
 
-{
-  "roadmapTitle": "string",
-  "phases": [
+    If TARGET ROLE is:
+    "Full Stack Developer"
+
+    then the roadmap MUST be about:
+    - HTML
+    - CSS
+    - JavaScript
+    - React
+    - Node.js
+    - Express.js
+    - REST APIs
+    - MongoDB
+    - SQL
+    - Authentication
+    - Git/GitHub
+    - Deployment
+    - Full-stack projects
+
+    DO NOT generate:
+    - Machine Learning
+    - Deep Learning
+    - Artificial Intelligence
+    - Neural Networks
+    - TensorFlow
+    - PyTorch
+    - Data Science
+
+    unless the TARGET ROLE explicitly asks for those technologies.
+
+    Candidate missing skills:
+    ${missingSkills.length > 0
+      ? missingSkills.join(", ")
+      : "No missing skills available"}
+
+    Create 5 to 6 learning phases.
+
+    Return ONLY valid JSON:
+
     {
-      "title": "string",
-      "duration": "string",
-      "topics": ["string"],
-      "projects": ["string"],
-      "resources": ["string"],
-      "completed": false
+      "roadmapTitle": "${targetRole} Roadmap",
+      "phases": [
+        {
+          "title": "",
+          "duration": "",
+          "topics": [],
+          "projects": [],
+          "resources": [],
+          "completed": false
+        }
+      ]
     }
-  ]
-}
+    `;
 
-Requirements:
-- Create 5 to 6 learning phases.
-- Each phase must have useful topics.
-- Each phase must have practical projects.
-- Each phase must have learning resources.
-- Duration should be realistic.
-- Projects should be relevant to the target role.
-- Do not use markdown.
-- Do not use code fences.
-- Return JSON only.
-`;
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+    const response = await generateContent(prompt);
 
     let text = response.text;
 

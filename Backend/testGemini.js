@@ -15,7 +15,7 @@ async function test() {
     console.log(response.text);
   } catch (err) {
     console.log("Status:", err.status);
-    console.log(err);
+    console.log(error);
   }
 }
 

@@ -1,5 +1,3 @@
-const { GoogleGenAI } = require("@google/genai");
-
 const CoachHistory = require("../models/CoachHistory");
 const Resume = require("../models/Resume");
 const CoachScore = require("../models/CoachScore");
@@ -7,10 +5,7 @@ const Roadmap = require("../models/Roadmap");
 const Interview = require("../models/Interview");
 const SkillGap = require("../models/SkillGap");
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
-
+const { generateContent } = require("../config/gemini");
 
 // ======================================================
 // ASK AI COACH
@@ -50,10 +45,7 @@ Do not return JSON.
 Return a normal conversational answer.
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: prompt,
-    });
+    const response = await generateContent(prompt);
 
     const answer = response.text;
 
@@ -226,77 +218,54 @@ const getCoachDashboardController = async (req, res) => {
     // 4. INTERVIEW SCORE
     // ==================================================
 
-    const latestInterview = await Interview.findOne({
-      user: userId,
+    const interviews = await Interview.find({
+      user: req.user._id,
     }).sort({
       createdAt: -1,
     });
 
-    if (latestInterview) {
+    console.log("INTERVIEW COUNT:", interviews.length);
 
-      let calculatedInterviewScore = 0;
 
-      // Calculate directly from question scores
-      if (
-        Array.isArray(latestInterview.questions) &&
-        latestInterview.questions.length > 0
-      ) {
+    const interviewScores = [];
 
-        const scores = latestInterview.questions
-          .map((question) => Number(question.score))
-          .filter(
-            (score) =>
-              Number.isFinite(score) &&
-              score >= 0
-          );
+    for (const interview of interviews) {
+      const questions = Array.isArray(interview.questions)
+        ? interview.questions
+        : [];
 
-        if (scores.length > 0) {
+      if (questions.length === 0) continue;
 
-          const total = scores.reduce(
-            (sum, score) => sum + score,
-            0
-          );
+      const validScores = questions
+        .map((q) => Number(q.score))
+        .filter((score) => !Number.isNaN(score) && score > 0);
 
-          calculatedInterviewScore = Math.round(
-            total / scores.length
-          );
-        }
-      }
+      if (validScores.length === 0) continue;
 
-      // Fallback to totalScore
-      if (
-        calculatedInterviewScore === 0 &&
-        Number(latestInterview.totalScore) > 0
-      ) {
-        calculatedInterviewScore =
-          Number(latestInterview.totalScore);
-      }
-
-      interviewScore = Math.min(
-        Math.max(
-          calculatedInterviewScore,
-          0
-        ),
-        100
+      const total = validScores.reduce(
+        (sum, score) => sum + score,
+        0
       );
 
-      console.log(
-        "INTERVIEW QUESTIONS:",
-        latestInterview.questions.length
+      // Assuming each question is scored out of 10
+      const average =
+        (total / validScores.length) * 10;
+
+      interviewScores.push(
+        Math.min(100, Math.round(average))
       );
-
-      console.log(
-        "INTERVIEW SCORE:",
-        interviewScore + "%"
-      );
-
-    } else {
-
-      console.log(
-        "INTERVIEW: No interview found"
-      );
-
     }
+
+    if (interviewScores.length > 0) {
+      interviewScore = Math.round(
+        interviewScores.reduce(
+          (sum, score) => sum + score,
+          0
+        ) / interviewScores.length
+      );
+    }
+
+    console.log("INTERVIEW AVERAGE:", interviewScore);
 
     // ==================================================
     // 5. SAVE SCORES

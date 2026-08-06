@@ -1,6 +1,5 @@
 import api from "./axios";
 
-
 // ======================================================
 // GENERATE ROADMAP
 // ======================================================
@@ -54,4 +53,16 @@ export const getRoadmap = async () => {
   );
 
   return response;
+};
+
+export const updatePhaseCompletion = (
+  phaseId,
+  completed
+) => {
+  return api.put(
+    `/api/roadmap/phase/${phaseId}`,
+    {
+      completed,
+    }
+  );
 };

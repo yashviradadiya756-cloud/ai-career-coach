@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import {
   generateRoadmap,
   getRoadmap,
+  updatePhaseCompletion,
 } from "../../api/roadmapApi";
 
 import {
@@ -14,6 +15,34 @@ export default function Roadmap() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
+  const handlePhaseCompletion = async (
+  phaseId,
+  completed
+) => {
+  try {
+    const response =
+      await updatePhaseCompletion(
+        phaseId,
+        completed
+      );
+
+    if (response.data?.success) {
+      setRoadmap(response.data.roadmap);
+    }
+
+  } catch (error) {
+    console.error(
+      "PHASE UPDATE ERROR:",
+      error.response?.data ||
+      error.message
+    );
+
+    alert(
+      error.response?.data?.message ||
+      "Failed to update phase."
+    );
+  }
+};
   // ======================================================
   // LOAD EXISTING ROADMAP
   // ======================================================
@@ -676,23 +705,50 @@ useEffect(() => {
 
                     <div style={styles.completedBox}>
 
-                      <span
-                        style={{
-                          ...styles.completedDot,
-                          background:
-                            phase.completed
-                              ? "#16a34a"
-                              : "#94a3b8",
-                        }}
-                      />
+                    <span
+                      style={{
+                        ...styles.completedDot,
+                        background:
+                          phase.completed
+                            ? "#16a34a"
+                            : "#94a3b8",
+                      }}
+                    />
 
-                      <span>
-                        {phase.completed
-                          ? "Phase Completed"
-                          : "Phase Not Completed"}
-                      </span>
+                    <span>
+                      {phase.completed
+                        ? "Phase Completed"
+                        : "Phase Not Completed"}
+                    </span>
 
-                    </div>
+                    <button
+                      onClick={() =>
+                        handlePhaseCompletion(
+                          phase._id,
+                          !phase.completed
+                        )
+                      }
+                      style={{
+                        marginLeft: "auto",
+                        padding: "9px 16px",
+                        border: "none",
+                        borderRadius: "8px",
+                        background: phase.completed
+                          ? "#fee2e2"
+                          : "#dcfce7",
+                        color: phase.completed
+                          ? "#dc2626"
+                          : "#15803d",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {phase.completed
+                        ? "↩ Mark Incomplete"
+                        : "✓ Mark Complete"}
+                    </button>
+
+                  </div>
 
                   </div>
 
