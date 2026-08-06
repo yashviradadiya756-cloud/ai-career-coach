@@ -1,119 +1,203 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { getAssessmentOverview } from "../../api/assessmentApi";
 
 export default function Assessment() {
-  const tests = [
-    {
-      title: "Technical Skills",
-      description: "Java, Python, React, Node.js",
-      questions: "25 Questions",
-      time: "30 Min",
-      color: "#2563eb",
-    },
-    {
-      title: "Aptitude Test",
-      description: "Logical & Quantitative",
-      questions: "20 Questions",
-      time: "20 Min",
-      color: "#16a34a",
-    },
-    {
-      title: "Communication",
-      description: "English & Soft Skills",
-      questions: "15 Questions",
-      time: "15 Min",
-      color: "#f59e0b",
-    },
-    {
-      title: "Personality Test",
-      description: "Career Behaviour Analysis",
-      questions: "20 Questions",
-      time: "20 Min",
-      color: "#dc2626",
-    },
-  ];
+  const [assessment, setAssessment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const results = [
-    { name: "Technical Skills", score: "88%" },
-    { name: "Aptitude Test", score: "81%" },
-    { name: "Communication", score: "91%" },
-    { name: "Personality Test", score: "85%" },
-  ];
+  useEffect(() => {
+    const fetchAssessment = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getAssessmentOverview();
+
+        console.log("Assessment API:", data);
+
+        if (data.success) {
+          setAssessment(data);
+        } else {
+          setError(
+            data.message || "Failed to load assessment dashboard"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Assessment API Error:",
+          error.response?.data || error.message
+        );
+
+        setError(
+          error.response?.data?.message ||
+            "Failed to load assessment dashboard"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssessment();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={styles.loading}>
+        <h3>Loading your assessments...</h3>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={styles.error}>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  if (!assessment) {
+    return null;
+  }
+
+  const {
+    user,
+    summary,
+    tests,
+    results,
+    recommendation,
+  } = assessment;
+
+  const handleStartTest = (test) => {
+    console.log("Starting test:", test);
+
+    // Later we will navigate to the actual test page.
+    alert(`Starting ${test.title}`);
+  };
 
   return (
     <div style={styles.container}>
+
       {/* Header */}
       <div style={styles.header}>
         <h1>📊 Assessment Dashboard</h1>
-        <p>Evaluate your skills and discover areas for improvement.</p>
+
+        <p>
+          Welcome {user?.name || "User"}! Evaluate your skills
+          and discover areas for improvement.
+        </p>
       </div>
 
       {/* Summary Cards */}
       <div style={styles.summary}>
+
         <div style={styles.summaryCard}>
           <h3>Total Assessments</h3>
-          <h1>12</h1>
+          <h1>{summary.totalAssessments}</h1>
         </div>
 
         <div style={styles.summaryCard}>
           <h3>Completed</h3>
-          <h1 style={{ color: "#16a34a" }}>8</h1>
+
+          <h1 style={{ color: "#16a34a" }}>
+            {summary.completed}
+          </h1>
         </div>
 
         <div style={styles.summaryCard}>
           <h3>Average Score</h3>
-          <h1 style={{ color: "#2563eb" }}>86%</h1>
+
+          <h1 style={{ color: "#2563eb" }}>
+            {summary.averageScore}%
+          </h1>
         </div>
 
         <div style={styles.summaryCard}>
           <h3>Rank</h3>
-          <h1 style={{ color: "#f59e0b" }}>Top 15%</h1>
+
+          <h1 style={{ color: "#f59e0b" }}>
+            {summary.rank}
+          </h1>
         </div>
+
       </div>
 
-      {/* Test Cards */}
-      <h2 style={{ marginBottom: 20 }}>Available Assessments</h2>
+      {/* Available Assessments */}
+      <h2 style={{ marginBottom: 20 }}>
+        Available Assessments
+      </h2>
 
       <div style={styles.grid}>
-        {tests.map((test, index) => (
-          <div key={index} style={styles.card}>
-            <h3 style={{ color: test.color }}>{test.title}</h3>
+
+        {tests.map((test) => (
+          <div
+            key={test.id}
+            style={styles.card}
+          >
+
+            <h3 style={{ color: test.color }}>
+              {test.title}
+            </h3>
 
             <p>{test.description}</p>
 
             <p>
-              <strong>{test.questions}</strong>
+              <strong>
+                {test.questions} Questions
+              </strong>
             </p>
 
-            <p>{test.time}</p>
+            <p>
+              {test.time} Min
+            </p>
 
-            <button style={styles.button}>Start Test</button>
+            <button
+              style={styles.button}
+              onClick={() => handleStartTest(test)}
+            >
+              Start Test
+            </button>
+
           </div>
         ))}
+
       </div>
 
       {/* Results */}
       <div style={styles.results}>
+
         <h2>📈 Previous Results</h2>
 
-        {results.map((item, index) => (
-          <div key={index} style={styles.resultRow}>
-            <span>{item.name}</span>
+        {results.length === 0 ? (
+          <p style={styles.noResults}>
+            No assessments completed yet.
+            Start your first assessment to see your results here.
+          </p>
+        ) : (
+          results.map((item) => (
+            <div
+              key={item.name}
+              style={styles.resultRow}
+            >
+              <span>{item.name}</span>
 
-            <strong>{item.score}</strong>
-          </div>
-        ))}
+              <strong>{item.score}%</strong>
+            </div>
+          ))
+        )}
+
       </div>
 
       {/* AI Recommendation */}
       <div style={styles.ai}>
+
         <h2>🤖 AI Recommendation</h2>
 
-        <p>
-          Your communication skills are excellent. Focus on improving Data
-          Structures, Algorithms, and System Design to increase your interview
-          success rate.
-        </p>
+        <p>{recommendation}</p>
+
       </div>
+
     </div>
   );
 }
@@ -123,6 +207,19 @@ const styles = {
     padding: "20px",
     background: "#f5f7fb",
     minHeight: "100vh",
+  },
+
+  loading: {
+    padding: "40px",
+    textAlign: "center",
+  },
+
+  error: {
+    margin: "20px",
+    padding: "20px",
+    background: "#fee2e2",
+    color: "#b91c1c",
+    borderRadius: "10px",
   },
 
   header: {
@@ -150,7 +247,8 @@ const styles = {
 
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit,minmax(260px,1fr))",
     gap: "20px",
   },
 
@@ -187,6 +285,11 @@ const styles = {
     justifyContent: "space-between",
     padding: "14px 0",
     borderBottom: "1px solid #e5e7eb",
+  },
+
+  noResults: {
+    color: "#6b7280",
+    padding: "10px 0",
   },
 
   ai: {
