@@ -1,4 +1,4 @@
-const ai = require("../config/gemini");
+const { generateContent } = require("../config/gemini");
 
 async function generateLearningRecommendations(
   missingSkills,
@@ -36,12 +36,17 @@ Return ONLY valid JSON.
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: prompt,
-    });
+    console.log("Generating Learning Recommendations...");
+    console.log("Target Role:", targetRole);
+    console.log("Missing Skills:", missingSkills);
+
+    const response = await generateContent(prompt);
 
     let text = response.text;
+
+    if (!text) {
+      throw new Error("Gemini returned an empty response");
+    }
 
     text = text
       .replace(/```json/g, "")
