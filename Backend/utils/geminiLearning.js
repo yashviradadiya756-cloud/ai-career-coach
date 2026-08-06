@@ -36,7 +36,7 @@ Return ONLY valid JSON.
 }
 `;
 
-    console.log("Generating Learning Recommendations...");
+    console.log("Calling Gemini for Learning Recommendations...");
     console.log("Target Role:", targetRole);
     console.log("Missing Skills:", missingSkills);
 
@@ -45,7 +45,7 @@ Return ONLY valid JSON.
     let text = response.text;
 
     if (!text) {
-      throw new Error("Gemini returned an empty response");
+      throw new Error("Gemini returned empty response");
     }
 
     text = text
@@ -59,7 +59,7 @@ Return ONLY valid JSON.
     return JSON.parse(text);
 
   } catch (error) {
-    console.log("Learning AI Error:", error);
+    console.error("Learning AI Error:", error);
     throw error;
   }
 }
