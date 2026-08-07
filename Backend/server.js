@@ -17,6 +17,16 @@ console.log(
 console.log("Razorpay Key:", process.env.RAZORPAY_KEY_ID);
 console.log("Secret Loaded:", !!process.env.RAZORPAY_KEY_SECRET);
 
+console.log(
+  "Razorpay Key Loaded:",
+  !!process.env.RAZORPAY_KEY_ID
+);
+
+console.log(
+  "Razorpay Secret Loaded:",
+  !!process.env.RAZORPAY_KEY_SECRET
+);
+
 const express = require("express");
 const cors = require("cors");
 

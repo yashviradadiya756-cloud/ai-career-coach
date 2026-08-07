@@ -34,7 +34,7 @@ const Overview = () => {
 
         setError(
           error.response?.data?.message ||
-          "Failed to load dashboard"
+            "Failed to load dashboard"
         );
       } finally {
         setLoading(false);
@@ -46,16 +46,16 @@ const Overview = () => {
 
   if (loading) {
     return (
-      <div className="dashboard-loading">
-        <h3>Loading your dashboard...</h3>
+      <div>
+        Loading your dashboard...
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="dashboard-error">
-        <p>{error}</p>
+      <div>
+        {error}
       </div>
     );
   }
@@ -71,8 +71,10 @@ const Overview = () => {
 
   return (
     <div>
+
       {/* Welcome */}
-      <WelcomeCard userName={user.name} />
+      <WelcomeCard user={user} />
+
 
       {/* Dashboard Statistics */}
       <div className="dashboard-grid">
@@ -103,16 +105,22 @@ const Overview = () => {
 
       </div>
 
-      {/* Overall Progress */}
+
+      {/* ONLY ADDITION: Overall Progress Bar*/}
       <ProgressBar
-        percentage={stats.progress}
+        percentage={stats.progress || 0}
       />
+
 
       {/* Bottom Section */}
       <div className="bottom-section">
+
         <RecentActivity />
+
         <QuickActions />
+
       </div>
+
     </div>
   );
 };

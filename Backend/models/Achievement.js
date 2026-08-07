@@ -6,13 +6,26 @@ const achievementSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      unique: true,
     },
 
     badges: [
       {
-        title: String,
-        description: String,
-        icon: String,
+        title: {
+          type: String,
+          required: true,
+        },
+
+        description: {
+          type: String,
+          required: true,
+        },
+
+        icon: {
+          type: String,
+          required: true,
+        },
+
         earnedAt: {
           type: Date,
           default: Date.now,
@@ -25,4 +38,7 @@ const achievementSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Achievement", achievementSchema);
+module.exports = mongoose.model(
+  "Achievement",
+  achievementSchema
+);

@@ -3,9 +3,7 @@ import React,{useState} from "react";
 export default function Settings(){
 
 const[darkMode,setDarkMode]=useState(false);
-
 const[email,setEmail]=useState(true);
-
 const[notification,setNotification]=useState(true);
 
 return(

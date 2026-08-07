@@ -1,9 +1,12 @@
 const Achievement = require("../models/Achievement");
-const Resume = require("../models/Resume");
-const SkillGap = require("../models/SkillGap");
-const Roadmap = require("../models/Roadmap");
 const Interview = require("../models/Interview");
 const Learning = require("../models/Learning");
+
+const PASSING_SCORE = 70;
+
+// ============================================
+// UPDATE ACHIEVEMENTS
+// ============================================
 
 const updateAchievementsController = async (req, res) => {
   try {
@@ -11,68 +14,82 @@ const updateAchievementsController = async (req, res) => {
 
     const badges = [];
 
-    const resume = await Resume.findOne({ user: userId });
-    if (resume) {
-      badges.push({
-        title: "Resume Uploaded",
-        description: "Uploaded your first resume",
-        icon: "📄",
-      });
-    }
+    // ========================================
+    // INTERVIEW ACHIEVEMENT
+    // ========================================
 
-    const skillGap = await SkillGap.findOne({ user: userId });
-    if (skillGap) {
-      badges.push({
-        title: "Skill Explorer",
-        description: "Completed Skill Gap Analysis",
-        icon: "🧠",
-      });
-    }
+    const interview = await Interview.findOne({
+      user: userId,
+    }).sort({ createdAt: -1 });
 
-    const roadmap = await Roadmap.findOne({ user: userId });
-    if (roadmap) {
+    if (interview && interview.totalScore >= PASSING_SCORE) {
       badges.push({
-        title: "Career Planner",
-        description: "Generated Career Roadmap",
-        icon: "🗺️",
-      });
-    }
-
-    const interview = await Interview.findOne({ user: userId });
-    if (interview) {
-      badges.push({
-        title: "Interview Ready",
-        description: "Completed AI Mock Interview",
+        title: "Interview Champion",
+        description: `Passed AI Mock Interview with ${interview.totalScore}% score`,
         icon: "🎤",
+        earnedAt: interview.createdAt || new Date(),
       });
     }
 
-    const learning = await Learning.findOne({ user: userId });
-    if (learning) {
-      badges.push({
-        title: "Lifelong Learner",
-        description: "Generated Learning Recommendations",
-        icon: "📚",
-      });
-    }
+    // ========================================
+    // LEARNING ACHIEVEMENT
+    // ========================================
 
-    const achievement = await Achievement.findOneAndUpdate(
-      { user: userId },
-      { badges },
-      {
-        new: true,
-        upsert: true,
+    const learning = await Learning.findOne({
+      user: userId,
+    }).sort({ createdAt: -1 });
+
+    if (
+      learning &&
+      learning.recommendations &&
+      learning.recommendations.length > 0
+    ) {
+      const totalCourses = learning.recommendations.length;
+
+      const completedCourses =
+        learning.recommendations.filter(
+          (course) => course.completed === true
+        ).length;
+
+      // Certificate only if ALL courses are completed
+      if (
+        totalCourses > 0 &&
+        completedCourses === totalCourses
+      ) {
+        badges.push({
+          title: "Learning Master",
+          description: `Completed all ${totalCourses} recommended learning courses`,
+          icon: "📚",
+          earnedAt: learning.updatedAt || new Date(),
+        });
       }
-    );
+    }
+
+    // ========================================
+    // SAVE ONLY VALID ACHIEVEMENTS
+    // ========================================
+
+    const achievement =
+      await Achievement.findOneAndUpdate(
+        { user: userId },
+        {
+          user: userId,
+          badges,
+        },
+        {
+          new: true,
+          upsert: true,
+          setDefaultsOnInsert: true,
+        }
+      );
 
     res.status(200).json({
       success: true,
       message: "Achievements Updated Successfully",
       achievement,
     });
-
   } catch (error) {
-    console.log(error);
+    console.error("Achievement Update Error:", error);
 
     res.status(500).json({
       success: false,
@@ -81,6 +98,10 @@ const updateAchievementsController = async (req, res) => {
   }
 };
 
+// ============================================
+// GET ACHIEVEMENTS
+// ============================================
+
 const getAchievementsController = async (req, res) => {
   try {
     const achievement = await Achievement.findOne({
@@ -88,9 +109,11 @@ const getAchievementsController = async (req, res) => {
     });
 
     if (!achievement) {
-      return res.status(404).json({
-        success: false,
-        message: "No achievements found.",
+      return res.status(200).json({
+        success: true,
+        achievement: {
+          badges: [],
+        },
       });
     }
 
@@ -98,8 +121,9 @@ const getAchievementsController = async (req, res) => {
       success: true,
       achievement,
     });
-
   } catch (error) {
+    console.error("Get Achievement Error:", error);
+
     res.status(500).json({
       success: false,
       message: error.message,

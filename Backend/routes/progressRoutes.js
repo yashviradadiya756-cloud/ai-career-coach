@@ -9,10 +9,20 @@ const {
   getProgressController,
 } = require("../controllers/progressController");
 
+
 // Update Progress
-router.post("/update", protect, updateProgressController);
+router.post(
+  "/update",
+  protect,
+  updateProgressController
+);
+
 
 // Get Progress
-router.get("/", protect, getProgressController);
+router.get(
+  "/",
+  protect,
+  getProgressController
+);
 
 module.exports = router;
