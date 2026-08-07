@@ -6,12 +6,8 @@ async function generateLearningRecommendations(
 ) {
   try {
     const skills = Array.isArray(missingSkills)
-      ? missingSkills
-      : [];
-
-    if (skills.length === 0) {
-      throw new Error("No missing skills provided");
-    }
+      ? missingSkills.join(", ")
+      : String(missingSkills);
 
     const prompt = `
 You are an AI Career Coach.
@@ -20,42 +16,43 @@ Target Role:
 ${targetRole}
 
 Missing Skills:
-${skills.join(", ")}
+${skills}
 
-Recommend one high-quality learning resource for EACH missing skill.
+Recommend one high-quality learning resource for each missing skill.
 
 Return ONLY valid JSON.
-Do not use markdown.
-Do not use code fences.
-
-Expected format:
 
 {
   "recommendations": [
     {
-      "skill": "Express.js",
-      "course": "Course name",
-      "platform": "Platform name",
-      "duration": "4 weeks",
-      "level": "Beginner",
-      "url": "https://example.com"
+      "skill": "",
+      "course": "",
+      "platform": "",
+      "duration": "",
+      "level": "",
+      "url": ""
     }
   ]
 }
 
-Rules:
-- Create exactly one recommendation for each missing skill.
-- Use real learning platforms where possible.
-- Keep URLs valid.
-- Keep course names specific.
-- Return JSON only.
+Important:
+- Return ONLY JSON.
+- Do not use markdown.
+- Do not add explanations before or after JSON.
+- Give one recommendation for each missing skill.
 `;
+
+    console.log("================================");
+    console.log("LEARNING AI REQUEST");
+    console.log("Target Role:", targetRole);
+    console.log("Missing Skills:", missingSkills);
+    console.log("================================");
 
     const response = await generateContent(prompt);
 
     let text = response.text;
 
-    console.log("===== GEMINI RAW LEARNING RESPONSE =====");
+    console.log("Gemini Learning Raw Response:");
     console.log(text);
 
     text = text
@@ -63,14 +60,29 @@ Rules:
       .replace(/```/g, "")
       .trim();
 
-    const result = JSON.parse(text);
+    const data = JSON.parse(text);
 
-    return result;
+    if (
+      !data ||
+      !Array.isArray(data.recommendations)
+    ) {
+      throw new Error(
+        "Gemini returned invalid learning recommendation format."
+      );
+    }
+
+    console.log(
+      "Learning Recommendations:",
+      data.recommendations.length
+    );
+
+    return data;
 
   } catch (error) {
-    console.error("Learning AI Error:", error);
+    console.log("Learning AI Error:", error);
     throw error;
   }
 }
 
 module.exports = generateLearningRecommendations;
+

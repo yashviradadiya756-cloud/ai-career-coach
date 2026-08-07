@@ -82,45 +82,65 @@ export default function Learning() {
 
   // Generate learning plan
   const handleGenerateLearning = async () => {
-    if (!targetRole) {
+  try {
+    setGenerating(true);
+    setError("");
+    setMessage("");
+
+    const role =
+      learning?.targetRole ||
+      skillGap?.targetRole;
+
+    console.log("Target role:", role);
+
+    if (!role) {
       setError(
-        "Target role not found. Please complete Skill Gap Analysis first."
+        "Please complete Skill Gap Analysis first."
       );
       return;
     }
 
-    try {
-      setGenerating(true);
-      setError("");
-      setMessage("");
+    console.log(
+      "Generating learning plan for:",
+      role
+    );
 
-      console.log("Generating learning for:", targetRole);
+    const response = await generateLearning(role);
 
-      const data = await generateLearning(targetRole);
+    console.log(
+      "Generated Learning:",
+      response
+    );
 
-      console.log("Generated Learning:", data);
+    if (response.success) {
+      setLearning(response.learning);
 
-      if (data.success) {
-        setLearning(data.learning);
-
-        setMessage(
-          "Learning plan generated successfully!"
-        );
-      }
-    } catch (error) {
-      console.error(
-        "Generate Learning Error:",
-        error.response?.data || error.message
+      setMessage(
+        "Learning plan generated successfully!"
       );
-
+    } else {
       setError(
-        error.response?.data?.message ||
+        response.message ||
         "Failed to generate learning plan."
       );
-    } finally {
-      setGenerating(false);
     }
-  };
+
+  } catch (error) {
+
+    console.error(
+      "Generate Learning Error:",
+      error.response?.data || error
+    );
+
+    setError(
+      error.response?.data?.message ||
+      "Failed to generate learning plan."
+    );
+
+  } finally {
+    setGenerating(false);
+  }
+};
 
   if (loading) {
     return (

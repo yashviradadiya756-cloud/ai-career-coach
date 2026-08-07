@@ -6,9 +6,12 @@ export const getLearning = async () => {
 };
 
 export const generateLearning = async (targetRole) => {
-  const response = await api.post("/api/learning/generate", {
-    targetRole,
-  });
+  const response = await api.post(
+    "/api/learning/generate",
+    {
+      targetRole,
+    }
+  );
 
   return response.data;
 };
