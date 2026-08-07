@@ -1,7 +1,9 @@
 import api from "./axios";
 
-export const getAchievements = () =>
-  api.get("/api/achievement");
+export const getAchievements = () => {
+  return api.get("/api/achievement");
+};
 
-export const claimAchievement = (id) =>
-  api.post(`/api/achievement/${id}`);
+export const updateAchievements = () => {
+  return api.post("/api/achievement/update");
+};

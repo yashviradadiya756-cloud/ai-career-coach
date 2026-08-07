@@ -1,7 +1,11 @@
 import api from "./axios";
 
-export const getProgress = () =>
-  api.get("/api/progress");
+// Get logged-in user's progress
+export const getProgress = () => {
+  return api.get("/api/progress");
+};
 
-export const updateProgress = (data) =>
-  api.put("/api/progress", data);
+// Calculate/update logged-in user's progress
+export const updateProgress = () => {
+  return api.post("/api/progress/update");
+};

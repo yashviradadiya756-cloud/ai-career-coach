@@ -114,24 +114,9 @@ app.use("/api/interview", interviewRoutes);
 app.use("/api/coach", coachRoutes);
 app.use("/api/learning", learningRoutes);
 app.use("/api/progress", progressRoutes);
-app.use("/api/achievements", achievementRoutes);
+app.use("/api/achievement", achievementRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/payment", paymentRoutes);
-
-if (app.router && app.router.stack) {
-  app.router.stack.forEach((layer) => {
-    if (layer.route) {
-      console.log(
-        layer.route.stack
-          ? `${Object.keys(layer.route.methods).join(",").toUpperCase()} ${layer.route.path}`
-          : layer.route.path
-      );
-    } else if (layer.name === "router") {
-      console.log("ROUTER:", layer.regexp);
-    }
-  });
-}
-
 
 const PORT = process.env.PORT || 5000;
 
