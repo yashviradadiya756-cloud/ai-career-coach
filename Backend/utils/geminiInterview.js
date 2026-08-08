@@ -1,4 +1,4 @@
-const ai = require("../config/gemini");
+const { generateContent } = require("../config/gemini");
 
 // ==========================================
 // GENERATE INTERVIEW QUESTIONS
@@ -6,38 +6,36 @@ const ai = require("../config/gemini");
 
 async function generateInterviewQuestions(targetRole) {
   try {
-    if (!targetRole || !targetRole.trim()) {
-      throw new Error("Target role is required");
-    }
-
-    console.log("=================================");
-    console.log("GEMINI INTERVIEW GENERATION");
-    console.log("Target Role:", targetRole);
-    console.log("=================================");
+    console.log(
+      "Generating interview questions for:",
+      targetRole
+    );
 
     const prompt = `
 You are an AI Technical Interviewer.
 
-Generate exactly 10 interview questions for the following role:
+Generate exactly 10 interview questions for the following job role:
 
 ${targetRole}
 
-Questions should be relevant to the target role.
+The questions should be useful for a technical interview.
 
-Mix the questions between:
+Include a mixture of:
 - Technical knowledge
-- Practical problem solving
+- Practical development
+- Problem solving
 - Real-world scenarios
-- Project experience
 - Role-specific concepts
 
 Return ONLY valid JSON.
 
-Do not use markdown.
-Do not use code fences.
-Do not add explanations.
+Do not include:
+- Markdown
+- \`\`\`json
+- Explanations
+- Extra text
 
-Required format:
+Use exactly this format:
 
 {
   "questions": [
@@ -75,64 +73,66 @@ Required format:
 }
 `;
 
-    // Check Gemini client
-    if (!ai) {
-      throw new Error("Gemini AI client is not initialized");
-    }
-
-    if (!ai.models) {
-      throw new Error(
-        "Gemini AI models API is not available. Check @google/genai configuration."
-      );
-    }
-
-    console.log("Calling Gemini API...");
-
-    const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: prompt,
-    });
+    const response = await generateContent(prompt);
 
     let text = response.text;
 
-    console.log("Gemini raw response:");
-    console.log(text);
-
     if (!text) {
-      throw new Error("Gemini returned an empty response");
+      throw new Error(
+        "Gemini returned an empty response"
+      );
     }
 
-    // Remove markdown code fences if Gemini adds them
+    console.log(
+      "Raw Gemini Interview Response:"
+    );
+
+    console.log(text);
+
+    // Remove markdown if Gemini accidentally returns it
     text = text
       .replace(/```json/gi, "")
       .replace(/```/g, "")
       .trim();
 
-    let parsedData;
+    // Find JSON object if Gemini added extra text
+    const startIndex = text.indexOf("{");
+    const endIndex = text.lastIndexOf("}");
 
-    try {
-      parsedData = JSON.parse(text);
-    } catch (parseError) {
-      console.error("❌ JSON Parse Error");
-      console.error("Gemini Response:", text);
-
-      throw new Error(
-        "Gemini returned invalid JSON"
-      );
-    }
-
-    // Validate response
     if (
-      !parsedData ||
-      !Array.isArray(parsedData.questions)
+      startIndex === -1 ||
+      endIndex === -1
     ) {
       throw new Error(
-        "Gemini response does not contain questions array"
+        "Gemini did not return valid JSON"
       );
     }
 
-    // Keep only valid questions
-    const questions = parsedData.questions
+    text = text.substring(
+      startIndex,
+      endIndex + 1
+    );
+
+    const data = JSON.parse(text);
+
+    // Validate questions
+    if (
+      !data ||
+      !Array.isArray(data.questions)
+    ) {
+      throw new Error(
+        "Invalid interview response format"
+      );
+    }
+
+    if (data.questions.length === 0) {
+      throw new Error(
+        "Gemini returned no interview questions"
+      );
+    }
+
+    // Make sure every question has text
+    const questions = data.questions
       .filter(
         (item) =>
           item &&
@@ -145,20 +145,16 @@ Required format:
 
     if (questions.length === 0) {
       throw new Error(
-        "No valid interview questions generated"
+        "No valid interview questions found"
       );
     }
-
-    console.log(
-      `✅ ${questions.length} interview questions generated`
-    );
 
     return {
       questions,
     };
   } catch (error) {
     console.error(
-      "❌ Gemini Interview Error:",
+      "Gemini Interview Error:",
       error
     );
 

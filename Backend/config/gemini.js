@@ -1,93 +1,159 @@
 const { GoogleGenAI } = require("@google/genai");
+require("dotenv").config();
 
-if (!process.env.GEMINI_API_KEY) {
-  console.error("❌ GEMINI_API_KEY is missing");
+// ==========================================
+// ENVIRONMENT
+// ==========================================
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+console.log("=================================");
+console.log("GEMINI CONFIG");
+console.log("=================================");
+
+console.log(
+  "GEMINI_API_KEY EXISTS:",
+  !!GEMINI_API_KEY
+);
+
+console.log(
+  "GEMINI_API_KEY LENGTH:",
+  GEMINI_API_KEY
+    ? GEMINI_API_KEY.length
+    : 0
+);
+
+// ==========================================
+// VALIDATE API KEY
+// ==========================================
+
+if (!GEMINI_API_KEY) {
+  console.error(
+    "❌ GEMINI_API_KEY is missing"
+  );
+
+  throw new Error(
+    "GEMINI_API_KEY is not configured"
+  );
 }
 
+// ==========================================
+// GEMINI CLIENT
+// ==========================================
+
 const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey: GEMINI_API_KEY,
 });
 
+console.log(
+  "AI CLIENT CREATED:",
+  !!ai
+);
+
+console.log(
+  "AI MODELS AVAILABLE:",
+  !!ai.models
+);
+
+console.log("=================================");
+
+// ==========================================
+// MODELS
+// ==========================================
+
 const PRIMARY_MODEL =
-  process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+  "gemini-3.5-flash-lite";
 
 const FALLBACK_MODEL =
-  process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash";
+  "gemini-3.6-flash";
 
-console.log("================================");
-console.log("GEMINI CONFIG");
-console.log("Primary Model:", PRIMARY_MODEL);
-console.log("Fallback Model:", FALLBACK_MODEL);
-console.log("================================");
+// ==========================================
+// GENERATE CONTENT
+// ==========================================
 
-const generateContent = async (contents, options = {}) => {
+const generateContent = async (
+  prompt
+) => {
+  if (!ai) {
+    throw new Error(
+      "Gemini AI client is not initialized"
+    );
+  }
+
+  if (!ai.models) {
+    throw new Error(
+      "Gemini AI models API is not available. Check @google/genai configuration."
+    );
+  }
+
+  // ========================================
+  // PRIMARY MODEL
+  // ========================================
+
   try {
     console.log(
-      `Trying primary model: ${PRIMARY_MODEL}`
+      "Trying primary model:",
+      PRIMARY_MODEL
     );
 
-    const response = await ai.models.generateContent({
-      model: PRIMARY_MODEL,
-      contents,
-      ...options,
-    });
+    const response =
+      await ai.models.generateContent({
+        model: PRIMARY_MODEL,
+        contents: prompt,
+      });
 
     console.log(
-      `Primary Gemini model succeeded: ${PRIMARY_MODEL}`
+      "Primary Gemini model succeeded:",
+      PRIMARY_MODEL
     );
 
     return response;
-
   } catch (primaryError) {
-
-    console.log(
-      `Primary Gemini model failed (${PRIMARY_MODEL})`
+    console.error(
+      "Primary Gemini error:"
     );
 
-    console.log(
-      primaryError?.message || primaryError
+    console.error(
+      primaryError.message
     );
 
-    // Try fallback for temporary Gemini errors
-    if (
-      primaryError?.status === 503 ||
-      primaryError?.status === 429 ||
-      primaryError?.status === 500
-    ) {
+    // ======================================
+    // FALLBACK MODEL
+    // ======================================
 
+    try {
       console.log(
-        `Trying fallback model: ${FALLBACK_MODEL}`
+        "Trying fallback model:",
+        FALLBACK_MODEL
       );
 
-      try {
-
-        const response = await ai.models.generateContent({
+      const response =
+        await ai.models.generateContent({
           model: FALLBACK_MODEL,
-          contents,
-          ...options,
+          contents: prompt,
         });
 
-        console.log(
-          `Fallback Gemini model succeeded: ${FALLBACK_MODEL}`
-        );
+      console.log(
+        "Fallback Gemini model succeeded:",
+        FALLBACK_MODEL
+      );
 
-        return response;
+      return response;
+    } catch (fallbackError) {
+      console.error(
+        "Fallback Gemini error:"
+      );
 
-      } catch (fallbackError) {
+      console.error(
+        fallbackError.message
+      );
 
-        console.log(
-          `Fallback Gemini model also failed: ${FALLBACK_MODEL}`
-        );
-
-        console.log(
-          fallbackError?.message || fallbackError
-        );
-
-        throw fallbackError;
-      }
+      throw new Error(
+        `Gemini generation failed: ${
+          fallbackError.message
+        }`
+      );
     }
-
-    throw primaryError;
   }
 };
 

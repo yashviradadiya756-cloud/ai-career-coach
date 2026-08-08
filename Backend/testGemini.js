@@ -1,20 +1,41 @@
-const { GoogleGenAI } = require("@google/genai");
 require("dotenv").config();
 
-const { generateContent, GEMINI_MODEL } = require("./config/gemini");
+const {
+  generateContent,
+  PRIMARY_MODEL,
+} = require("./config/gemini");
 
 async function test() {
-  console.log("Model:", GEMINI_MODEL);
+  console.log("=================================");
+  console.log("GEMINI TEST");
+  console.log("=================================");
+
+  console.log(
+    "API KEY EXISTS:",
+    !!process.env.GEMINI_API_KEY
+  );
+
+  console.log(
+    "Primary Model:",
+    PRIMARY_MODEL
+  );
 
   try {
-    const response = await generateContent(
-      "Say hello in one short sentence."
-    );
+    const response =
+      await generateContent(
+        "Say hello in one short sentence."
+      );
 
-    console.log("Gemini Response:");
+    console.log("=================================");
+    console.log("GEMINI RESPONSE");
+    console.log("=================================");
+
     console.log(response.text);
   } catch (error) {
-    console.error("Gemini Error:");
+    console.error(
+      "❌ GEMINI TEST ERROR:"
+    );
+
     console.error(error);
   }
 }

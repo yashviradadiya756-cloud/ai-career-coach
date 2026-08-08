@@ -5,20 +5,24 @@ const generateInterviewQuestions = require("../utils/geminiInterview");
 // GENERATE INTERVIEW
 // ==========================================
 
-const generateInterviewController = async (req, res) => {
+const generateInterviewController = async (
+  req,
+  res
+) => {
   try {
     const { targetRole } = req.body;
 
-    console.log("=================================");
-    console.log("INTERVIEW GENERATE API");
+    console.log(
+      "================================="
+    );
+    console.log("INTERVIEW GENERATION");
     console.log("User:", req.user?._id);
     console.log("Target Role:", targetRole);
-    console.log("=================================");
+    console.log(
+      "================================="
+    );
 
-    // ==========================================
-    // VALIDATE TARGET ROLE
-    // ==========================================
-
+    // Validate target role
     if (
       !targetRole ||
       typeof targetRole !== "string" ||
@@ -30,10 +34,7 @@ const generateInterviewController = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // GENERATE QUESTIONS
-    // ==========================================
-
+    // Generate questions using Gemini
     const interviewData =
       await generateInterviewQuestions(
         targetRole.trim()
@@ -41,20 +42,19 @@ const generateInterviewController = async (req, res) => {
 
     if (
       !interviewData ||
-      !Array.isArray(interviewData.questions) ||
+      !Array.isArray(
+        interviewData.questions
+      ) ||
       interviewData.questions.length === 0
     ) {
       return res.status(500).json({
         success: false,
         message:
-          "Failed to generate interview questions",
+          "Invalid interview questions generated",
       });
     }
 
-    // ==========================================
-    // FORMAT QUESTIONS FOR DATABASE
-    // ==========================================
-
+    // Prepare questions for MongoDB
     const questions =
       interviewData.questions.map((q) => ({
         question: q.question,
@@ -64,10 +64,7 @@ const generateInterviewController = async (req, res) => {
         score: 0,
       }));
 
-    // ==========================================
-    // SAVE INTERVIEW
-    // ==========================================
-
+    // Save interview
     const interview = await Interview.create({
       user: req.user._id,
       targetRole: targetRole.trim(),
@@ -77,30 +74,28 @@ const generateInterviewController = async (req, res) => {
     });
 
     console.log(
-      "✅ Interview saved:",
+      "Interview saved:",
       interview._id
     );
-
-    // ==========================================
-    // RESPONSE
-    // ==========================================
 
     return res.status(201).json({
       success: true,
       message:
         "Interview Questions Generated Successfully",
-
       interview,
     });
   } catch (error) {
     console.error(
-      "❌ Interview Controller Error:",
-      error
+      "================================="
+    );
+    console.error("INTERVIEW GENERATION ERROR");
+    console.error(error);
+    console.error(
+      "================================="
     );
 
     return res.status(500).json({
       success: false,
-
       message:
         error.message ||
         "Interview generation failed",
