@@ -3,139 +3,155 @@ const Learning = require("../models/Learning");
 
 const generateLearningRecommendations = require("../utils/geminiLearning");
 
-// ============================================
+// ==========================================
 // GENERATE LEARNING RECOMMENDATIONS
-// ============================================
+// ==========================================
 
 const generateLearningController = async (req, res) => {
-try {
-  console.log("🔥 NEW LEARNING CONTROLLER IS RUNNING 🔥");
-console.log("USER ID:", req.user._id);
-console.log("BODY:", req.body);
-let { targetRole } = req.body;
+  try {
+    console.log("=================================");
+    console.log("LEARNING GENERATION");
+    console.log("USER:", req.user._id);
+    console.log("BODY:", req.body);
+    console.log("=================================");
 
+    const skillGap = await SkillGap.findOne({
+      user: req.user._id,
+    }).sort({
+      createdAt: -1,
+    });
 
-console.log("================================");
-console.log("LEARNING GENERATION REQUEST");
-console.log("User ID:", req.user._id);
-console.log("Requested Target Role:", targetRole);
-console.log("================================");
+    if (!skillGap) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Please complete Skill Gap Analysis first.",
+      });
+    }
 
-// Find latest Skill Gap for logged-in user
-// Do NOT filter by targetRole because targetRole
-// can have different capitalization.
-const skillGap = await SkillGap.findOne({
-  user: req.user._id,
-}).sort({ createdAt: -1 });
+    const targetRole = skillGap.targetRole;
 
-if (!skillGap) {
-  return res.status(404).json({
-    success: false,
-    message: "Please complete Skill Gap Analysis first.",
-  });
-}
+    console.log("Target Role:", targetRole);
+    console.log(
+      "Missing Skills:",
+      skillGap.missingSkills
+    );
 
-// Always use the target role saved in the Skill Gap.
-// This prevents case-sensitive mismatch such as:
-// "Full Stack Developer"
-// vs
-// "Full stack developer"
-targetRole = skillGap.targetRole;
+    if (
+      !Array.isArray(skillGap.missingSkills) ||
+      skillGap.missingSkills.length === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No missing skills found in Skill Gap Analysis.",
+      });
+    }
 
-console.log("================================");
-console.log("SKILL GAP FOUND");
-console.log("Skill Gap ID:", skillGap._id);
-console.log("Target Role:", targetRole);
-console.log("Missing Skills:", skillGap.missingSkills);
-console.log("================================");
+    // Generate recommendations using Gemini
+    const learningData =
+      await generateLearningRecommendations(
+        skillGap.missingSkills,
+        targetRole
+      );
 
-// Make sure missingSkills exists
-if (
-  !Array.isArray(skillGap.missingSkills) ||
-  skillGap.missingSkills.length === 0
-) {
-  return res.status(400).json({
-    success: false,
-    message: "No missing skills found in Skill Gap Analysis.",
-  });
-}
+    if (
+      !learningData ||
+      !Array.isArray(
+        learningData.recommendations
+      )
+    ) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Invalid learning recommendations generated.",
+      });
+    }
 
-// Generate AI recommendations
-const learningData = await generateLearningRecommendations(
-  skillGap.missingSkills,
-  targetRole
-);
+    // Save to MongoDB
+    const learning = await Learning.create({
+      user: req.user._id,
+      skillGap: skillGap._id,
+      targetRole,
+      recommendations:
+        learningData.recommendations,
+    });
 
-console.log("AI Learning Data:", learningData);
+    console.log(
+      "Learning saved:",
+      learning._id
+    );
 
-// Save in MongoDB
-const learning = await Learning.create({
-  user: req.user._id,
-  skillGap: skillGap._id,
-  targetRole,
-  recommendations: learningData.recommendations,
-});
+    return res.status(201).json({
+      success: true,
+      message:
+        "Learning Recommendations Generated Successfully",
+      learning,
+    });
+  } catch (error) {
+    console.error(
+      "LEARNING GENERATION ERROR:",
+      error
+    );
 
-console.log("Learning recommendations saved:", learning._id);
-
-return res.status(201).json({
-  success: true,
-  message: "Learning Recommendations Generated Successfully",
-  learning,
-});
-
-
-} catch (error) {
-console.log("Learning Error:", error);
-
-
-return res.status(500).json({
-  success: false,
-  message: error.message,
-});
-}
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to generate learning recommendations.",
+    });
+  }
 };
 
-// ============================================
+// ==========================================
 // GET LATEST LEARNING
-// ============================================
+// ==========================================
 
 const getLearningController = async (req, res) => {
-try {
-const learning = await Learning.findOne({
-user: req.user._id,
-})
-.sort({ createdAt: -1 })
-.populate("skillGap");
+  try {
+    console.log(
+      "GET LEARNING FOR USER:",
+      req.user._id
+    );
 
+    const learning = await Learning.findOne({
+      user: req.user._id,
+    })
+      .sort({
+        createdAt: -1,
+      })
+      .populate("skillGap");
 
-if (!learning) {
-  return res.status(404).json({
-    success: false,
-    message: "No learning recommendations found.",
-  });
-}
+    // New user has no learning record yet
+    if (!learning) {
+      return res.status(200).json({
+        success: true,
+        learning: null,
+        message:
+          "No learning recommendations found yet.",
+      });
+    }
 
-return res.status(200).json({
-  success: true,
-  learning,
-});
+    return res.status(200).json({
+      success: true,
+      learning,
+    });
+  } catch (error) {
+    console.error(
+      "GET LEARNING ERROR:",
+      error
+    );
 
-
-} catch (error) {
-console.log("Get Learning Error:", error);
-
-
-return res.status(500).json({
-  success: false,
-  message: error.message,
-});
-
-
-}
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to get learning recommendations.",
+    });
+  }
 };
 
 module.exports = {
-generateLearningController,
-getLearningController,
+  generateLearningController,
+  getLearningController,
 };

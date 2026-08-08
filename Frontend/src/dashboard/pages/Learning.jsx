@@ -23,54 +23,88 @@ export default function Learning() {
   }, []);
 
   const loadLearningData = async () => {
+  try {
+    setLoading(true);
+    setError("");
+
+    // ==========================================
+    // GET LEARNING
+    // ==========================================
+
     try {
-      setLoading(true);
-      setError("");
+      const learningResponse =
+        await getLearning();
 
-      // Get existing learning recommendations
-      try {
-        const learningResponse = await getLearning();
+      console.log(
+        "Learning API response:",
+        learningResponse
+      );
 
-        console.log("Learning API response:", learningResponse);
-
-        if (learningResponse.success && learningResponse.learning) {
-          setLearning(learningResponse.learning);
-        }
-      } catch (error) {
-        if (error.response?.status === 404) {
-          console.log("No learning recommendations yet.");
-          setLearning(null);
-        } else {
-          console.error(
-            "Learning API Error:",
-            error.response?.data || error.message
-          );
-        }
-      }
-
-      // Get latest skill gap
-      try {
-        const skillGapResponse = await getLatestSkillGap();
-
-        console.log("Skill Gap response:", skillGapResponse);
-
-        if (skillGapResponse.success && skillGapResponse.skillGap) {
-          setSkillGap(skillGapResponse.skillGap);
-        }
-      } catch (error) {
-        console.log(
-          "Skill Gap API Error:",
-          error.response?.data || error.message
+      if (
+        learningResponse.success &&
+        learningResponse.learning
+      ) {
+        setLearning(
+          learningResponse.learning
         );
+      } else {
+        setLearning(null);
       }
     } catch (error) {
-      console.error("Learning Error:", error);
+      console.error(
+        "Learning API Error:",
+        error.response?.data ||
+          error.message
+      );
 
-      setError("Failed to load learning dashboard");
-    } finally {
-      setLoading(false);
+      setLearning(null);
     }
-  };
+
+    // ==========================================
+    // GET SKILL GAP
+    // ==========================================
+
+    try {
+      const skillGapResponse =
+        await getLatestSkillGap();
+
+      console.log(
+        "Skill Gap response:",
+        skillGapResponse
+      );
+
+      if (
+        skillGapResponse.success &&
+        skillGapResponse.skillGap
+      ) {
+        setSkillGap(
+          skillGapResponse.skillGap
+        );
+      } else {
+        setSkillGap(null);
+      }
+    } catch (error) {
+      console.error(
+        "Skill Gap API Error:",
+        error.response?.data ||
+          error.message
+      );
+
+      setSkillGap(null);
+    }
+  } catch (error) {
+    console.error(
+      "Learning Error:",
+      error
+    );
+
+    setError(
+      "Failed to load learning dashboard"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   // IMPORTANT:
   // Get target role from existing learning first,

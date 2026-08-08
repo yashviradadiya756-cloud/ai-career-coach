@@ -21,12 +21,35 @@ const learningSchema = new mongoose.Schema(
 
     recommendations: [
       {
-        skill: String,
-        course: String,
-        platform: String,
-        duration: String,
-        level: String,
-        url: String,
+        skill: {
+          type: String,
+          default: "",
+        },
+
+        course: {
+          type: String,
+          default: "",
+        },
+
+        platform: {
+          type: String,
+          default: "",
+        },
+
+        duration: {
+          type: String,
+          default: "",
+        },
+
+        level: {
+          type: String,
+          default: "",
+        },
+
+        url: {
+          type: String,
+          default: "",
+        },
       },
     ],
   },
@@ -35,4 +58,7 @@ const learningSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Learning", learningSchema);
+module.exports = mongoose.model(
+  "Learning",
+  learningSchema
+);
