@@ -37,9 +37,14 @@ const getSettings = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { name, phone } = req.body;
+    const {
+      username,
+      phone,
+    } = req.body;
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(
+      req.user._id
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -48,8 +53,8 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    if (name !== undefined) {
-      user.name = name;
+    if (username !== undefined) {
+      user.username = username;
     }
 
     if (phone !== undefined) {
@@ -58,21 +63,31 @@ const updateProfile = async (req, res) => {
 
     await user.save();
 
-    const updatedUser = await User.findById(req.user._id).select("-password");
+    const updatedUser =
+      await User.findById(
+        req.user._id
+      ).select("-password");
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
       user: updatedUser,
     });
   } catch (error) {
-    console.error("Update Profile Error:", error);
+    console.error(
+      "Update Profile Error:",
+      error
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to update profile",
     });
   }
+};
+
+module.exports = {
+  updateProfile,
 };
 
 

@@ -36,40 +36,43 @@ export default function Register() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.password ||
-      !formData.confirmPassword
-    ) {
-      alert("Please fill all fields");
-      return;
-    }
+  if (
+    !formData.username ||
+    !formData.email ||
+    !formData.password ||
+    !formData.confirmPassword
+  ) {
+    alert("Please fill all fields");
+    return;
+  }
 
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
+  if (formData.password !== formData.confirmPassword) {
+    alert("Passwords do not match");
+    return;
+  }
 
-    try {
-      await register({
-        username: formData.username,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password,
-      });
+  try {
+    await register({
+      username: formData.username,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+    });
 
-      alert("Registration Successful");
+    alert("Registration Successful");
 
-      navigate("/login");
-    } catch (error) {
-      console.log(error);
+    navigate("/login");
+  } catch (error) {
+    console.log("Registration Error:", error);
 
-      alert(error.response?.data?.message || "Registration Failed");
-    }
-  };
+    alert(
+      error.response?.data?.message ||
+        "Registration Failed"
+    );
+  }
+};
 
   return (
     <div className="login-page">
@@ -103,18 +106,6 @@ export default function Register() {
             />
           </div>
 
-          <div className="input-box">
-            <User size={20} className="icon" />
-
-            <input
-              type="text"
-              name="name"
-              placeholder="Enter your full name"
-              value={formData.name}
-              onChange={handleChange}
-            />
-          </div>
-
           {/* EMAIL */}
           <label>Email Address</label>
 
@@ -129,7 +120,7 @@ export default function Register() {
               onChange={handleChange}
             />
           </div>
-          
+
           <label>Phone Number</label>
 
           <div className="input-box">

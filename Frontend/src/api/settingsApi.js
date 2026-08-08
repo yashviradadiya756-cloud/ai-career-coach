@@ -1,31 +1,47 @@
 import api from "./axios";
 
 
-// Get settings
+// GET SETTINGS
+
 export const getSettings = () => {
   return api.get("/api/settings");
 };
 
 
-// Update profile
+// UPDATE PROFILE
+
 export const updateProfile = (data) => {
-  return api.put("/api/settings/profile", data);
+  return api.put(
+    "/api/settings/profile",
+    data
+  );
 };
 
 
-// Update preferences
+// UPDATE PREFERENCES
+
 export const updatePreferences = (data) => {
-  return api.put("/api/settings/preferences", data);
+  return api.put(
+    "/api/settings/preferences",
+    data
+  );
 };
 
 
-// Change password
+// CHANGE PASSWORD
+
 export const changePassword = (data) => {
-  return api.put("/api/settings/password", data);
+  return api.put(
+    "/api/settings/password",
+    data
+  );
 };
 
 
-// Delete account
+// DELETE ACCOUNT
+
 export const deleteAccount = () => {
-  return api.delete("/api/settings/account");
+  return api.delete(
+    "/api/settings/account"
+  );
 };

@@ -1,5 +1,15 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { loginUser, registerUser } from "../api/authApi";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  loginUser,
+  registerUser,
+} from "../api/authApi";
+
 import { getProfile } from "../api/userApi";
 
 const AuthContext = createContext();
@@ -8,38 +18,57 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Login
+
+  // ==========================================
+  // LOGIN
+  // ==========================================
+
   const login = async (data) => {
     const res = await loginUser(data);
 
-    localStorage.setItem("token", res.data.token);
+    localStorage.setItem(
+      "token",
+      res.data.token
+    );
 
     const profile = await getProfile();
 
     setUser(profile.data.user);
+
+    return res.data;
   };
 
-  // Register
+
+  // ==========================================
+  // REGISTER
+  // ==========================================
+
   const register = async (userData) => {
-  const response = await api.post(
-    "/api/auth/register",
-    userData
-  );
+    const response = await registerUser(userData);
 
-  return response.data;
-};
+    return response.data;
+  };
 
-  // Logout
+
+  // ==========================================
+  // LOGOUT
+  // ==========================================
+
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
   };
 
-  // Load User
+
+  // ==========================================
+  // LOAD USER
+  // ==========================================
+
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token =
+          localStorage.getItem("token");
 
         if (!token) {
           setLoading(false);
@@ -53,6 +82,7 @@ export const AuthProvider = ({ children }) => {
         console.log(error);
 
         localStorage.removeItem("token");
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -60,6 +90,7 @@ export const AuthProvider = ({ children }) => {
 
     loadUser();
   }, []);
+
 
   return (
     <AuthContext.Provider
@@ -76,4 +107,6 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+
+export const useAuth = () =>
+  useContext(AuthContext);

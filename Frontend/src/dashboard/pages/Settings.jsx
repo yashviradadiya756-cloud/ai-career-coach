@@ -11,7 +11,7 @@ import {
 export default function Settings() {
   const [user, setUser] = useState(null);
 
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -50,7 +50,7 @@ export default function Settings() {
 
       setUser(data);
 
-      setName(data.name || "");
+      setUsername(data.username || "");
       setEmail(data.email || "");
       setPhone(data.phone || "");
 
@@ -75,7 +75,6 @@ export default function Settings() {
     }
   };
 
-
   // ==========================
   // UPDATE PROFILE
   // ==========================
@@ -89,7 +88,7 @@ export default function Settings() {
       setError("");
 
       const response = await updateProfile({
-        name,
+        username,
         phone,
       });
 
@@ -336,14 +335,14 @@ export default function Settings() {
 
           <div style={styles.avatarContainer}>
             <div style={styles.avatar}>
-              {name
-                ? name.charAt(0).toUpperCase()
+              {username
+                ? username.charAt(0).toUpperCase()
                 : "U"}
             </div>
 
             <div>
               <h3 style={{ margin: 0 }}>
-                {name || "User"}
+                {username || "User"}
               </h3>
 
               <p style={styles.smallText}>
