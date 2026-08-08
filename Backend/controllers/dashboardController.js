@@ -13,13 +13,12 @@ const getDashboardOverview = async (req, res) => {
     console.log("USER ID:", userId);
     console.log("=================================");
 
-
     // ==========================================
-    // USER
+    // 1. USER
     // ==========================================
 
     const user = await User.findById(userId).select(
-      "name email"
+      "name username email"
     );
 
     if (!user) {
@@ -29,11 +28,20 @@ const getDashboardOverview = async (req, res) => {
       });
     }
 
-    return res.status(200).json({ success: true, user: { name: user.name, username: user.username, email: user.email, }, stats: { careerScore, resumeATS, skillsMatched, totalSkills, interviewAverage, progress: overallProgress, }, });
+    // ==========================================
+    // 2. DEFAULT VALUES
+    // IMPORTANT FOR NEW USERS
+    // ==========================================
 
+    let resumeATS = 0;
+    let roadmapProgress = 0;
+    let interviewAverage = 0;
+    let learningProgress = 0;
+    let skillsMatched = 0;
+    let totalSkills = 0;
 
     // ==========================================
-    // LATEST RESUME
+    // 3. LATEST RESUME
     // ==========================================
 
     const latestResume = await Resume.findOne({
@@ -42,13 +50,25 @@ const getDashboardOverview = async (req, res) => {
       createdAt: -1,
     });
 
-    const resumeATS = latestResume
-      ? Number(latestResume.atsScore) || 0
-      : 0;
+    if (latestResume) {
+      resumeATS = Number(latestResume.atsScore) || 0;
 
+      if (Array.isArray(latestResume.skills)) {
+        totalSkills = latestResume.skills.length;
+      }
+
+      if (
+        Array.isArray(
+          latestResume.matchedSkills
+        )
+      ) {
+        skillsMatched =
+          latestResume.matchedSkills.length;
+      }
+    }
 
     // ==========================================
-    // ROADMAP
+    // 4. ROADMAP
     // ==========================================
 
     const latestRoadmap = await Roadmap.findOne({
@@ -56,8 +76,6 @@ const getDashboardOverview = async (req, res) => {
     }).sort({
       createdAt: -1,
     });
-
-    let roadmapProgress = 0;
 
     if (
       latestRoadmap &&
@@ -77,9 +95,8 @@ const getDashboardOverview = async (req, res) => {
       );
     }
 
-
     // ==========================================
-    // INTERVIEWS
+    // 5. INTERVIEWS
     // ==========================================
 
     const interviews = await Interview.find({
@@ -91,12 +108,10 @@ const getDashboardOverview = async (req, res) => {
     const interviewScores = [];
 
     interviews.forEach((interview) => {
-
       if (
         Array.isArray(interview.questions) &&
         interview.questions.length > 0
       ) {
-
         const scores = interview.questions
           .map((question) =>
             Number(question.score)
@@ -108,7 +123,6 @@ const getDashboardOverview = async (req, res) => {
           );
 
         if (scores.length > 0) {
-
           const total = scores.reduce(
             (sum, score) => sum + score,
             0
@@ -127,11 +141,7 @@ const getDashboardOverview = async (req, res) => {
       }
     });
 
-
-    let interviewAverage = 0;
-
     if (interviewScores.length > 0) {
-
       const total =
         interviewScores.reduce(
           (sum, score) => sum + score,
@@ -143,9 +153,8 @@ const getDashboardOverview = async (req, res) => {
       );
     }
 
-
     // ==========================================
-    // LEARNING
+    // 6. LEARNING
     // ==========================================
 
     const latestLearning = await Learning.findOne({
@@ -154,8 +163,6 @@ const getDashboardOverview = async (req, res) => {
       createdAt: -1,
     });
 
-    let learningProgress = 0;
-
     if (
       latestLearning &&
       Array.isArray(
@@ -163,52 +170,27 @@ const getDashboardOverview = async (req, res) => {
       ) &&
       latestLearning.recommendations.length > 0
     ) {
-
-      /*
-       * Each learning recommendation
-       * contributes 10%.
-       *
-       * Example:
-       * 5 recommendations = 50%
-       * 10 recommendations = 100%
-       */
-
       learningProgress = Math.min(
         100,
         latestLearning.recommendations.length * 10
       );
     }
 
+    // ==========================================
+    // 7. CAREER SCORE
+    // MUST BE DECLARED BEFORE RESPONSE
+    // ==========================================
+
+    const careerScore = Math.round(
+      (
+        resumeATS +
+        roadmapProgress +
+        interviewAverage
+      ) / 3
+    );
 
     // ==========================================
-    // SKILLS
-    // ==========================================
-
-    let skillsMatched = 0;
-    let totalSkills = 0;
-
-    if (latestResume) {
-
-      if (
-        Array.isArray(latestResume.skills)
-      ) {
-        totalSkills =
-          latestResume.skills.length;
-      }
-
-      if (
-        Array.isArray(
-          latestResume.matchedSkills
-        )
-      ) {
-        skillsMatched =
-          latestResume.matchedSkills.length;
-      }
-    }
-
-
-    // ==========================================
-    // OVERALL PROGRESS
+    // 8. OVERALL PROGRESS
     // ==========================================
 
     const overallProgress = Math.round(
@@ -220,104 +202,84 @@ const getDashboardOverview = async (req, res) => {
       ) / 4
     );
 
-
     // ==========================================
-    // CAREER SCORE
-    // ==========================================
-
-    const careerScore = Math.round(
-      (
-        resumeATS +
-        roadmapProgress +
-        interviewAverage
-      ) / 3
-    );
-
-
-    // ==========================================
-    // DEBUG
+    // 9. DEBUG
     // ==========================================
 
+    console.log("Resume ATS:", resumeATS);
     console.log(
-      "Resume ATS:",
-      resumeATS
-    );
-
-    console.log(
-      "Interview:",
+      "Interview Average:",
       interviewAverage
     );
-
     console.log(
-      "Roadmap:",
+      "Roadmap Progress:",
       roadmapProgress
     );
-
     console.log(
-      "Learning:",
+      "Learning Progress:",
       learningProgress
     );
-
+    console.log(
+      "Skills Matched:",
+      skillsMatched
+    );
+    console.log(
+      "Total Skills:",
+      totalSkills
+    );
+    console.log(
+      "Career Score:",
+      careerScore
+    );
     console.log(
       "Overall Progress:",
       overallProgress
     );
 
-    console.log(
-      "Career Score:",
-      careerScore
-    );
-
-
     // ==========================================
-    // RESPONSE
+    // 10. RESPONSE
     // ==========================================
 
     return res.status(200).json({
-
       success: true,
 
       user: {
-        name: user.name,
-        email: user.email,
+        name: user.name || "",
+        username: user.username || "",
+        email: user.email || "",
       },
 
       stats: {
+        careerScore: careerScore || 0,
 
-        careerScore,
+        resumeATS: resumeATS || 0,
 
-        resumeATS,
+        skillsMatched: skillsMatched || 0,
 
-        skillsMatched,
+        totalSkills: totalSkills || 0,
 
-        totalSkills,
+        interviewAverage:
+          interviewAverage || 0,
 
-        interviewAverage,
-
-        // IMPORTANT
-        // This is now OVERALL progress
-        progress: overallProgress,
+        progress:
+          overallProgress || 0,
       },
     });
 
   } catch (error) {
-
     console.error(
       "DASHBOARD OVERVIEW ERROR:",
       error
     );
 
     return res.status(500).json({
-
       success: false,
-
       message:
         error.message ||
         "Failed to load dashboard",
     });
   }
 };
-
 
 module.exports = {
   getDashboardOverview,
