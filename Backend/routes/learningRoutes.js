@@ -9,24 +9,26 @@ const {
   getLearningController,
 } = require("../controllers/learningController");
 
-// ==========================================
-// GENERATE LEARNING PLAN
-// POST /api/learning/generate
-// ==========================================
-router.post(
-  "/generate",
-  protect,
-  generateLearningController
-);
-
-// ==========================================
-// GET LATEST LEARNING PLAN
+// ======================================================
+// GET latest learning plan
 // GET /api/learning
-// ==========================================
+// ======================================================
+
 router.get(
   "/",
   protect,
   getLearningController
+);
+
+// ======================================================
+// Generate learning plan
+// POST /api/learning/generate
+// ======================================================
+
+router.post(
+  "/generate",
+  protect,
+  generateLearningController
 );
 
 module.exports = router;

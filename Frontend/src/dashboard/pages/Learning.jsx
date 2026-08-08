@@ -36,8 +36,8 @@ export default function Learning() {
         await getLearning();
 
       console.log(
-        "Learning API response:",
-        learningResponse
+        "LEARNING API RESPONSE:",
+        JSON.stringify(response, null, 2)
       );
 
       if (
@@ -69,8 +69,8 @@ export default function Learning() {
         await getLatestSkillGap();
 
       console.log(
-        "Skill Gap response:",
-        skillGapResponse
+        "SKILL GAP RESPONSE:",
+        JSON.stringify(response, null, 2)
       );
 
       if (

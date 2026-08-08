@@ -1,11 +1,28 @@
 import api from "./axios";
 
-export const analyzeSkillGap = (targetRole) => {
-  return api.post("/api/skillgap/analyze", {
-    targetRole,
-  });
+// ======================================================
+// ANALYZE SKILL GAP
+// ======================================================
+
+export const analyzeSkillGap = async (targetRole) => {
+  const response = await api.post(
+    "/api/skillgap/analyze",
+    {
+      targetRole,
+    }
+  );
+
+  return response.data;
 };
 
-export const getLatestSkillGap = () => {
-  return api.get("/api/skillgap/latest");
+// ======================================================
+// GET LATEST SKILL GAP
+// ======================================================
+
+export const getLatestSkillGap = async () => {
+  const response = await api.get(
+    "/api/skillgap/latest"
+  );
+
+  return response.data;
 };

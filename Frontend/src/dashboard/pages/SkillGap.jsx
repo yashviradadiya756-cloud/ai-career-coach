@@ -1,339 +1,446 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+
 import {
   analyzeSkillGap,
   getLatestSkillGap,
 } from "../../api/skillGapApi";
 
-export default function SkillGap() {
-  const [targetRole, setTargetRole] = useState("");
+const SkillGap = () => {
   const [skillGap, setSkillGap] = useState(null);
 
-  const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
+  const [targetRole, setTargetRole] = useState("");
 
-  // Fetch Latest Skill Gap
-  const fetchSkillGap = async () => {
+  const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
+
+  const [error, setError] = useState("");
+
+  // ==========================================
+  // LOAD LATEST SKILL GAP
+  // ==========================================
+
+  useEffect(() => {
+    loadSkillGap();
+  }, []);
+
+  const loadSkillGap = async () => {
     try {
-      setDataLoading(true);
+      setLoading(true);
+      setError("");
 
-      const res = await getLatestSkillGap();
+      const response =
+        await getLatestSkillGap();
 
-      console.log(res.data);
+      console.log(
+        "Skill Gap response:",
+        response
+      );
 
-      setSkillGap(res.data.skillGap);
+      if (
+        response?.success &&
+        response?.skillGap
+      ) {
+        setSkillGap(response.skillGap);
+
+        setTargetRole(
+          response.skillGap.targetRole || ""
+        );
+      } else {
+        setSkillGap(null);
+      }
     } catch (error) {
-      console.log(error);
+      console.error(
+        "Skill Gap API Error:",
+        error.response?.data ||
+          error.message
+      );
+
+      // 404 simply means no Skill Gap yet.
+      if (
+        error.response?.status === 404
+      ) {
+        setSkillGap(null);
+      } else {
+        setError(
+          error.response?.data?.message ||
+            "Failed to load Skill Gap Analysis."
+        );
+      }
     } finally {
-      setDataLoading(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchSkillGap();
-  }, []);
+  // ==========================================
+  // ANALYZE SKILL GAP
+  // ==========================================
 
-  // Analyze Skill Gap
   const handleAnalyze = async () => {
-  if (loading) return;
+    try {
+      if (!targetRole.trim()) {
+        setError(
+          "Please enter a target career role."
+        );
+        return;
+      }
 
-  if (!targetRole.trim()) {
-    alert("Please enter your target role.");
-    return;
-  }
+      setAnalyzing(true);
+      setError("");
 
-  try {
-    setLoading(true);
+      console.log(
+        "Analyzing Skill Gap for:",
+        targetRole
+      );
 
-    const res = await analyzeSkillGap(targetRole.trim());
+      const response =
+        await analyzeSkillGap(
+          targetRole.trim()
+        );
 
-    console.log(res.data);
+      console.log(
+        "Skill Gap Analyze Result:",
+        response
+      );
 
-    await fetchSkillGap();
+      if (
+        response?.success &&
+        response?.skillGap
+      ) {
+        setSkillGap(
+          response.skillGap
+        );
+      } else {
+        setError(
+          response?.message ||
+            "Skill Gap Analysis failed."
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Skill Gap Analyze Error:",
+        error.response?.data ||
+          error.message
+      );
 
-    alert("Skill Gap Analysis Completed");
+      setError(
+        error.response?.data?.message ||
+          "Failed to analyze Skill Gap."
+      );
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
-    setTargetRole("");
-  } catch (error) {
-    console.log(error.response?.data);
+  // ==========================================
+  // LOADING
+  // ==========================================
 
-    alert(
-      error.response?.data?.message ||
-      "Analysis Failed. Please try again."
+  if (loading) {
+    return (
+      <div className="skill-gap-page">
+        <h2>Loading Skill Gap Analysis...</h2>
+      </div>
     );
-  } finally {
-    setLoading(false);
   }
-};
+
+  // ==========================================
+  // DATA
+  // ==========================================
+
+  const currentSkills =
+    skillGap?.currentSkills || [];
+
+  const missingSkills =
+    skillGap?.missingSkills || [];
+
+  const recommendedCourses =
+    skillGap?.recommendedCourses || [];
+
+  const roadmap =
+    skillGap?.roadmap || [];
+
+  const readinessScore =
+    Number(skillGap?.readinessScore) || 0;
+
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
+    <div className="skill-gap-page">
 
-      <div style={styles.header}>
-        <h1>🧠 Skill Gap Analysis</h1>
+      {/* ================================== */}
+      {/* HEADER */}
+      {/* ================================== */}
+
+      <div className="skill-gap-header">
+
+        <h1>🎯 Skill Gap Analysis</h1>
 
         <p>
-          Compare your current skills with industry requirements and
-          receive AI-powered recommendations.
+          Identify the skills you already have
+          and discover what you need to learn
+          for your target career.
         </p>
 
-        <div style={styles.searchBox}>
+      </div>
+
+      {/* ================================== */}
+      {/* ERROR */}
+      {/* ================================== */}
+
+      {error && (
+        <div className="skill-gap-error">
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* ================================== */}
+      {/* TARGET ROLE */}
+      {/* ================================== */}
+
+      <div className="skill-gap-input-card">
+
+        <h2>Target Career Role</h2>
+
+        <div className="skill-gap-input-row">
+
           <input
             type="text"
-            placeholder="Target Role (Example: Full Stack Developer)"
             value={targetRole}
-            onChange={(e) => setTargetRole(e.target.value)}
-            style={styles.input}
+            onChange={(e) =>
+              setTargetRole(e.target.value)
+            }
+            placeholder="Example: Full Stack Developer"
           />
 
           <button
             onClick={handleAnalyze}
-            style={styles.button}
-            disabled={loading}
+            disabled={analyzing}
           >
-            {loading ? "Analyzing..." : "Analyze"}
+            {analyzing
+              ? "Analyzing..."
+              : "Analyze Skill Gap"}
           </button>
+
         </div>
+
       </div>
 
-      {/* Summary Cards */}
+      {/* ================================== */}
+      {/* NO DATA */}
+      {/* ================================== */}
 
-      <div style={styles.cards}>
-        <div style={styles.card}>
-          <h3>Career Readiness</h3>
+      {!skillGap ? (
+        <div className="skill-gap-empty">
 
-          <h1 style={{ color: "#2563eb" }}>
-            {dataLoading
-              ? "..."
-              : `${skillGap?.readinessScore || 0}%`}
-          </h1>
+          <h2>
+            No Skill Gap Analysis Found
+          </h2>
+
+          <p>
+            Enter your target role and click
+            "Analyze Skill Gap".
+          </p>
+
         </div>
+      ) : (
+        <>
+          {/* ================================== */}
+          {/* TARGET ROLE + SCORE */}
+          {/* ================================== */}
 
-        <div style={styles.card}>
-          <h3>Current Skills</h3>
+          <div className="skill-gap-overview">
 
-          <h1 style={{ color: "#16a34a" }}>
-            {dataLoading
-              ? "..."
-              : skillGap?.currentSkills?.length || 0}
-          </h1>
-        </div>
+            <div className="skill-gap-role-card">
 
-        <div style={styles.card}>
-          <h3>Missing Skills</h3>
+              <h3>Target Role</h3>
 
-          <h1 style={{ color: "#dc2626" }}>
-            {dataLoading
-              ? "..."
-              : skillGap?.missingSkills?.length || 0}
-          </h1>
-        </div>
+              <h2>
+                {skillGap.targetRole}
+              </h2>
 
-        <div style={styles.card}>
-          <h3>Courses</h3>
-
-          <h1 style={{ color: "#f59e0b" }}>
-            {dataLoading
-              ? "..."
-              : skillGap?.recommendedCourses?.length || 0}
-          </h1>
-        </div>
-      </div>
-
-      {/* ===== PART 2 STARTS HERE ===== */}
-            {/* Skill Progress */}
-
-      <div style={styles.section}>
-        <h2>📊 Current Skills</h2>
-
-        {skillGap?.currentSkills?.length > 0 ? (
-          skillGap.currentSkills.map((skill, index) => (
-            <div key={index} style={{ marginBottom: "20px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: "8px",
-                }}
-              >
-                <strong>{skill}</strong>
-
-                <span>Industry Ready</span>
-              </div>
-
-              <div style={styles.progressBackground}>
-                <div
-                  style={{
-                    width: "85%",
-                    height: "100%",
-                    background: "#2563eb",
-                    borderRadius: "20px",
-                  }}
-                ></div>
-              </div>
             </div>
-          ))
-        ) : (
-          <p>No Skills Found</p>
-        )}
-      </div>
 
-      {/* Missing Skills */}
+            <div className="skill-gap-score-card">
 
-      <div style={styles.section}>
-        <h2>❌ Missing Skills</h2>
+              <h3>Readiness Score</h3>
 
-        <ul>
-          {skillGap?.missingSkills?.length > 0 ? (
-            skillGap.missingSkills.map((item, index) => (
-              <li key={index} style={styles.listItem}>
-                ❌ {item}
-              </li>
-            ))
-          ) : (
-            <li>No Missing Skills</li>
-          )}
-        </ul>
-      </div>
+              <h1>
+                {readinessScore}%
+              </h1>
 
-      {/* Recommended Courses */}
+            </div>
 
-      <div style={styles.section}>
-        <h2>📚 Recommended Courses</h2>
+          </div>
 
-        <ul>
-          {skillGap?.recommendedCourses?.length > 0 ? (
-            skillGap.recommendedCourses.map((item, index) => (
-              <li key={index} style={styles.listItem}>
-                📖 {item}
-              </li>
-            ))
-          ) : (
-            <li>No Recommendations</li>
-          )}
-        </ul>
-      </div>
+          {/* ================================== */}
+          {/* CURRENT SKILLS */}
+          {/* ================================== */}
 
-      {/* Roadmap */}
+          <div className="skill-section">
 
-      <div style={styles.section}>
-        <h2>🚀 Learning Roadmap</h2>
+            <div className="skill-section-header">
 
-        <ul>
-          {skillGap?.roadmap?.length > 0 ? (
-            skillGap.roadmap.map((item, index) => (
-              <li key={index} style={styles.listItem}>
-                🚀 {item}
-              </li>
-            ))
-          ) : (
-            <li>No Roadmap Generated</li>
-          )}
-        </ul>
-      </div>
+              <h2>
+                ✅ Current Skills
+              </h2>
 
-      {/* Target Role */}
+              <span>
+                {currentSkills.length}
+              </span>
 
-      <div style={styles.section}>
-        <h2>🎯 Target Career</h2>
+            </div>
 
-        <p>
-          You are preparing for the role of{" "}
-          <strong>
-            {skillGap?.targetRole || "Not Selected"}
-          </strong>
-        </p>
+            {currentSkills.length === 0 ? (
+              <p>
+                No current skills found.
+              </p>
+            ) : (
+              <div className="skill-list">
 
-        <p style={{ marginTop: "10px" }}>
-          Your current readiness score is{" "}
-          <strong>
-            {skillGap?.readinessScore || 0}%
-          </strong>.
-          Continue following the recommended roadmap and complete the suggested
-          courses to improve your chances of becoming job-ready.
-        </p>
-      </div>
+                {currentSkills.map(
+                  (skill, index) => (
+                    <span
+                      className="skill-tag current"
+                      key={index}
+                    >
+                      {skill}
+                    </span>
+                  )
+                )}
+
+              </div>
+            )}
+
+          </div>
+
+          {/* ================================== */}
+          {/* MISSING SKILLS */}
+          {/* ================================== */}
+
+          <div className="skill-section">
+
+            <div className="skill-section-header">
+
+              <h2>
+                ⚠️ Missing Skills
+              </h2>
+
+              <span>
+                {missingSkills.length}
+              </span>
+
+            </div>
+
+            {missingSkills.length === 0 ? (
+              <p>
+                🎉 No major skill gaps found!
+              </p>
+            ) : (
+              <div className="skill-list">
+
+                {missingSkills.map(
+                  (skill, index) => (
+                    <span
+                      className="skill-tag missing"
+                      key={index}
+                    >
+                      {skill}
+                    </span>
+                  )
+                )}
+
+              </div>
+            )}
+
+          </div>
+
+          {/* ================================== */}
+          {/* RECOMMENDED COURSES */}
+          {/* ================================== */}
+
+          <div className="skill-section">
+
+            <h2>
+              📚 Recommended Courses
+            </h2>
+
+            {recommendedCourses.length === 0 ? (
+              <p>
+                No recommended courses found.
+              </p>
+            ) : (
+              <div className="course-list">
+
+                {recommendedCourses.map(
+                  (course, index) => (
+                    <div
+                      className="course-item"
+                      key={index}
+                    >
+                      <span>
+                        {index + 1}
+                      </span>
+
+                      <p>
+                        {course}
+                      </p>
+                    </div>
+                  )
+                )}
+
+              </div>
+            )}
+
+          </div>
+
+          {/* ================================== */}
+          {/* ROADMAP */}
+          {/* ================================== */}
+
+          <div className="skill-section">
+
+            <h2>
+              🗺️ Recommended Roadmap
+            </h2>
+
+            {roadmap.length === 0 ? (
+              <p>
+                No roadmap available.
+              </p>
+            ) : (
+              <div className="roadmap-list">
+
+                {roadmap.map(
+                  (step, index) => (
+                    <div
+                      className="roadmap-item"
+                      key={index}
+                    >
+
+                      <div className="roadmap-number">
+                        {index + 1}
+                      </div>
+
+                      <div className="roadmap-content">
+                        <p>{step}</p>
+                      </div>
+
+                    </div>
+                  )
+                )}
+
+              </div>
+            )}
+
+          </div>
+
+        </>
+      )}
 
     </div>
   );
-}
-const styles = {
-  container: {
-    padding: "20px",
-    background: "#f5f7fb",
-    minHeight: "100vh",
-  },
-
-  header: {
-    background: "#fff",
-    padding: "25px",
-    borderRadius: "12px",
-    marginBottom: "20px",
-    boxShadow: "0 2px 10px rgba(0,0,0,.08)",
-  },
-
-  searchBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: "15px",
-    marginTop: "20px",
-    flexWrap: "wrap",
-  },
-
-  input: {
-    width: "350px",
-    padding: "12px",
-    border: "1px solid #d1d5db",
-    borderRadius: "8px",
-    fontSize: "15px",
-    outline: "none",
-  },
-
-  button: {
-  padding: "12px 24px",
-  background: "#2563eb",
-  color: "#fff",
-  border: "none",
-  borderRadius: "8px",
-  cursor: "pointer",
-  fontSize: "15px",
-  fontWeight: "600",
-},
-
-  cards: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4,1fr)",
-    gap: "20px",
-    marginBottom: "20px",
-  },
-
-  card: {
-    background: "#fff",
-    padding: "20px",
-    borderRadius: "12px",
-    textAlign: "center",
-    boxShadow: "0 2px 10px rgba(0,0,0,.08)",
-  },
-
-  section: {
-    background: "#fff",
-    padding: "20px",
-    borderRadius: "12px",
-    marginBottom: "20px",
-    boxShadow: "0 2px 10px rgba(0,0,0,.08)",
-  },
-
-  progressBackground: {
-    width: "100%",
-    height: "12px",
-    background: "#e5e7eb",
-    borderRadius: "20px",
-    overflow: "hidden",
-  },
-
-  listItem: {
-    marginBottom: "12px",
-    fontSize: "16px",
-    lineHeight: "1.6",
-  },
 };
+
+export default SkillGap;

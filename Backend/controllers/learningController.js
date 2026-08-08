@@ -3,17 +3,21 @@ const Learning = require("../models/Learning");
 
 const generateLearningRecommendations = require("../utils/geminiLearning");
 
-// ==========================================
+// ======================================================
 // GENERATE LEARNING RECOMMENDATIONS
-// ==========================================
+// ======================================================
 
 const generateLearningController = async (req, res) => {
   try {
-    console.log("=================================");
-    console.log("LEARNING GENERATION");
+    console.log("================================");
+    console.log("🔥 LEARNING GENERATION STARTED");
     console.log("USER:", req.user._id);
     console.log("BODY:", req.body);
-    console.log("=================================");
+    console.log("================================");
+
+    // --------------------------------------------------
+    // Find latest Skill Gap
+    // --------------------------------------------------
 
     const skillGap = await SkillGap.findOne({
       user: req.user._id,
@@ -29,13 +33,28 @@ const generateLearningController = async (req, res) => {
       });
     }
 
-    const targetRole = skillGap.targetRole;
+    console.log("Skill Gap found:", skillGap._id);
+    console.log("Target Role:", skillGap.targetRole);
+    console.log("Missing Skills:", skillGap.missingSkills);
 
-    console.log("Target Role:", targetRole);
-    console.log(
-      "Missing Skills:",
-      skillGap.missingSkills
-    );
+    // --------------------------------------------------
+    // Validate target role
+    // --------------------------------------------------
+
+    const targetRole =
+      skillGap.targetRole?.trim();
+
+    if (!targetRole) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Target role is missing from Skill Gap Analysis.",
+      });
+    }
+
+    // --------------------------------------------------
+    // Validate missing skills
+    // --------------------------------------------------
 
     if (
       !Array.isArray(skillGap.missingSkills) ||
@@ -48,7 +67,10 @@ const generateLearningController = async (req, res) => {
       });
     }
 
-    // Generate recommendations using Gemini
+    // --------------------------------------------------
+    // Generate AI recommendations
+    // --------------------------------------------------
+
     const learningData =
       await generateLearningRecommendations(
         skillGap.missingSkills,
@@ -68,7 +90,23 @@ const generateLearningController = async (req, res) => {
       });
     }
 
-    // Save to MongoDB
+    console.log(
+      "Generated recommendations:",
+      learningData.recommendations.length
+    );
+
+    // --------------------------------------------------
+    // Delete previous learning plan
+    // --------------------------------------------------
+
+    await Learning.deleteMany({
+      user: req.user._id,
+    });
+
+    // --------------------------------------------------
+    // Save new learning plan
+    // --------------------------------------------------
+
     const learning = await Learning.create({
       user: req.user._id,
       skillGap: skillGap._id,
@@ -81,6 +119,10 @@ const generateLearningController = async (req, res) => {
       "Learning saved:",
       learning._id
     );
+
+    // --------------------------------------------------
+    // Response
+    // --------------------------------------------------
 
     return res.status(201).json({
       success: true,
@@ -103,16 +145,16 @@ const generateLearningController = async (req, res) => {
   }
 };
 
-// ==========================================
+// ======================================================
 // GET LATEST LEARNING
-// ==========================================
+// ======================================================
 
 const getLearningController = async (req, res) => {
   try {
-    console.log(
-      "GET LEARNING FOR USER:",
-      req.user._id
-    );
+    console.log("================================");
+    console.log("GET LEARNING");
+    console.log("USER:", req.user._id);
+    console.log("================================");
 
     const learning = await Learning.findOne({
       user: req.user._id,
@@ -122,18 +164,20 @@ const getLearningController = async (req, res) => {
       })
       .populate("skillGap");
 
-    // New user has no learning record yet
+    // No learning plan yet
     if (!learning) {
       return res.status(200).json({
         success: true,
-        learning: null,
+        exists: false,
         message:
-          "No learning recommendations found yet.",
+          "No learning recommendations found.",
+        learning: null,
       });
     }
 
     return res.status(200).json({
       success: true,
+      exists: true,
       learning,
     });
   } catch (error) {
@@ -146,7 +190,7 @@ const getLearningController = async (req, res) => {
       success: false,
       message:
         error.message ||
-        "Failed to get learning recommendations.",
+        "Failed to load learning recommendations.",
     });
   }
 };
