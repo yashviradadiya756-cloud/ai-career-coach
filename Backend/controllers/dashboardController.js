@@ -29,6 +29,8 @@ const getDashboardOverview = async (req, res) => {
       });
     }
 
+    return res.status(200).json({ success: true, user: { name: user.name, username: user.username, email: user.email, }, stats: { careerScore, resumeATS, skillsMatched, totalSkills, interviewAverage, progress: overallProgress, }, });
+
 
     // ==========================================
     // LATEST RESUME

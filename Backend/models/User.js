@@ -2,25 +2,19 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    // Full name
     name: {
       type: String,
-      required: true,
+      required: false,
+      default: "",
       trim: true,
-      minlength: 2,
-      maxlength: 100,
     },
 
-    // Username
     username: {
       type: String,
       required: true,
       trim: true,
-      minlength: 3,
-      maxlength: 30,
     },
 
-    // Email
     email: {
       type: String,
       required: true,
@@ -29,20 +23,17 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Password
     password: {
       type: String,
       required: true,
     },
 
-    // Phone
     phone: {
       type: String,
       default: "",
       trim: true,
     },
 
-    // Preferences
     preferences: {
       darkMode: {
         type: Boolean,

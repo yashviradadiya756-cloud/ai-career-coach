@@ -5,8 +5,6 @@ export const getSettings = () => {
 };
 
 export const updateProfile = (data) => {
-  console.log("SENDING PROFILE DATA:", data);
-
   return api.put(
     "/api/settings/profile",
     data

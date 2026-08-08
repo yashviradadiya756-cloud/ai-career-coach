@@ -32,28 +32,18 @@ const getSettings = async (req, res) => {
   }
 };
 
-
-// ==========================================
+// ===============================
 // UPDATE PROFILE
-// ==========================================
+// ===============================
 
 const updateProfile = async (req, res) => {
   try {
-    console.log("================================");
-    console.log("UPDATE PROFILE");
-    console.log("BODY:", req.body);
+    const { name, username, phone } = req.body;
+
+    console.log("UPDATE PROFILE BODY:", req.body);
     console.log("USER ID:", req.user._id);
-    console.log("================================");
 
-    const {
-      name,
-      username,
-      phone,
-    } = req.body;
-
-    const user = await User.findById(
-      req.user._id
-    );
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({
@@ -64,31 +54,58 @@ const updateProfile = async (req, res) => {
 
     // FULL NAME
     if (name !== undefined) {
-      if (!name.trim()) {
+      const cleanName = String(name).trim();
+
+      if (!cleanName) {
         return res.status(400).json({
           success: false,
           message: "Full name cannot be empty",
         });
       }
 
-      user.name = name.trim();
+      user.name = cleanName;
     }
 
     // USERNAME
     if (username !== undefined) {
-      if (!username.trim()) {
+      const cleanUsername = String(username).trim();
+
+      if (!cleanUsername) {
         return res.status(400).json({
           success: false,
           message: "Username cannot be empty",
         });
       }
 
-      user.username = username.trim();
+      // Check if another user already has this username
+      const usernameExists = await User.findOne({
+        username: cleanUsername,
+        _id: { $ne: req.user._id },
+      });
+
+      if (usernameExists) {
+        return res.status(400).json({
+          success: false,
+          message: "Username is already taken",
+        });
+      }
+
+      user.username = cleanUsername;
     }
 
     // PHONE
     if (phone !== undefined) {
-      user.phone = phone.trim();
+      user.phone = String(phone).trim();
+    }
+
+    // IMPORTANT:
+    // Existing users may not have name in MongoDB.
+    // If name is missing, don't allow save without it.
+    if (!user.name || !user.name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Full name is required",
+      });
     }
 
     await user.save();
@@ -97,10 +114,7 @@ const updateProfile = async (req, res) => {
       req.user._id
     ).select("-password");
 
-    console.log(
-      "UPDATED USER:",
-      updatedUser
-    );
+    console.log("PROFILE UPDATED:", updatedUser);
 
     return res.status(200).json({
       success: true,
@@ -109,16 +123,14 @@ const updateProfile = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(
-      "UPDATE PROFILE ERROR:",
-      error
-    );
+    console.error("================================");
+    console.error("UPDATE PROFILE ERROR:");
+    console.error(error);
+    console.error("================================");
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to update profile",
+      message: error.message || "Failed to update profile",
     });
   }
 };

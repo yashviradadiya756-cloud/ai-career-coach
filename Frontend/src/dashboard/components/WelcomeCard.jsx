@@ -19,8 +19,7 @@ const WelcomeCard = ({ user }) => {
       </h2>
 
       <p className="welcome-subtitle">
-        Continue your AI career journey where
-        you left off.
+        Continue your AI career journey where you left off.
       </p>
 
     </div>

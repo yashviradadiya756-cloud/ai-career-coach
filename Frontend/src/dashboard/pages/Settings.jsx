@@ -82,31 +82,55 @@ export default function Settings() {
   // ==========================
 
   const handleProfileSave = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      setSavingProfile(true);
-      setMessage("");
-      setError("");
+  try {
+    setSavingProfile(true);
+    setMessage("");
+    setError("");
 
-      const response = await updateProfile({
-        name,
-        username,
-        phone,
-      });
+    console.log("SENDING PROFILE:", {
+      name,
+      username,
+      phone,
+    });
 
-      setUser(response.data.user);
+    const response = await updateProfile({
+      name: name.trim(),
+      username: username.trim(),
+      phone: phone.trim(),
+    });
 
-      setMessage("Profile updated successfully.");
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Failed to update profile"
-      );
-    } finally {
-      setSavingProfile(false);
-    }
-  };
+    console.log(
+      "PROFILE UPDATE RESPONSE:",
+      response.data
+    );
+
+    setUser(response.data.user);
+
+    setName(response.data.user.name || "");
+    setUsername(response.data.user.username || "");
+    setPhone(response.data.user.phone || "");
+
+    setMessage(
+      "Profile updated successfully."
+    );
+
+  } catch (err) {
+    console.error(
+      "PROFILE UPDATE ERROR:",
+      err.response?.data || err
+    );
+
+    setError(
+      err.response?.data?.message ||
+        "Failed to update profile"
+    );
+
+  } finally {
+    setSavingProfile(false);
+  }
+};
 
 
   // ==========================
@@ -391,11 +415,13 @@ export default function Settings() {
                 type="text"
                 style={styles.input}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) =>
+                  setName(e.target.value)
+                }
                 placeholder="Enter your full name"
+                required
               />
             </div>
-
 
             <div>
               <label style={styles.label}>
