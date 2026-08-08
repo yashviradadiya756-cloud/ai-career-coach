@@ -8,26 +8,51 @@ const jwt = require("jsonwebtoken");
 
 const registerUser = async (req, res) => {
   try {
-    const { username, email, password, phone } = req.body;
+    const {
+      name,
+      username,
+      email,
+      password,
+      phone,
+    } = req.body;
 
     console.log("REGISTER BODY:", req.body);
 
-    if (!username || !email || !password) {
+    // Required fields
+    if (
+      !name?.trim() ||
+      !username?.trim() ||
+      !email?.trim() ||
+      !password
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Username, email and password are required",
+        message:
+          "Full Name, Username, Email and Password are required",
       });
     }
 
-    // Check existing user
+    // Check email
     const userExists = await User.findOne({
-      email: email.toLowerCase(),
+      email: email.toLowerCase().trim(),
     });
 
     if (userExists) {
       return res.status(400).json({
         success: false,
-        message: "User already exists",
+        message: "Email is already registered",
+      });
+    }
+
+    // Check username
+    const usernameExists = await User.findOne({
+      username: username.trim(),
+    });
+
+    if (usernameExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Username is already taken",
       });
     }
 
@@ -41,11 +66,14 @@ const registerUser = async (req, res) => {
 
     // Create user
     const user = await User.create({
-      username,
-      email: email.toLowerCase(),
+      name: name.trim(),
+      username: username.trim(),
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
-      phone: phone || "",
+      phone: phone?.trim() || "",
     });
+
+    console.log("USER CREATED:", user);
 
     return res.status(201).json({
       success: true,
@@ -53,13 +81,14 @@ const registerUser = async (req, res) => {
 
       user: {
         _id: user._id,
+        name: user.name,
         username: user.username,
         email: user.email,
         phone: user.phone,
       },
     });
   } catch (error) {
-    console.error("Register Error:", error);
+    console.error("REGISTER ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -75,9 +104,6 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   try {
-    console.log("Login API called");
-    console.log(req.body);
-
     const {
       email,
       password,
@@ -91,13 +117,8 @@ const loginUser = async (req, res) => {
     }
 
     const user = await User.findOne({
-      email: email.toLowerCase(),
+      email: email.toLowerCase().trim(),
     });
-
-    console.log(
-      "User:",
-      user ? user._id : "Not Found"
-    );
 
     if (!user) {
       return res.status(400).json({
@@ -106,15 +127,9 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(
       password,
       user.password
-    );
-
-    console.log(
-      "Password Match:",
-      isMatch
     );
 
     if (!isMatch) {
@@ -124,7 +139,6 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Generate JWT
     const token = jwt.sign(
       {
         id: user._id,
@@ -135,8 +149,6 @@ const loginUser = async (req, res) => {
       }
     );
 
-    console.log("Token Generated");
-
     return res.status(200).json({
       success: true,
       message: "Login Successful",
@@ -145,13 +157,14 @@ const loginUser = async (req, res) => {
 
       user: {
         _id: user._id,
+        name: user.name,
         username: user.username,
         email: user.email,
         phone: user.phone,
       },
     });
   } catch (error) {
-    console.error("Login Error:", error);
+    console.error("LOGIN ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -183,10 +196,7 @@ const getProfile = async (req, res) => {
       user,
     });
   } catch (error) {
-    console.error(
-      "Get Profile Error:",
-      error
-    );
+    console.error("GET PROFILE ERROR:", error);
 
     return res.status(500).json({
       success: false,

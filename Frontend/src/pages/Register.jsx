@@ -21,6 +21,7 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
+  name: "",
   username: "",
   email: "",
   phone: "",
@@ -34,17 +35,55 @@ export default function Register() {
       [e.target.name]: e.target.value,
     });
   };
+  const handleRegister = async (e) => {
+  e.preventDefault();
+
+  if (!name.trim()) {
+    setError("Full name is required");
+    return;
+  }
+
+  if (!username.trim()) {
+    setError("Username is required");
+    return;
+  }
+
+  try {
+    const response = await registerUser({
+      name: name.trim(),
+      username: username.trim(),
+      email: email.trim(),
+      password,
+      phone: phone.trim(),
+    });
+
+    console.log("REGISTER SUCCESS:", response.data);
+
+    // continue login / redirect logic
+  } catch (error) {
+    console.error(
+      "REGISTER ERROR:",
+      error.response?.data || error
+    );
+
+    setError(
+      error.response?.data?.message ||
+        "Registration failed"
+    );
+  }
+};
 
   const handleSubmit = async (e) => {
   e.preventDefault();
 
   if (
-    !formData.username ||
-    !formData.email ||
-    !formData.password ||
-    !formData.confirmPassword
+  !formData.name.trim() ||
+  !formData.username.trim() ||
+  !formData.email.trim() ||
+  !formData.password ||
+  !formData.confirmPassword
   ) {
-    alert("Please fill all fields");
+    alert("Full Name, Username, Email and Password are required");
     return;
   }
 
@@ -55,6 +94,7 @@ export default function Register() {
 
   try {
     await register({
+      name: formData.name,
       username: formData.username,
       email: formData.email,
       phone: formData.phone,
@@ -91,6 +131,25 @@ export default function Register() {
         <h1>Create Account</h1>
 
         <form onSubmit={handleSubmit}>
+
+          {/* FULL NAME */}
+
+        <label>Full Name *</label>
+
+        <div className="input-box">
+          <User size={20} className="icon" />
+
+          <input
+            type="text"
+            name="name"
+            placeholder="Enter your full name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+
           {/* NAME */}
           <label>Username</label>
 

@@ -21,10 +21,14 @@ const Overview = () => {
 
         const data = await getDashboardOverview();
 
+        console.log("Dashboard Data:", data);
+
         if (data.success) {
           setDashboard(data);
         } else {
-          setError("Failed to load dashboard");
+          setError(
+            data.message || "Failed to load dashboard"
+          );
         }
       } catch (error) {
         console.error(
@@ -44,75 +48,101 @@ const Overview = () => {
     fetchDashboard();
   }, []);
 
+  // ============================
+  // LOADING
+  // ============================
+
   if (loading) {
     return (
-      <div>
+      <div className="dashboard-loading">
         Loading your dashboard...
       </div>
     );
   }
 
+  // ============================
+  // ERROR
+  // ============================
+
   if (error) {
     return (
-      <div>
-        {error}
+      <div className="dashboard-error">
+        ⚠️ {error}
       </div>
     );
   }
+
+  // ============================
+  // NO DATA
+  // ============================
 
   if (!dashboard) {
     return null;
   }
 
   const {
-    user,
-    stats,
+    user = {},
+    stats = {},
   } = dashboard;
 
   return (
-    <div>
+    <div className="overview-page">
 
-      {/* Welcome */}
+      {/* ============================
+          WELCOME
+      ============================ */}
+
       <WelcomeCard user={user} />
 
 
-      {/* Dashboard Statistics */}
+      {/* ============================
+          DASHBOARD STATISTICS
+      ============================ */}
+
       <div className="dashboard-grid">
 
         <DashboardCard
           title="Career Score"
-          value={stats.careerScore}
+          value={stats.careerScore ?? 0}
           colorClass="blue"
         />
 
         <DashboardCard
           title="Resume ATS"
-          value={`${stats.resumeATS}%`}
+          value={`${stats.resumeATS ?? 0}%`}
           colorClass="green"
         />
 
         <DashboardCard
           title="Skills Matched"
-          value={`${stats.skillsMatched} / ${stats.totalSkills}`}
+          value={`${stats.skillsMatched ?? 0} / ${
+            stats.totalSkills ?? 0
+          }`}
           colorClass="amber"
         />
 
         <DashboardCard
           title="Interview Average"
-          value={`${stats.interviewAverage}%`}
+          value={`${stats.interviewAverage ?? 0}%`}
           colorClass="red"
         />
 
       </div>
 
 
-      {/* ONLY ADDITION: Overall Progress Bar*/}
+      {/* ============================
+          OVERALL PROGRESS
+      ============================ */}
+
       <ProgressBar
-        percentage={stats.progress || 0}
+        percentage={stats.progress ?? 0}
       />
 
 
-      {/* Bottom Section */}
+      {/* ============================
+          BOTTOM SECTION
+      ============================ */}
+
       <div className="bottom-section">
 
         <RecentActivity />
@@ -126,3 +156,4 @@ const Overview = () => {
 };
 
 export default Overview;
+

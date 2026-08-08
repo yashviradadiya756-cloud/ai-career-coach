@@ -1,24 +1,17 @@
 import api from "./axios";
 
-
-// GET SETTINGS
-
 export const getSettings = () => {
   return api.get("/api/settings");
 };
 
-
-// UPDATE PROFILE
-
 export const updateProfile = (data) => {
+  console.log("SENDING PROFILE DATA:", data);
+
   return api.put(
     "/api/settings/profile",
     data
   );
 };
-
-
-// UPDATE PREFERENCES
 
 export const updatePreferences = (data) => {
   return api.put(
@@ -27,18 +20,12 @@ export const updatePreferences = (data) => {
   );
 };
 
-
-// CHANGE PASSWORD
-
 export const changePassword = (data) => {
   return api.put(
     "/api/settings/password",
     data
   );
 };
-
-
-// DELETE ACCOUNT
 
 export const deleteAccount = () => {
   return api.delete(

@@ -1,13 +1,15 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 
-// ===============================
-// GET SETTINGS / PROFILE
-// ===============================
+// ==========================================
+// GET SETTINGS
+// ==========================================
 
 const getSettings = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("-password");
+    const user = await User.findById(
+      req.user._id
+    ).select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -16,14 +18,14 @@ const getSettings = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       user,
     });
   } catch (error) {
-    console.error("Get Settings Error:", error);
+    console.error("GET SETTINGS ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to load settings",
     });
@@ -31,13 +33,20 @@ const getSettings = async (req, res) => {
 };
 
 
-// ===============================
+// ==========================================
 // UPDATE PROFILE
-// ===============================
+// ==========================================
 
 const updateProfile = async (req, res) => {
   try {
+    console.log("================================");
+    console.log("UPDATE PROFILE");
+    console.log("BODY:", req.body);
+    console.log("USER ID:", req.user._id);
+    console.log("================================");
+
     const {
+      name,
       username,
       phone,
     } = req.body;
@@ -53,47 +62,71 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    if (username !== undefined) {
-      user.username = username;
+    // FULL NAME
+    if (name !== undefined) {
+      if (!name.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Full name cannot be empty",
+        });
+      }
+
+      user.name = name.trim();
     }
 
+    // USERNAME
+    if (username !== undefined) {
+      if (!username.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Username cannot be empty",
+        });
+      }
+
+      user.username = username.trim();
+    }
+
+    // PHONE
     if (phone !== undefined) {
-      user.phone = phone;
+      user.phone = phone.trim();
     }
 
     await user.save();
 
-    const updatedUser =
-      await User.findById(
-        req.user._id
-      ).select("-password");
+    const updatedUser = await User.findById(
+      req.user._id
+    ).select("-password");
+
+    console.log(
+      "UPDATED USER:",
+      updatedUser
+    );
 
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
       user: updatedUser,
     });
+
   } catch (error) {
     console.error(
-      "Update Profile Error:",
+      "UPDATE PROFILE ERROR:",
       error
     );
 
     return res.status(500).json({
       success: false,
-      message: "Failed to update profile",
+      message:
+        error.message ||
+        "Failed to update profile",
     });
   }
 };
 
-module.exports = {
-  updateProfile,
-};
 
-
-// ===============================
+// ==========================================
 // UPDATE PREFERENCES
-// ===============================
+// ==========================================
 
 const updatePreferences = async (req, res) => {
   try {
@@ -103,7 +136,9 @@ const updatePreferences = async (req, res) => {
       pushNotifications,
     } = req.body;
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(
+      req.user._id
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -112,45 +147,56 @@ const updatePreferences = async (req, res) => {
       });
     }
 
-    if (!user.preferences) {
-      user.preferences = {};
-    }
-
     if (darkMode !== undefined) {
       user.preferences.darkMode = darkMode;
     }
 
-    if (emailNotifications !== undefined) {
-      user.preferences.emailNotifications = emailNotifications;
+    if (
+      emailNotifications !== undefined
+    ) {
+      user.preferences.emailNotifications =
+        emailNotifications;
     }
 
-    if (pushNotifications !== undefined) {
-      user.preferences.pushNotifications = pushNotifications;
+    if (
+      pushNotifications !== undefined
+    ) {
+      user.preferences.pushNotifications =
+        pushNotifications;
     }
 
     await user.save();
 
-    const updatedUser = await User.findById(req.user._id).select("-password");
+    const updatedUser = await User.findById(
+      req.user._id
+    ).select("-password");
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Preferences updated successfully",
+      message:
+        "Preferences updated successfully",
       user: updatedUser,
     });
-  } catch (error) {
-    console.error("Update Preferences Error:", error);
 
-    res.status(500).json({
+  } catch (error) {
+    console.error(
+      "UPDATE PREFERENCES ERROR:",
+      error
+    );
+
+    return res.status(500).json({
       success: false,
-      message: "Failed to update preferences",
+      message:
+        error.message ||
+        "Failed to update preferences",
     });
   }
 };
 
 
-// ===============================
+// ==========================================
 // CHANGE PASSWORD
-// ===============================
+// ==========================================
 
 const changePassword = async (req, res) => {
   try {
@@ -160,28 +206,37 @@ const changePassword = async (req, res) => {
       confirmPassword,
     } = req.body;
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if (
+      !currentPassword ||
+      !newPassword ||
+      !confirmPassword
+    ) {
       return res.status(400).json({
         success: false,
-        message: "All password fields are required",
+        message:
+          "All password fields are required",
       });
     }
 
     if (newPassword !== confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "New passwords do not match",
+        message:
+          "New passwords do not match",
       });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "Password must be at least 6 characters",
+        message:
+          "Password must be at least 6 characters",
       });
     }
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(
+      req.user._id
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -190,46 +245,58 @@ const changePassword = async (req, res) => {
       });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(
-      currentPassword,
-      user.password
-    );
+    const isPasswordCorrect =
+      await bcrypt.compare(
+        currentPassword,
+        user.password
+      );
 
     if (!isPasswordCorrect) {
       return res.status(401).json({
         success: false,
-        message: "Current password is incorrect",
+        message:
+          "Current password is incorrect",
       });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    user.password = hashedPassword;
+    user.password =
+      await bcrypt.hash(
+        newPassword,
+        10
+      );
 
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Password changed successfully",
+      message:
+        "Password changed successfully",
     });
-  } catch (error) {
-    console.error("Change Password Error:", error);
 
-    res.status(500).json({
+  } catch (error) {
+    console.error(
+      "CHANGE PASSWORD ERROR:",
+      error
+    );
+
+    return res.status(500).json({
       success: false,
-      message: "Failed to change password",
+      message:
+        "Failed to change password",
     });
   }
 };
 
 
-// ===============================
+// ==========================================
 // DELETE ACCOUNT
-// ===============================
+// ==========================================
 
 const deleteAccount = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(
+      req.user._id
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -238,22 +305,34 @@ const deleteAccount = async (req, res) => {
       });
     }
 
-    await User.findByIdAndDelete(req.user._id);
+    await User.findByIdAndDelete(
+      req.user._id
+    );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Account deleted successfully",
+      message:
+        "Account deleted successfully",
     });
-  } catch (error) {
-    console.error("Delete Account Error:", error);
 
-    res.status(500).json({
+  } catch (error) {
+    console.error(
+      "DELETE ACCOUNT ERROR:",
+      error
+    );
+
+    return res.status(500).json({
       success: false,
-      message: "Failed to delete account",
+      message:
+        "Failed to delete account",
     });
   }
 };
 
+
+// ==========================================
+// EXPORT EVERYTHING
+// ==========================================
 
 module.exports = {
   getSettings,

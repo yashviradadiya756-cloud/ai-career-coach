@@ -11,6 +11,7 @@ import {
 export default function Settings() {
   const [user, setUser] = useState(null);
 
+  const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -50,6 +51,7 @@ export default function Settings() {
 
       setUser(data);
 
+      setName(data.name || "");
       setUsername(data.username || "");
       setEmail(data.email || "");
       setPhone(data.phone || "");
@@ -88,6 +90,7 @@ export default function Settings() {
       setError("");
 
       const response = await updateProfile({
+        name,
         username,
         phone,
       });
@@ -145,9 +148,15 @@ export default function Settings() {
 
   const updateProfile = async (req, res) => {
   try {
-    const { username, phone } = req.body;
+    const {
+      name,
+      username,
+      phone,
+    } = req.body;
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(
+      req.user._id
+    );
 
     if (!user) {
       return res.status(404).json({
@@ -156,19 +165,38 @@ export default function Settings() {
       });
     }
 
+    if (name !== undefined) {
+      if (!name.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Full name cannot be empty",
+        });
+      }
+
+      user.name = name.trim();
+    }
+
     if (username !== undefined) {
-      user.username = username;
+      if (!username.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Username cannot be empty",
+        });
+      }
+
+      user.username = username.trim();
     }
 
     if (phone !== undefined) {
-      user.phone = phone;
+      user.phone = phone.trim();
     }
 
     await user.save();
 
-    const updatedUser = await User.findById(
-      req.user._id
-    ).select("-password");
+    const updatedUser =
+      await User.findById(
+        req.user._id
+      ).select("-password");
 
     return res.status(200).json({
       success: true,
@@ -360,12 +388,11 @@ export default function Settings() {
               </label>
 
               <input
+                type="text"
                 style={styles.input}
                 value={name}
-                onChange={(e) =>
-                  setName(e.target.value)
-                }
-                placeholder="Enter your name"
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your full name"
               />
             </div>
 
