@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+} from "react";
 
 import WelcomeCard from "../components/WelcomeCard";
 import DashboardCard from "../components/DashboardCard";
@@ -6,12 +9,19 @@ import ProgressBar from "../components/ProgressBar";
 import RecentActivity from "../components/RecentActivity";
 import QuickActions from "../components/QuickActions";
 
-import { getDashboardOverview } from "../../api/dashboardApi";
+import {
+  getDashboardOverview,
+} from "../../api/dashboardApi";
 
 const Overview = () => {
-  const [dashboard, setDashboard] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [dashboard, setDashboard] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -19,28 +29,33 @@ const Overview = () => {
         setLoading(true);
         setError("");
 
-        const data = await getDashboardOverview();
+        const response =
+          await getDashboardOverview();
 
-        console.log("DASHBOARD RESPONSE:", data);
-        console.log("DASHBOARD USER:", data?.user);
+        console.log(
+          "DASHBOARD RESPONSE:",
+          response
+        );
 
-        if (data.success) {
-          setDashboard(data);
+        if (response?.success) {
+          setDashboard(response);
         } else {
-          setError("Failed to load dashboard");
+          setError(
+            response?.message ||
+              "Failed to load dashboard"
+          );
         }
-
       } catch (error) {
         console.error(
           "Dashboard API Error:",
-          error.response?.data || error.message
+          error.response?.data ||
+            error.message
         );
 
         setError(
           error.response?.data?.message ||
             "Failed to load dashboard"
         );
-
       } finally {
         setLoading(false);
       }
@@ -51,7 +66,7 @@ const Overview = () => {
 
   if (loading) {
     return (
-      <div className="dashboard-loading">
+      <div>
         Loading your dashboard...
       </div>
     );
@@ -59,7 +74,7 @@ const Overview = () => {
 
   if (error) {
     return (
-      <div className="dashboard-error">
+      <div>
         {error}
       </div>
     );
@@ -69,66 +84,73 @@ const Overview = () => {
     return null;
   }
 
-  const {
-    user,
-    stats,
-  } = dashboard;
+  const user =
+    dashboard.user || {};
+
+  const stats =
+    dashboard.stats || {};
 
   return (
-    <div className="overview-page">
+    <div>
 
-      {/* =========================
-          WELCOME
-      ========================== */}
+      {/* ================================= */}
+      {/* WELCOME */}
+      {/* ================================= */}
 
       <WelcomeCard user={user} />
 
 
-      {/* =========================
-          DASHBOARD STATISTICS
-      ========================== */}
+      {/* ================================= */}
+      {/* DASHBOARD STATISTICS */}
+      {/* ================================= */}
 
       <div className="dashboard-grid">
 
         <DashboardCard
           title="Career Score"
-          value={stats.careerScore}
+          value={stats.careerScore || 0}
           colorClass="blue"
         />
 
         <DashboardCard
           title="Resume ATS"
-          value={`${stats.resumeATS}%`}
+          value={`${stats.resumeATS || 0}%`}
           colorClass="green"
         />
 
         <DashboardCard
           title="Skills Matched"
-          value={`${stats.skillsMatched} / ${stats.totalSkills}`}
+          value={`${stats.skillsMatched || 0} / ${
+            stats.totalSkills || 0
+          }`}
           colorClass="amber"
         />
 
         <DashboardCard
           title="Interview Average"
-          value={`${stats.interviewAverage}%`}
+          value={`${
+            stats.interviewAverage || 0
+          }%`}
           colorClass="red"
         />
 
       </div>
 
 
-      {/* =========================
-          OVERALL PROGRESS
-      ========================== */}
+      {/* ================================= */}
+      {/* OVERALL PROGRESS */}
+      {/* ================================= */}
 
       <ProgressBar
-        percentage={stats.progress || 0}
+        percentage={
+          stats.progress || 0
+        }
       />
 
 
-      {/* =========================
-          BOTTOM SECTION
-      ========================== */}
+      {/* ================================= */}
+      {/* BOTTOM SECTION */}
+      {/* ================================= */}
 
       <div className="bottom-section">
 

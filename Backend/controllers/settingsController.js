@@ -140,13 +140,25 @@ const updateProfile = async (req, res) => {
 // UPDATE PREFERENCES
 // ==========================================
 
-const updatePreferences = async (req, res) => {
+const updateProfile = async (req, res) => {
   try {
     const {
-      darkMode,
-      emailNotifications,
-      pushNotifications,
+      name,
+      username,
+      phone,
     } = req.body;
+
+    console.log(
+      "UPDATE PROFILE BODY:",
+      req.body
+    );
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
 
     const user = await User.findById(
       req.user._id
@@ -159,40 +171,86 @@ const updatePreferences = async (req, res) => {
       });
     }
 
-    if (darkMode !== undefined) {
-      user.preferences.darkMode = darkMode;
+    // ------------------------------------------
+    // NAME
+    // ------------------------------------------
+
+    if (name !== undefined) {
+      const cleanName = String(name).trim();
+
+      if (!cleanName) {
+        return res.status(400).json({
+          success: false,
+          message: "Full name cannot be empty",
+        });
+      }
+
+      user.name = cleanName;
     }
 
-    if (
-      emailNotifications !== undefined
-    ) {
-      user.preferences.emailNotifications =
-        emailNotifications;
+    // ------------------------------------------
+    // USERNAME
+    // ------------------------------------------
+
+    if (username !== undefined) {
+      const cleanUsername =
+        String(username).trim();
+
+      if (!cleanUsername) {
+        return res.status(400).json({
+          success: false,
+          message: "Username cannot be empty",
+        });
+      }
+
+      // Don't allow another user to use
+      // the same username.
+
+      const existingUser =
+        await User.findOne({
+          username: cleanUsername,
+          _id: { $ne: user._id },
+        });
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Username is already taken",
+        });
+      }
+
+      user.username = cleanUsername;
     }
 
-    if (
-      pushNotifications !== undefined
-    ) {
-      user.preferences.pushNotifications =
-        pushNotifications;
+    // ------------------------------------------
+    // PHONE
+    // ------------------------------------------
+
+    if (phone !== undefined) {
+      user.phone = String(phone).trim();
     }
 
     await user.save();
 
-    const updatedUser = await User.findById(
-      req.user._id
-    ).select("-password");
+    const updatedUser =
+      await User.findById(
+        user._id
+      ).select("-password");
+
+    console.log(
+      "PROFILE UPDATED:",
+      updatedUser
+    );
 
     return res.status(200).json({
       success: true,
       message:
-        "Preferences updated successfully",
+        "Profile updated successfully",
       user: updatedUser,
     });
-
   } catch (error) {
     console.error(
-      "UPDATE PREFERENCES ERROR:",
+      "UPDATE PROFILE ERROR:",
       error
     );
 
@@ -200,7 +258,7 @@ const updatePreferences = async (req, res) => {
       success: false,
       message:
         error.message ||
-        "Failed to update preferences",
+        "Failed to update profile",
     });
   }
 };

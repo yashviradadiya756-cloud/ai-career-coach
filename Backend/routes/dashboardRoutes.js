@@ -8,6 +8,7 @@ const {
 
 const protect = require("../middleware/authMiddleware");
 
+// GET /api/dashboard/overview
 router.get(
   "/overview",
   protect,

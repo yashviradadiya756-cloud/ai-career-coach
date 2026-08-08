@@ -2,18 +2,29 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
+    // ==========================================
+    // FULL NAME
+    // ==========================================
+
     name: {
       type: String,
-      required: false,
-      default: "",
+      required: true,
       trim: true,
     },
+
+    // ==========================================
+    // USERNAME
+    // ==========================================
 
     username: {
       type: String,
       required: true,
       trim: true,
     },
+
+    // ==========================================
+    // EMAIL
+    // ==========================================
 
     email: {
       type: String,
@@ -23,16 +34,28 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // ==========================================
+    // PASSWORD
+    // ==========================================
+
     password: {
       type: String,
       required: true,
     },
+
+    // ==========================================
+    // PHONE
+    // ==========================================
 
     phone: {
       type: String,
       default: "",
       trim: true,
     },
+
+    // ==========================================
+    // PREFERENCES
+    // ==========================================
 
     preferences: {
       darkMode: {
@@ -56,4 +79,5 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports =
+  mongoose.model("User", userSchema);

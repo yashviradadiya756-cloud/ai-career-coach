@@ -4,8 +4,23 @@ const Roadmap = require("../models/Roadmap");
 const Interview = require("../models/Interview");
 const Learning = require("../models/Learning");
 
+// =====================================================
+// GET DASHBOARD OVERVIEW
+// =====================================================
+
 const getDashboardOverview = async (req, res) => {
   try {
+    // -------------------------------------------------
+    // 1. CHECK AUTHENTICATED USER
+    // -------------------------------------------------
+
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: "User is not authenticated",
+      });
+    }
+
     const userId = req.user._id;
 
     console.log("=================================");
@@ -13,12 +28,12 @@ const getDashboardOverview = async (req, res) => {
     console.log("USER ID:", userId);
     console.log("=================================");
 
-    // ==========================================
-    // 1. USER
-    // ==========================================
+    // -------------------------------------------------
+    // 2. GET USER
+    // -------------------------------------------------
 
     const user = await User.findById(userId).select(
-      "name username email"
+      "name username email phone"
     );
 
     if (!user) {
@@ -28,54 +43,61 @@ const getDashboardOverview = async (req, res) => {
       });
     }
 
-    // ==========================================
-    // 2. DEFAULT VALUES
-    // IMPORTANT FOR NEW USERS
-    // ==========================================
+    // -------------------------------------------------
+    // 3. DEFAULT VALUES
+    // IMPORTANT:
+    // These are declared BEFORE being used.
+    // -------------------------------------------------
 
     let resumeATS = 0;
+
     let roadmapProgress = 0;
+
     let interviewAverage = 0;
+
     let learningProgress = 0;
+
     let skillsMatched = 0;
+
     let totalSkills = 0;
 
-    // ==========================================
-    // 3. LATEST RESUME
-    // ==========================================
+    // -------------------------------------------------
+    // 4. RESUME
+    // -------------------------------------------------
 
     const latestResume = await Resume.findOne({
       user: userId,
-    }).sort({
-      createdAt: -1,
-    });
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
     if (latestResume) {
       resumeATS = Number(latestResume.atsScore) || 0;
+
+      resumeATS = Math.min(
+        100,
+        Math.max(0, resumeATS)
+      );
 
       if (Array.isArray(latestResume.skills)) {
         totalSkills = latestResume.skills.length;
       }
 
-      if (
-        Array.isArray(
-          latestResume.matchedSkills
-        )
-      ) {
+      if (Array.isArray(latestResume.matchedSkills)) {
         skillsMatched =
           latestResume.matchedSkills.length;
       }
     }
 
-    // ==========================================
-    // 4. ROADMAP
-    // ==========================================
+    // -------------------------------------------------
+    // 5. ROADMAP
+    // -------------------------------------------------
 
     const latestRoadmap = await Roadmap.findOne({
       user: userId,
-    }).sort({
-      createdAt: -1,
-    });
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
     if (
       latestRoadmap &&
@@ -93,53 +115,53 @@ const getDashboardOverview = async (req, res) => {
       roadmapProgress = Math.round(
         (completedPhases / totalPhases) * 100
       );
+
+      roadmapProgress = Math.min(
+        100,
+        Math.max(0, roadmapProgress)
+      );
     }
 
-    // ==========================================
-    // 5. INTERVIEWS
-    // ==========================================
+    // -------------------------------------------------
+    // 6. INTERVIEW
+    // -------------------------------------------------
 
     const interviews = await Interview.find({
       user: userId,
-    }).sort({
-      createdAt: -1,
-    });
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
     const interviewScores = [];
 
-    interviews.forEach((interview) => {
-      if (
-        Array.isArray(interview.questions) &&
-        interview.questions.length > 0
-      ) {
-        const scores = interview.questions
-          .map((question) =>
-            Number(question.score)
-          )
-          .filter(
-            (score) =>
-              !Number.isNaN(score) &&
-              score >= 0
-          );
+    if (Array.isArray(interviews)) {
+      interviews.forEach((interview) => {
+        if (
+          Array.isArray(interview.questions) &&
+          interview.questions.length > 0
+        ) {
+          interview.questions.forEach(
+            (question) => {
+              const score = Number(
+                question.score
+              );
 
-        if (scores.length > 0) {
-          const total = scores.reduce(
-            (sum, score) => sum + score,
-            0
-          );
-
-          const average =
-            total / scores.length;
-
-          interviewScores.push(
-            Math.min(
-              100,
-              Math.max(0, average)
-            )
+              if (
+                !Number.isNaN(score) &&
+                score >= 0
+              ) {
+                interviewScores.push(
+                  Math.min(
+                    100,
+                    Math.max(0, score)
+                  )
+                );
+              }
+            }
           );
         }
-      }
-    });
+      });
+    }
 
     if (interviewScores.length > 0) {
       const total =
@@ -153,22 +175,21 @@ const getDashboardOverview = async (req, res) => {
       );
     }
 
-    // ==========================================
-    // 6. LEARNING
-    // ==========================================
+    // -------------------------------------------------
+    // 7. LEARNING
+    // -------------------------------------------------
 
     const latestLearning = await Learning.findOne({
       user: userId,
-    }).sort({
-      createdAt: -1,
-    });
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
     if (
       latestLearning &&
       Array.isArray(
         latestLearning.recommendations
-      ) &&
-      latestLearning.recommendations.length > 0
+      )
     ) {
       learningProgress = Math.min(
         100,
@@ -176,10 +197,11 @@ const getDashboardOverview = async (req, res) => {
       );
     }
 
-    // ==========================================
-    // 7. CAREER SCORE
-    // MUST BE DECLARED BEFORE RESPONSE
-    // ==========================================
+    // -------------------------------------------------
+    // 8. CALCULATE CAREER SCORE
+    // IMPORTANT:
+    // Calculate AFTER all variables are initialized.
+    // -------------------------------------------------
 
     const careerScore = Math.round(
       (
@@ -189,64 +211,49 @@ const getDashboardOverview = async (req, res) => {
       ) / 3
     );
 
-    // ==========================================
-    // 8. OVERALL PROGRESS
-    // ==========================================
+    // -------------------------------------------------
+    // 9. OVERALL PROGRESS
+    // -------------------------------------------------
 
     const overallProgress = Math.round(
       (
         resumeATS +
-        interviewAverage +
         roadmapProgress +
+        interviewAverage +
         learningProgress
       ) / 4
     );
 
-    // ==========================================
-    // 9. DEBUG
-    // ==========================================
+    // -------------------------------------------------
+    // 10. DEBUG
+    // -------------------------------------------------
 
+    console.log("Dashboard values:");
+    console.log("Name:", user.name);
+    console.log("Username:", user.username);
     console.log("Resume ATS:", resumeATS);
-    console.log(
-      "Interview Average:",
-      interviewAverage
-    );
-    console.log(
-      "Roadmap Progress:",
-      roadmapProgress
-    );
-    console.log(
-      "Learning Progress:",
-      learningProgress
-    );
-    console.log(
-      "Skills Matched:",
-      skillsMatched
-    );
-    console.log(
-      "Total Skills:",
-      totalSkills
-    );
-    console.log(
-      "Career Score:",
-      careerScore
-    );
+    console.log("Roadmap:", roadmapProgress);
+    console.log("Interview:", interviewAverage);
+    console.log("Learning:", learningProgress);
+    console.log("Career Score:", careerScore);
     console.log(
       "Overall Progress:",
       overallProgress
     );
 
-    // ==========================================
-    // 10. RESPONSE
-    // ==========================================
+    // -------------------------------------------------
+    // 11. SEND RESPONSE
+    // -------------------------------------------------
 
     return res.status(200).json({
       success: true,
 
       user: {
+        _id: user._id,
         name: user.name || "",
         username: user.username || "",
         email: user.email || "",
+        phone: user.phone || "",
       },
 
       stats: {
@@ -261,15 +268,37 @@ const getDashboardOverview = async (req, res) => {
         interviewAverage:
           interviewAverage || 0,
 
-        progress:
-          overallProgress || 0,
+        progress: overallProgress || 0,
       },
     });
-
   } catch (error) {
+    // -------------------------------------------------
+    // IMPORTANT:
+    // THIS WILL SHOW THE REAL ERROR IN RENDER LOGS
+    // -------------------------------------------------
+
     console.error(
-      "DASHBOARD OVERVIEW ERROR:",
-      error
+      "================================="
+    );
+
+    console.error(
+      "DASHBOARD OVERVIEW ERROR:"
+    );
+
+    console.error(error);
+
+    console.error(
+      "ERROR MESSAGE:",
+      error.message
+    );
+
+    console.error(
+      "ERROR STACK:",
+      error.stack
+    );
+
+    console.error(
+      "================================="
     );
 
     return res.status(500).json({
