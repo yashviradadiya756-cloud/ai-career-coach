@@ -1,40 +1,72 @@
 const Interview = require("../models/Interview");
 const generateInterviewQuestions = require("../utils/geminiInterview");
 
+// ==========================================
+// GENERATE INTERVIEW
+// ==========================================
+
 const generateInterviewController = async (req, res) => {
   try {
     const { targetRole } = req.body;
 
-    if (!targetRole || !targetRole.trim()) {
+    console.log("=================================");
+    console.log("INTERVIEW GENERATE API");
+    console.log("User:", req.user?._id);
+    console.log("Target Role:", targetRole);
+    console.log("=================================");
+
+    // ==========================================
+    // VALIDATE TARGET ROLE
+    // ==========================================
+
+    if (
+      !targetRole ||
+      typeof targetRole !== "string" ||
+      !targetRole.trim()
+    ) {
       return res.status(400).json({
         success: false,
         message: "Target Role is required",
       });
     }
 
-    console.log("Generating interview for:", targetRole);
+    // ==========================================
+    // GENERATE QUESTIONS
+    // ==========================================
 
-    const interviewData = await generateInterviewQuestions(
-      targetRole.trim()
-    );
+    const interviewData =
+      await generateInterviewQuestions(
+        targetRole.trim()
+      );
 
     if (
       !interviewData ||
-      !Array.isArray(interviewData.questions)
+      !Array.isArray(interviewData.questions) ||
+      interviewData.questions.length === 0
     ) {
       return res.status(500).json({
         success: false,
-        message: "Invalid interview questions generated",
+        message:
+          "Failed to generate interview questions",
       });
     }
 
-    const questions = interviewData.questions.map((q) => ({
-      question: q.question,
-      answer: "",
-      feedback: "",
-      improvement: "",
-      score: 0,
-    }));
+    // ==========================================
+    // FORMAT QUESTIONS FOR DATABASE
+    // ==========================================
+
+    const questions =
+      interviewData.questions.map((q) => ({
+        question: q.question,
+        answer: "",
+        feedback: "",
+        improvement: "",
+        score: 0,
+      }));
+
+    // ==========================================
+    // SAVE INTERVIEW
+    // ==========================================
 
     const interview = await Interview.create({
       user: req.user._id,
@@ -44,18 +76,34 @@ const generateInterviewController = async (req, res) => {
       improvement: "",
     });
 
-    res.status(201).json({
+    console.log(
+      "✅ Interview saved:",
+      interview._id
+    );
+
+    // ==========================================
+    // RESPONSE
+    // ==========================================
+
+    return res.status(201).json({
       success: true,
-      message: "Interview Questions Generated Successfully",
+      message:
+        "Interview Questions Generated Successfully",
+
       interview,
     });
-
   } catch (error) {
-    console.log("Interview Error:", error);
+    console.error(
+      "❌ Interview Controller Error:",
+      error
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message || "Interview generation failed",
+
+      message:
+        error.message ||
+        "Interview generation failed",
     });
   }
 };

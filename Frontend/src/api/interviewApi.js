@@ -1,21 +1,29 @@
 import api from "./axios";
 
-export const generateInterview = (targetRole) => {
-  return api.post("/api/interview/generate", {
-    targetRole,
-  });
+// ==========================================
+// GENERATE INTERVIEW
+// ==========================================
+
+export const generateInterview = async (targetRole) => {
+  const response = await api.post(
+    "/api/interview/generate",
+    {
+      targetRole,
+    }
+  );
+
+  return response.data;
 };
 
-export const submitInterviewAnswer = (
-  interviewId,
-  questionIndex,
-  question,
-  answer
-) => {
-  return api.post("/api/interview/submit", {
-    interviewId,
-    questionIndex,
-    question,
-    answer,
-  });
+// ==========================================
+// SUBMIT INTERVIEW
+// ==========================================
+
+export const submitInterview = async (data) => {
+  const response = await api.post(
+    "/api/interview/submit",
+    data
+  );
+
+  return response.data;
 };

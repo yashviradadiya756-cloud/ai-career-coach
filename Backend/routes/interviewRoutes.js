@@ -12,10 +12,24 @@ const {
   submitInterviewController,
 } = require("../controllers/submitInterviewController");
 
-// Generate interview questions
-router.post("/generate", protect, generateInterviewController);
+// ==========================================
+// GENERATE INTERVIEW
+// ==========================================
 
-// Submit interview answers
-router.post("/submit", protect, submitInterviewController);
+router.post(
+  "/generate",
+  protect,
+  generateInterviewController
+);
+
+// ==========================================
+// SUBMIT INTERVIEW
+// ==========================================
+
+router.post(
+  "/submit",
+  protect,
+  submitInterviewController
+);
 
 module.exports = router;

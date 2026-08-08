@@ -11,6 +11,7 @@ const interviewSchema = new mongoose.Schema(
     targetRole: {
       type: String,
       required: true,
+      trim: true,
     },
 
     improvement: {
@@ -20,7 +21,10 @@ const interviewSchema = new mongoose.Schema(
 
     questions: [
       {
-        question: String,
+        question: {
+          type: String,
+          required: true,
+        },
 
         answer: {
           type: String,
@@ -54,4 +58,7 @@ const interviewSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Interview", interviewSchema);
+module.exports = mongoose.model(
+  "Interview",
+  interviewSchema
+);

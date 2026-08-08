@@ -1,997 +1,716 @@
-import React, { useEffect, useState, useRef } from "react";
-import axios from "../../api/axios";
+import React, { useState } from "react";
 
-export default function Interview() {
+import {
+  generateInterview,
+  submitInterview,
+} from "../../api/interviewApi";
+
+const Interview = () => {
+  // ==========================================
+  // STATE
+  // ==========================================
+
+  const [targetRole, setTargetRole] = useState("");
+
   const [interview, setInterview] = useState(null);
 
-  const [targetRole, setTargetRole] = useState("Full Stack Developer");
-
-  const [loading, setLoading] = useState(false);
-  const [starting, setStarting] = useState(false);
-
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentQuestion, setCurrentQuestion] =
+    useState(0);
 
   const [answer, setAnswer] = useState("");
 
-  const [listening, setListening] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [feedback, setFeedback] = useState(null);
+  const [submitting, setSubmitting] =
+    useState(false);
 
-  const [completed, setCompleted] = useState(false);
+  const [error, setError] = useState("");
 
-  const recognitionRef = useRef(null);
+  const [success, setSuccess] = useState("");
 
-  // =====================================================
-  // CHECK BROWSER SPEECH SUPPORT
-  // =====================================================
+  const [result, setResult] = useState(null);
 
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  // =====================================================
-  // SPEAK QUESTION
-  // =====================================================
-
-  const speakQuestion = (question) => {
-    if (!window.speechSynthesis) {
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    const speech = new SpeechSynthesisUtterance(question);
-
-    speech.lang = "en-US";
-    speech.rate = 0.9;
-    speech.pitch = 1;
-
-    window.speechSynthesis.speak(speech);
-  };
-
-  // =====================================================
-  // GENERATE INTERVIEW
-  // =====================================================
+  // ==========================================
+  // START INTERVIEW
+  // ==========================================
 
   const startInterview = async () => {
-    if (!targetRole.trim()) {
-      alert("Please enter target role");
-      return;
-    }
-
     try {
-      setStarting(true);
+      setError("");
+      setSuccess("");
+      setResult(null);
 
-      const res = await axios.post("/api/interview/generate", {
-        targetRole: targetRole.trim(),
-      });
+      if (!targetRole.trim()) {
+        setError(
+          "Please enter your target job role."
+        );
+        return;
+      }
 
-      console.log("Interview:", res.data);
+      setLoading(true);
 
-      setInterview(res.data.interview);
+      console.log(
+        "Starting interview:",
+        targetRole
+      );
 
-      setCurrentIndex(0);
+      const data = await generateInterview(
+        targetRole.trim()
+      );
+
+      console.log(
+        "Interview API Response:",
+        data
+      );
+
+      if (!data.success) {
+        throw new Error(
+          data.message ||
+            "Failed to generate interview"
+        );
+      }
+
+      if (
+        !data.interview ||
+        !Array.isArray(
+          data.interview.questions
+        ) ||
+        data.interview.questions.length === 0
+      ) {
+        throw new Error(
+          "No interview questions were generated."
+        );
+      }
+
+      setInterview(data.interview);
+
+      setCurrentQuestion(0);
 
       setAnswer("");
 
-      setFeedback(null);
-
-      setCompleted(false);
-
-      // Speak first question
-      setTimeout(() => {
-        speakQuestion(res.data.interview.questions[0].question);
-      }, 500);
-
+      setSuccess(
+        "Interview generated successfully!"
+      );
     } catch (error) {
-      console.log(error);
+      console.error(
+        "Interview generation error:",
+        error
+      );
 
-      alert(
+      setError(
         error.response?.data?.message ||
-          "Unable to start interview"
-      );
-    } finally {
-      setStarting(false);
-    }
-  };
-
-  // =====================================================
-  // START SPEAKING
-  // =====================================================
-
-  const startListening = () => {
-    if (!SpeechRecognition) {
-      alert(
-        "Speech recognition is not supported in this browser. Please use Google Chrome."
-      );
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-
-    recognition.lang = "en-US";
-
-    recognition.continuous = true;
-
-    recognition.interimResults = true;
-
-    recognitionRef.current = recognition;
-
-    let finalTranscript = answer;
-
-    recognition.onstart = () => {
-      setListening(true);
-    };
-
-    recognition.onresult = (event) => {
-      let interimTranscript = "";
-
-      for (
-        let i = event.resultIndex;
-        i < event.results.length;
-        i++
-      ) {
-        const transcript =
-          event.results[i][0].transcript;
-
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript + " ";
-        } else {
-          interimTranscript += transcript;
-        }
-      }
-
-      setAnswer(
-        finalTranscript + interimTranscript
-      );
-    };
-
-    recognition.onerror = (event) => {
-      console.log("Speech error:", event.error);
-      setListening(false);
-    };
-
-    recognition.onend = () => {
-      setListening(false);
-    };
-
-    recognition.start();
-  };
-
-  // =====================================================
-  // STOP SPEAKING
-  // =====================================================
-
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-
-    setListening(false);
-  };
-
-  // =====================================================
-  // SUBMIT ANSWER
-  // =====================================================
-
-  const submitAnswer = async () => {
-    if (!answer.trim()) {
-      alert("Please answer the question first.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      stopListening();
-
-      const currentQuestion =
-        interview.questions[currentIndex];
-
-      const res = await axios.post(
-        "/api/interview/submit",
-        {
-          interviewId: interview._id,
-
-          questionIndex: currentIndex,
-
-          question: currentQuestion.question,
-
-          answer: answer.trim(),
-        }
-      );
-
-      console.log("Evaluation:", res.data);
-
-      setFeedback(res.data.evaluation);
-
-      // Update current question locally
-      const updatedQuestions = [
-        ...interview.questions,
-      ];
-
-      updatedQuestions[currentIndex] = {
-        ...updatedQuestions[currentIndex],
-        answer: answer.trim(),
-        score: res.data.evaluation.score,
-        feedback: res.data.evaluation.feedback,
-        improvement:
-          res.data.evaluation.improvement,
-      };
-
-      setInterview({
-        ...interview,
-        questions: updatedQuestions,
-      });
-
-    } catch (error) {
-      console.log(error);
-
-      alert(
-        error.response?.data?.message ||
-          "Unable to evaluate answer"
+          error.message ||
+          "Failed to generate interview."
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // =====================================================
+  // ==========================================
   // NEXT QUESTION
-  // =====================================================
+  // ==========================================
 
   const nextQuestion = () => {
-    const nextIndex = currentIndex + 1;
-
-    if (
-      nextIndex >= interview.questions.length
-    ) {
-      setCompleted(true);
-
-      window.speechSynthesis.cancel();
-
+    if (!answer.trim()) {
+      setError(
+        "Please answer the question before continuing."
+      );
       return;
     }
 
-    setCurrentIndex(nextIndex);
+    setError("");
+
+    const updatedQuestions = [
+      ...interview.questions,
+    ];
+
+    updatedQuestions[currentQuestion] = {
+      ...updatedQuestions[currentQuestion],
+      answer: answer.trim(),
+    };
+
+    setInterview({
+      ...interview,
+      questions: updatedQuestions,
+    });
+
+    if (
+      currentQuestion <
+      interview.questions.length - 1
+    ) {
+      setCurrentQuestion(
+        currentQuestion + 1
+      );
+
+      setAnswer("");
+    } else {
+      setSuccess(
+        "All questions answered. Submit your interview."
+      );
+    }
+  };
+
+  // ==========================================
+  // PREVIOUS QUESTION
+  // ==========================================
+
+  const previousQuestion = () => {
+    if (currentQuestion === 0) {
+      return;
+    }
+
+    const updatedQuestions = [
+      ...interview.questions,
+    ];
+
+    updatedQuestions[currentQuestion] = {
+      ...updatedQuestions[currentQuestion],
+      answer: answer.trim(),
+    };
+
+    setInterview({
+      ...interview,
+      questions: updatedQuestions,
+    });
+
+    const previousIndex =
+      currentQuestion - 1;
+
+    setCurrentQuestion(previousIndex);
+
+    setAnswer(
+      updatedQuestions[previousIndex]
+        ?.answer || ""
+    );
+
+    setError("");
+  };
+
+  // ==========================================
+  // SUBMIT INTERVIEW
+  // ==========================================
+
+  const handleSubmit = async () => {
+    try {
+      setError("");
+      setSuccess("");
+
+      if (!interview) {
+        return;
+      }
+
+      const questions = [
+        ...interview.questions,
+      ];
+
+      questions[currentQuestion] = {
+        ...questions[currentQuestion],
+        answer: answer.trim(),
+      };
+
+      const unanswered = questions.some(
+        (question) =>
+          !question.answer ||
+          !question.answer.trim()
+      );
+
+      if (unanswered) {
+        setError(
+          "Please answer all interview questions before submitting."
+        );
+        return;
+      }
+
+      setSubmitting(true);
+
+      const data = await submitInterview({
+        interviewId: interview._id,
+        questions,
+      });
+
+      console.log(
+        "Submit Interview Response:",
+        data
+      );
+
+      if (!data.success) {
+        throw new Error(
+          data.message ||
+            "Failed to submit interview"
+        );
+      }
+
+      setResult(data);
+
+      setSuccess(
+        "Interview submitted successfully!"
+      );
+    } catch (error) {
+      console.error(
+        "Interview submit error:",
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to submit interview."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ==========================================
+  // RESET
+  // ==========================================
+
+  const resetInterview = () => {
+    setInterview(null);
+
+    setTargetRole("");
+
+    setCurrentQuestion(0);
 
     setAnswer("");
 
-    setFeedback(null);
+    setError("");
 
-    setTimeout(() => {
-      speakQuestion(
-        interview.questions[nextIndex].question
-      );
-    }, 300);
+    setSuccess("");
+
+    setResult(null);
   };
 
-  // =====================================================
-  // REPEAT QUESTION
-  // =====================================================
+  // ==========================================
+  // RESULT
+  // ==========================================
 
-  const repeatQuestion = () => {
-    if (!interview) return;
-
-    speakQuestion(
-      interview.questions[currentIndex].question
-    );
-  };
-
-  // =====================================================
-  // CLEANUP
-  // =====================================================
-
-  useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, []);
-
-  // =====================================================
-  // START SCREEN
-  // =====================================================
-
-  if (!interview) {
+  if (result) {
     return (
       <div style={styles.container}>
-
-        <div style={styles.startCard}>
-
-          <div style={styles.robot}>
-            🤖
-          </div>
-
-          <h1>
-            AI Mock Interview
+        <div style={styles.header}>
+          <h1 style={styles.title}>
+            🎯 Interview Result
           </h1>
 
           <p style={styles.subtitle}>
-            Practice a real interview with your
-            AI interviewer.
+            Your AI interview has been evaluated.
           </p>
-
-          <div style={styles.infoGrid}>
-
-            <div style={styles.infoCard}>
-              🎙️
-              <h3>Speak Your Answer</h3>
-              <p>
-                Answer questions using your voice.
-              </p>
-            </div>
-
-            <div style={styles.infoCard}>
-              🔊
-              <h3>AI Speaks</h3>
-              <p>
-                Questions are asked by voice.
-              </p>
-            </div>
-
-            <div style={styles.infoCard}>
-              🧠
-              <h3>AI Evaluation</h3>
-              <p>
-                Get score and feedback.
-              </p>
-            </div>
-
-          </div>
-
-          <div style={styles.roleBox}>
-
-            <label>
-              Target Job Role
-            </label>
-
-            <input
-              value={targetRole}
-              onChange={(e) =>
-                setTargetRole(e.target.value)
-              }
-              placeholder="Example: Full Stack Developer"
-              style={styles.input}
-            />
-
-          </div>
-
-          <button
-            onClick={startInterview}
-            disabled={starting}
-            style={styles.startButton}
-          >
-            {starting
-              ? "Preparing Interview..."
-              : "🎤 Start AI Interview"}
-          </button>
-
-          <p style={styles.tip}>
-            💡 Use Google Chrome and allow microphone
-            permission when asked.
-          </p>
-
         </div>
 
+        <div style={styles.resultCard}>
+          <h2>
+            Interview Completed
+          </h2>
+
+          <div style={styles.score}>
+            {result.interview?.totalScore ??
+              result.totalScore ??
+              0}
+            %
+          </div>
+
+          <p>
+            {result.interview?.improvement ||
+              result.improvement ||
+              "Keep practicing to improve your interview performance."}
+          </p>
+
+          <button
+            style={styles.primaryButton}
+            onClick={resetInterview}
+          >
+            Start New Interview
+          </button>
+        </div>
       </div>
     );
   }
 
-  // =====================================================
-  // COMPLETED SCREEN
-  // =====================================================
+  // ==========================================
+  // INTERVIEW SCREEN
+  // ==========================================
 
-  if (completed) {
+  if (interview) {
+    const question =
+      interview.questions[currentQuestion];
 
-    const answeredQuestions =
-      interview.questions.filter(
-        (q) => q.answer
-      );
-
-    const totalScore =
-      answeredQuestions.reduce(
-        (sum, q) => sum + (q.score || 0),
-        0
-      );
-
-    const averageScore =
-      answeredQuestions.length > 0
-        ? Math.round(
-            totalScore /
-              answeredQuestions.length
-          )
-        : 0;
+    const totalQuestions =
+      interview.questions.length;
 
     return (
       <div style={styles.container}>
-
-        <div style={styles.resultCard}>
-
-          <div style={styles.successIcon}>
-            🎉
-          </div>
-
-          <h1>
-            Interview Completed!
+        <div style={styles.header}>
+          <h1 style={styles.title}>
+            🎤 AI Mock Interview
           </h1>
 
-          <p>
-            Great job completing your AI mock
-            interview.
-          </p>
-
-          <div style={styles.scoreCircle}>
-            <span>
-              {averageScore}
-            </span>
-            <small>/100</small>
-          </div>
-
-          <h2>
-            Overall Interview Score
-          </h2>
-
-          <div style={styles.reviewBox}>
-
-            <h3>
-              🤖 AI Interview Review
-            </h3>
-
-            <p>
-              You completed{" "}
-              <strong>
-                {answeredQuestions.length}
-              </strong>{" "}
-              questions for the role of{" "}
-              <strong>
-                {interview.targetRole}
-              </strong>.
-            </p>
-
-            <p>
-              Continue practicing communication,
-              technical concepts, project
-              explanations and confidence.
-            </p>
-
-          </div>
-
-          <button
-            style={styles.startButton}
-            onClick={() => {
-              setInterview(null);
-              setCompleted(false);
-              setCurrentIndex(0);
-              setAnswer("");
-              setFeedback(null);
-            }}
-          >
-            🔄 Start New Interview
-          </button>
-
-        </div>
-
-      </div>
-    );
-  }
-
-  // =====================================================
-  // INTERVIEW SCREEN
-  // =====================================================
-
-  const currentQuestion =
-    interview.questions[currentIndex];
-
-  const progress =
-    ((currentIndex + 1) /
-      interview.questions.length) *
-    100;
-
-  return (
-    <div style={styles.container}>
-
-      <div style={styles.interviewContainer}>
-
-        {/* Header */}
-
-        <div style={styles.interviewHeader}>
-
-          <div>
-
-            <span style={styles.badge}>
-              🤖 AI Interviewer
-            </span>
-
-            <h1>
+          <p style={styles.subtitle}>
+            Target Role:{" "}
+            <strong>
               {interview.targetRole}
-            </h1>
-
-          </div>
-
-          <div style={styles.questionCounter}>
-            Question{" "}
-            {currentIndex + 1} /{" "}
-            {interview.questions.length}
-          </div>
-
+            </strong>
+          </p>
         </div>
 
-        {/* Progress */}
+        {error && (
+          <div style={styles.error}>
+            ⚠️ {error}
+          </div>
+        )}
 
-        <div style={styles.progressBackground}>
+        {success && (
+          <div style={styles.success}>
+            ✓ {success}
+          </div>
+        )}
+
+        <div style={styles.progressText}>
+          Question {currentQuestion + 1} of{" "}
+          {totalQuestions}
+        </div>
+
+        <div style={styles.progressContainer}>
           <div
             style={{
-              ...styles.progressFill,
-              width: `${progress}%`,
+              ...styles.progressBar,
+              width: `${
+                ((currentQuestion + 1) /
+                  totalQuestions) *
+                100
+              }%`,
             }}
           />
         </div>
 
-        {/* Question */}
-
         <div style={styles.questionCard}>
-
-          <div style={styles.questionIcon}>
-            🤖
+          <div style={styles.questionNumber}>
+            Question {currentQuestion + 1}
           </div>
 
-          <div style={{ flex: 1 }}>
-
-            <span style={styles.aiLabel}>
-              AI INTERVIEWER
-            </span>
-
-            <h2>
-              {currentQuestion.question}
-            </h2>
-
-          </div>
-
-          <button
-            onClick={repeatQuestion}
-            style={styles.repeatButton}
-          >
-            🔊 Repeat
-          </button>
-
-        </div>
-
-        {/* Answer */}
-
-        <div style={styles.answerCard}>
-
-          <h2>
-            🎙️ Your Answer
+          <h2 style={styles.question}>
+            {question.question}
           </h2>
-
-          <p style={styles.answerHint}>
-            Click the microphone and speak your
-            answer naturally.
-          </p>
 
           <textarea
             value={answer}
             onChange={(e) =>
               setAnswer(e.target.value)
             }
-            placeholder="Your spoken answer will appear here..."
+            placeholder="Type your answer here..."
             style={styles.textarea}
+            rows={8}
           />
 
-          <div style={styles.voiceControls}>
+          <div style={styles.buttonRow}>
+            <button
+              style={styles.secondaryButton}
+              onClick={previousQuestion}
+              disabled={
+                currentQuestion === 0
+              }
+            >
+              ← Previous
+            </button>
 
-            {!listening ? (
+            {currentQuestion <
+            totalQuestions - 1 ? (
               <button
-                onClick={startListening}
-                style={styles.micButton}
+                style={styles.primaryButton}
+                onClick={nextQuestion}
               >
-                🎙️ Start Speaking
+                Next →
               </button>
             ) : (
               <button
-                onClick={stopListening}
-                style={styles.stopButton}
+                style={styles.submitButton}
+                onClick={handleSubmit}
+                disabled={submitting}
               >
-                ⏹ Stop Speaking
+                {submitting
+                  ? "Submitting..."
+                  : "Submit Interview"}
               </button>
             )}
-
-            <button
-              onClick={submitAnswer}
-              disabled={
-                loading || !answer.trim()
-              }
-              style={styles.submitButton}
-            >
-              {loading
-                ? "🤖 AI Evaluating..."
-                : "✅ Submit Answer"}
-            </button>
-
           </div>
-
-          {listening && (
-            <div style={styles.listening}>
-              🔴 Listening... Speak now
-            </div>
-          )}
-
         </div>
+      </div>
+    );
+  }
 
-        {/* AI Feedback */}
+  // ==========================================
+  // START SCREEN
+  // ==========================================
 
-        {feedback && (
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>
+          🎤 AI Mock Interview
+        </h1>
 
-          <div style={styles.feedbackCard}>
-
-            <h2>
-              🤖 AI Evaluation
-            </h2>
-
-            <div style={styles.feedbackScore}>
-              {feedback.score}/100
-            </div>
-
-            <h3>
-              💬 Feedback
-            </h3>
-
-            <p>
-              {feedback.feedback}
-            </p>
-
-            <h3>
-              📈 How to Improve
-            </h3>
-
-            <p>
-              {feedback.improvement}
-            </p>
-
-            <button
-              onClick={nextQuestion}
-              style={styles.nextButton}
-            >
-              {currentIndex + 1 >=
-              interview.questions.length
-                ? "🏆 Finish Interview"
-                : "➡️ Next Question"}
-            </button>
-
-          </div>
-
-        )}
-
-        {/* Tip */}
-
-        <div style={styles.tipBox}>
-          💡 Speak clearly and explain your
-          answer with examples from your
-          projects or experience.
-        </div>
-
+        <p style={styles.subtitle}>
+          Practice with AI-generated interview
+          questions based on your target role.
+        </p>
       </div>
 
+      {error && (
+        <div style={styles.error}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      {success && (
+        <div style={styles.success}>
+          ✓ {success}
+        </div>
+      )}
+
+      <div style={styles.startCard}>
+        <div style={styles.icon}>
+          🤖
+        </div>
+
+        <h2>
+          Start Your AI Interview
+        </h2>
+
+        <p>
+          Enter your target role and CareerPilot
+          will generate technical interview
+          questions for you.
+        </p>
+
+        <label style={styles.label}>
+          Target Job Role
+        </label>
+
+        <input
+          type="text"
+          value={targetRole}
+          onChange={(e) =>
+            setTargetRole(e.target.value)
+          }
+          placeholder="e.g. React Developer"
+          style={styles.input}
+        />
+
+        <button
+          style={styles.primaryButton}
+          onClick={startInterview}
+          disabled={loading}
+        >
+          {loading
+            ? "Generating Questions..."
+            : "Start Interview"}
+        </button>
+      </div>
     </div>
   );
-}
+};
 
-// =====================================================
+// ==========================================
 // STYLES
-// =====================================================
+// ==========================================
 
 const styles = {
-
   container: {
-    minHeight: "100vh",
     padding: "30px",
-    background:
-      "linear-gradient(135deg,#f8fafc,#eef2ff)",
+    minHeight: "100vh",
+    background: "#f5f7fb",
   },
 
-  startCard: {
-    maxWidth: "900px",
-    margin: "40px auto",
-    background: "#fff",
-    padding: "45px",
-    borderRadius: "25px",
-    textAlign: "center",
+  header: {
+    background: "#ffffff",
+    padding: "28px",
+    borderRadius: "16px",
+    marginBottom: "20px",
     boxShadow:
-      "0 20px 60px rgba(15,23,42,.12)",
+      "0 4px 15px rgba(0,0,0,0.08)",
   },
 
-  robot: {
-    fontSize: "70px",
-    marginBottom: "10px",
+  title: {
+    margin: 0,
+    fontSize: "30px",
+    color: "#111827",
   },
 
   subtitle: {
-    color: "#64748b",
-    fontSize: "18px",
+    marginTop: "8px",
+    color: "#6b7280",
   },
 
-  infoGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit,minmax(200px,1fr))",
-    gap: "20px",
-    marginTop: "35px",
-    marginBottom: "35px",
+  startCard: {
+    maxWidth: "650px",
+    margin: "40px auto",
+    background: "#ffffff",
+    padding: "40px",
+    borderRadius: "18px",
+    textAlign: "center",
+    boxShadow:
+      "0 5px 20px rgba(0,0,0,0.08)",
   },
 
-  infoCard: {
-    padding: "25px",
-    borderRadius: "16px",
-    background: "#f8fafc",
-    border: "1px solid #e2e8f0",
-    fontSize: "15px",
+  icon: {
+    fontSize: "50px",
+    marginBottom: "10px",
   },
 
-  roleBox: {
+  label: {
+    display: "block",
     textAlign: "left",
-    marginBottom: "25px",
+    fontWeight: "600",
+    marginBottom: "8px",
+    marginTop: "25px",
   },
 
   input: {
     width: "100%",
-    boxSizing: "border-box",
-    padding: "15px",
-    marginTop: "8px",
-    borderRadius: "10px",
-    border: "1px solid #cbd5e1",
+    padding: "13px",
+    border:
+      "1px solid #d1d5db",
+    borderRadius: "8px",
     fontSize: "16px",
-  },
-
-  startButton: {
-    width: "100%",
-    padding: "16px",
-    border: "none",
-    borderRadius: "12px",
-    background:
-      "linear-gradient(135deg,#2563eb,#4f46e5)",
-    color: "#fff",
-    fontSize: "17px",
-    fontWeight: "700",
-    cursor: "pointer",
-  },
-
-  tip: {
-    color: "#64748b",
-    marginTop: "20px",
-  },
-
-  interviewContainer: {
-    maxWidth: "1000px",
-    margin: "0 auto",
-  },
-
-  interviewHeader: {
-    background: "#fff",
-    padding: "25px",
-    borderRadius: "18px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "20px",
-    boxShadow:
-      "0 8px 30px rgba(15,23,42,.08)",
-  },
-
-  badge: {
-    background: "#eef2ff",
-    color: "#4338ca",
-    padding: "7px 12px",
-    borderRadius: "20px",
-    fontSize: "13px",
-    fontWeight: "700",
-  },
-
-  questionCounter: {
-    fontWeight: "700",
-    color: "#475569",
-  },
-
-  progressBackground: {
-    height: "8px",
-    background: "#e2e8f0",
-    borderRadius: "20px",
-    margin: "15px 0 25px",
-    overflow: "hidden",
-  },
-
-  progressFill: {
-    height: "100%",
-    background:
-      "linear-gradient(90deg,#2563eb,#7c3aed)",
-    borderRadius: "20px",
-    transition: "width .3s ease",
-  },
-
-  questionCard: {
-    background:
-      "linear-gradient(135deg,#eef2ff,#f8fafc)",
-    padding: "30px",
-    borderRadius: "20px",
-    display: "flex",
-    alignItems: "center",
-    gap: "20px",
+    boxSizing: "border-box",
     marginBottom: "20px",
   },
 
-  questionIcon: {
-    width: "55px",
-    height: "55px",
-    borderRadius: "50%",
-    background: "#4f46e5",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    fontSize: "27px",
-  },
-
-  aiLabel: {
-    fontSize: "12px",
-    fontWeight: "800",
-    color: "#4f46e5",
-  },
-
-  repeatButton: {
-    padding: "10px 15px",
-    border: "1px solid #cbd5e1",
-    background: "#fff",
-    borderRadius: "10px",
-    cursor: "pointer",
-    fontWeight: "600",
-  },
-
-  answerCard: {
-    background: "#fff",
-    padding: "30px",
-    borderRadius: "20px",
+  questionCard: {
+    maxWidth: "900px",
+    margin: "25px auto",
+    background: "#ffffff",
+    padding: "35px",
+    borderRadius: "18px",
     boxShadow:
-      "0 8px 30px rgba(15,23,42,.08)",
+      "0 5px 20px rgba(0,0,0,0.08)",
   },
 
-  answerHint: {
-    color: "#64748b",
+  questionNumber: {
+    color: "#2563eb",
+    fontWeight: "700",
+    marginBottom: "15px",
+  },
+
+  question: {
+    fontSize: "22px",
+    lineHeight: "1.5",
+    marginBottom: "25px",
+    color: "#111827",
   },
 
   textarea: {
     width: "100%",
-    minHeight: "180px",
-    boxSizing: "border-box",
-    padding: "18px",
-    borderRadius: "14px",
-    border: "2px solid #e2e8f0",
+    padding: "15px",
+    border:
+      "1px solid #d1d5db",
+    borderRadius: "10px",
     fontSize: "16px",
     resize: "vertical",
-    outline: "none",
+    boxSizing: "border-box",
+    marginBottom: "20px",
   },
 
-  voiceControls: {
-    display: "flex",
-    gap: "15px",
-    marginTop: "20px",
-    flexWrap: "wrap",
+  progressText: {
+    maxWidth: "900px",
+    margin: "0 auto 8px",
+    fontWeight: "600",
+    color: "#374151",
   },
 
-  micButton: {
-    flex: 1,
-    padding: "15px",
-    border: "none",
-    borderRadius: "12px",
+  progressContainer: {
+    maxWidth: "900px",
+    margin: "0 auto",
+    height: "8px",
+    background: "#e5e7eb",
+    borderRadius: "10px",
+    overflow: "hidden",
+  },
+
+  progressBar: {
+    height: "100%",
     background: "#2563eb",
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: "16px",
-    cursor: "pointer",
+    borderRadius: "10px",
+    transition: "width 0.3s ease",
   },
 
-  stopButton: {
-    flex: 1,
-    padding: "15px",
+  buttonRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+  },
+
+  primaryButton: {
+    padding: "12px 24px",
+    background: "#2563eb",
+    color: "#ffffff",
     border: "none",
-    borderRadius: "12px",
-    background: "#dc2626",
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: "16px",
+    borderRadius: "8px",
     cursor: "pointer",
+    fontWeight: "600",
+    fontSize: "15px",
+  },
+
+  secondaryButton: {
+    padding: "12px 24px",
+    background: "#e5e7eb",
+    color: "#111827",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "600",
+    fontSize: "15px",
   },
 
   submitButton: {
-    flex: 1,
-    padding: "15px",
-    border: "none",
-    borderRadius: "12px",
+    padding: "12px 24px",
     background: "#16a34a",
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: "16px",
-    cursor: "pointer",
-  },
-
-  listening: {
-    marginTop: "15px",
-    color: "#dc2626",
-    fontWeight: "700",
-  },
-
-  feedbackCard: {
-    marginTop: "20px",
-    background: "#fff",
-    padding: "30px",
-    borderRadius: "20px",
-    border: "2px solid #bbf7d0",
-    boxShadow:
-      "0 8px 30px rgba(15,23,42,.08)",
-  },
-
-  feedbackScore: {
-    fontSize: "40px",
-    fontWeight: "800",
-    color: "#16a34a",
-    margin: "15px 0",
-  },
-
-  nextButton: {
-    marginTop: "20px",
-    width: "100%",
-    padding: "15px",
+    color: "#ffffff",
     border: "none",
-    borderRadius: "12px",
-    background: "#4f46e5",
-    color: "#fff",
-    fontSize: "16px",
-    fontWeight: "700",
+    borderRadius: "8px",
     cursor: "pointer",
+    fontWeight: "600",
+    fontSize: "15px",
   },
 
-  tipBox: {
-    marginTop: "20px",
-    background: "#fff7ed",
-    color: "#9a3412",
-    padding: "15px",
-    borderRadius: "12px",
+  error: {
+    maxWidth: "900px",
+    margin: "0 auto 20px",
+    padding: "14px 18px",
+    background: "#fee2e2",
+    color: "#991b1b",
+    borderRadius: "8px",
+    fontWeight: "500",
+  },
+
+  success: {
+    maxWidth: "900px",
+    margin: "0 auto 20px",
+    padding: "14px 18px",
+    background: "#dcfce7",
+    color: "#166534",
+    borderRadius: "8px",
+    fontWeight: "500",
   },
 
   resultCard: {
-    maxWidth: "750px",
-    margin: "50px auto",
-    background: "#fff",
-    padding: "45px",
-    borderRadius: "25px",
+    maxWidth: "650px",
+    margin: "40px auto",
+    background: "#ffffff",
+    padding: "40px",
+    borderRadius: "18px",
     textAlign: "center",
     boxShadow:
-      "0 20px 60px rgba(15,23,42,.12)",
+      "0 5px 20px rgba(0,0,0,0.08)",
   },
 
-  successIcon: {
-    fontSize: "70px",
-  },
-
-  scoreCircle: {
-    width: "150px",
-    height: "150px",
-    borderRadius: "50%",
-    background:
-      "linear-gradient(135deg,#2563eb,#7c3aed)",
-    color: "#fff",
-    margin: "30px auto",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "column",
-  },
-
-  reviewBox: {
-    textAlign: "left",
-    padding: "20px",
-    background: "#f8fafc",
-    borderRadius: "15px",
-    marginBottom: "25px",
+  score: {
+    fontSize: "60px",
+    fontWeight: "800",
+    color: "#2563eb",
+    margin: "20px 0",
   },
 };
+
+export default Interview;
