@@ -20,9 +20,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register
-  const register = async (data) => {
-    await registerUser(data);
-  };
+  const register = async (userData) => {
+  const response = await api.post(
+    "/api/auth/register",
+    userData
+  );
+
+  return response.data;
+};
 
   // Logout
   const logout = () => {

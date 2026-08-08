@@ -2,15 +2,18 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
+    username: {
       type: String,
       required: true,
+      trim: true,
     },
 
     email: {
       type: String,
       required: true,
       unique: true,
+      lowercase: true,
+      trim: true,
     },
 
     password: {
@@ -18,19 +21,27 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
-    careerGoal: {
+    phone: {
       type: String,
       default: "",
+      trim: true,
     },
 
-    skills: {
-      type: [String],
-      default: [],
-    },
+    preferences: {
+      darkMode: {
+        type: Boolean,
+        default: false,
+      },
 
-    resume: {
-      type: String,
-      default: "",
+      emailNotifications: {
+        type: Boolean,
+        default: true,
+      },
+
+      pushNotifications: {
+        type: Boolean,
+        default: true,
+      },
     },
   },
   {

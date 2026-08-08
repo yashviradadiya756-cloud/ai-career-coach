@@ -21,11 +21,12 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  username: "",
+  email: "",
+  phone: "",
+  password: "",
+  confirmPassword: "",
+});
 
   const handleChange = (e) => {
     setFormData({
@@ -54,8 +55,9 @@ export default function Register() {
 
     try {
       await register({
-        name: formData.name,
+        username: formData.username,
         email: formData.email,
+        phone: formData.phone,
         password: formData.password,
       });
 
@@ -87,7 +89,19 @@ export default function Register() {
 
         <form onSubmit={handleSubmit}>
           {/* NAME */}
-          <label>Full Name</label>
+          <label>Username</label>
+
+          <div className="input-box">
+            <User size={20} className="icon" />
+
+            <input
+              type="text"
+              name="username"
+              placeholder="Enter your username"
+              value={formData.username}
+              onChange={handleChange}
+            />
+          </div>
 
           <div className="input-box">
             <User size={20} className="icon" />
@@ -112,6 +126,18 @@ export default function Register() {
               name="email"
               placeholder="Enter your email"
               value={formData.email}
+              onChange={handleChange}
+            />
+          </div>
+          
+          <label>Phone Number</label>
+
+          <div className="input-box">
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Enter your phone number"
+              value={formData.phone}
               onChange={handleChange}
             />
           </div>

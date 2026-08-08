@@ -46,6 +46,7 @@ const progressRoutes = require("./routes/progressRoutes");
 const achievementRoutes = require("./routes/achievementRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
 
 const app = express();
 
@@ -127,6 +128,7 @@ app.use("/api/progress", progressRoutes);
 app.use("/api/achievement", achievementRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/settings", settingsRoutes); 
 
 const PORT = process.env.PORT || 5000;
 
