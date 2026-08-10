@@ -14,7 +14,6 @@ const SkillGap = () => {
   // ==========================================
   // LOAD LATEST SKILL GAP
   // ==========================================
-
   useEffect(() => {
     loadSkillGap();
   }, []);
@@ -40,7 +39,7 @@ const SkillGap = () => {
         error.response?.data || error.message
       );
 
-      // 404 simply means no Skill Gap yet.
+      // 404 means no Skill Gap exists yet
       if (error.response?.status === 404) {
         setSkillGap(null);
       } else {
@@ -57,7 +56,6 @@ const SkillGap = () => {
   // ==========================================
   // ANALYZE SKILL GAP
   // ==========================================
-
   const handleAnalyze = async () => {
     try {
       if (!targetRole.trim()) {
@@ -99,14 +97,13 @@ const SkillGap = () => {
   // ==========================================
   // LOADING
   // ==========================================
-
   if (loading) {
     return (
-      <div style={styles.container}>
-        <div style={styles.loadingState}>
-          <div style={styles.spinner}></div>
-          <h2 style={styles.loadingText}>Loading Skill Gap Analysis...</h2>
-        </div>
+      <div style={styles.loadingState}>
+        <div style={styles.loadingSpinner}></div>
+        <p style={styles.loadingText}>
+          Loading Skill Gap Analysis...
+        </p>
       </div>
     );
   }
@@ -114,49 +111,67 @@ const SkillGap = () => {
   // ==========================================
   // DATA
   // ==========================================
+  const currentSkills = Array.isArray(skillGap?.currentSkills)
+    ? skillGap.currentSkills
+    : [];
 
-  const currentSkills = skillGap?.currentSkills || [];
-  const missingSkills = skillGap?.missingSkills || [];
-  const recommendedCourses = skillGap?.recommendedCourses || [];
-  const roadmap = skillGap?.roadmap || [];
-  const readinessScore = Number(skillGap?.readinessScore) || 0;
+  const missingSkills = Array.isArray(skillGap?.missingSkills)
+    ? skillGap.missingSkills
+    : [];
+
+  const recommendedCourses = Array.isArray(
+    skillGap?.recommendedCourses
+  )
+    ? skillGap.recommendedCourses
+    : [];
+
+  const roadmap = Array.isArray(skillGap?.roadmap)
+    ? skillGap.roadmap
+    : [];
+
+  const readinessScore =
+    Number(skillGap?.readinessScore) || 0;
 
   // ==========================================
   // UI
   // ==========================================
-
   return (
-    <div className="skill-gap-page" style={styles.container}>
-      {/* ================================== */}
-      {/* HEADER */}
-      {/* ================================== */}
+    <div
+      className="skill-gap-container"
+      style={styles.container}
+    >
+      {/* ==================================
+          HEADER
+      ================================== */}
+      <div style={styles.header}>
+        <h1 style={styles.headerTitle}>
+          🎯 Skill Gap Analysis
+        </h1>
 
-      <div className="skill-gap-header" style={styles.header}>
-        <h1 style={styles.headerTitle}>🎯 Skill Gap Analysis</h1>
         <p style={styles.headerSubtitle}>
-          Identify the skills you already have and discover what you need to
-          learn for your target career.
+          Identify the skills you already have and discover
+          what you need to learn for your target career.
         </p>
       </div>
 
-      {/* ================================== */}
-      {/* ERROR */}
-      {/* ================================== */}
-
+      {/* ==================================
+          ERROR
+      ================================== */}
       {error && (
-        <div className="skill-gap-error" style={styles.errorBox}>
+        <div style={styles.errorBox}>
           ⚠️ {error}
         </div>
       )}
 
-      {/* ================================== */}
-      {/* TARGET ROLE */}
-      {/* ================================== */}
+      {/* ==================================
+          TARGET ROLE
+      ================================== */}
+      <div style={styles.card}>
+        <h2 style={styles.cardTitle}>
+          Target Career Role
+        </h2>
 
-      <div className="skill-gap-input-card" style={styles.card}>
-        <h2 style={styles.cardTitle}>Target Career Role</h2>
-
-        <div className="skill-gap-input-row" style={styles.inputRow}>
+        <div style={styles.inputRow}>
           <input
             type="text"
             value={targetRole}
@@ -171,57 +186,91 @@ const SkillGap = () => {
             style={{
               ...styles.primaryButton,
               opacity: analyzing ? 0.7 : 1,
-              cursor: analyzing ? "not-allowed" : "pointer",
+              cursor: analyzing
+                ? "not-allowed"
+                : "pointer",
             }}
           >
-            {analyzing ? "Analyzing..." : "Analyze Skill Gap"}
+            {analyzing
+              ? "Analyzing..."
+              : "Analyze Skill Gap"}
           </button>
         </div>
       </div>
 
-      {/* ================================== */}
-      {/* NO DATA */}
-      {/* ================================== */}
-
+      {/* ==================================
+          NO DATA
+      ================================== */}
       {!skillGap ? (
-        <div className="skill-gap-empty" style={styles.emptyCard}>
-          <h2 style={styles.emptyTitle}>No Skill Gap Analysis Found</h2>
+        <div style={styles.emptyCard}>
+          <h2 style={styles.emptyTitle}>
+            No Skill Gap Analysis Found
+          </h2>
+
           <p style={styles.emptyText}>
-            Enter your target role and click "Analyze Skill Gap".
+            Enter your target role and click
+            "Analyze Skill Gap".
           </p>
         </div>
       ) : (
         <>
-          {/* ================================== */}
-          {/* TARGET ROLE + SCORE */}
-          {/* ================================== */}
+          {/* ==================================
+              TARGET ROLE + SCORE
+          ================================== */}
+          <div style={styles.overviewGrid}>
+            <div style={styles.overviewCard}>
+              <p style={styles.cardMetaTitle}>
+                Target Role
+              </p>
 
-          <div className="skill-gap-overview" style={styles.overviewGrid}>
-            <div className="skill-gap-role-card" style={styles.overviewCard}>
-              <h3 style={styles.cardMetaTitle}>Target Role</h3>
-              <h2 style={styles.roleTitle}>{skillGap.targetRole}</h2>
+              <h2 style={styles.roleTitle}>
+                {skillGap.targetRole || targetRole}
+              </h2>
             </div>
 
-            <div className="skill-gap-score-card" style={styles.overviewCard}>
-              <h3 style={styles.cardMetaTitle}>Readiness Score</h3>
-              <h1 style={styles.scoreText}>{readinessScore}%</h1>
+            <div style={styles.overviewCard}>
+              <p style={styles.cardMetaTitle}>
+                Readiness Score
+              </p>
+
+              <p style={styles.scoreText}>
+                {readinessScore}%
+              </p>
+
+              <div style={styles.progressBar}>
+                <div
+                  style={{
+                    ...styles.progressFill,
+                    width: `${Math.min(
+                      Math.max(readinessScore, 0),
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* ================================== */}
-          {/* CURRENT SKILLS */}
-          {/* ================================== */}
+          {/* ==================================
+              CURRENT SKILLS
+          ================================== */}
+          <div style={styles.card}>
+            <div style={styles.sectionHeader}>
+              <h2 style={styles.sectionTitle}>
+                ✅ Current Skills
+              </h2>
 
-          <div className="skill-section" style={styles.card}>
-            <div className="skill-section-header" style={styles.sectionHeader}>
-              <h2 style={styles.sectionTitle}>✅ Current Skills</h2>
-              <span style={styles.badgeSuccess}>{currentSkills.length}</span>
+              <span style={styles.badgeSuccess}>
+                {currentSkills.length}
+              </span>
             </div>
 
             {currentSkills.length === 0 ? (
-              <p style={styles.emptyText}>No current skills found.</p>
+              <p style={styles.emptyText}>
+                No current skills found.
+              </p>
             ) : (
-              <div className="skill-list" style={styles.skillTagGrid}>
+              <div style={styles.skillTagGrid}>
                 {currentSkills.map((skill, index) => (
                   <span
                     className="skill-tag current"
@@ -235,14 +284,18 @@ const SkillGap = () => {
             )}
           </div>
 
-          {/* ================================== */}
-          {/* MISSING SKILLS */}
-          {/* ================================== */}
+          {/* ==================================
+              MISSING SKILLS
+          ================================== */}
+          <div style={styles.card}>
+            <div style={styles.sectionHeader}>
+              <h2 style={styles.sectionTitle}>
+                ⚠️ Missing Skills
+              </h2>
 
-          <div className="skill-section" style={styles.card}>
-            <div className="skill-section-header" style={styles.sectionHeader}>
-              <h2 style={styles.sectionTitle}>⚠️ Missing Skills</h2>
-              <span style={styles.badgeDanger}>{missingSkills.length}</span>
+              <span style={styles.badgeDanger}>
+                {missingSkills.length}
+              </span>
             </div>
 
             {missingSkills.length === 0 ? (
@@ -250,7 +303,7 @@ const SkillGap = () => {
                 🎉 No major skill gaps found!
               </p>
             ) : (
-              <div className="skill-list" style={styles.skillTagGrid}>
+              <div style={styles.skillTagGrid}>
                 {missingSkills.map((skill, index) => (
                   <span
                     className="skill-tag missing"
@@ -264,61 +317,105 @@ const SkillGap = () => {
             )}
           </div>
 
-          {/* ================================== */}
-          {/* RECOMMENDED COURSES */}
-          {/* ================================== */}
+          {/* ==================================
+              RECOMMENDED COURSES
+          ================================== */}
+          {recommendedCourses.length > 0 && (
+            <div style={styles.card}>
+              <div style={styles.sectionHeader}>
+                <h2 style={styles.sectionTitle}>
+                  📚 Recommended Courses
+                </h2>
+              </div>
 
-          {/* <div className="skill-section" style={styles.card}>
-            <h2 style={styles.sectionTitle}>📚 Recommended Courses</h2>
-
-            {recommendedCourses.length === 0 ? (
-              <p style={styles.emptyText}>No recommended courses found.</p>
-            ) : (
-              <div className="course-list" style={styles.listContainer}>
+              <div style={styles.listContainer}>
                 {recommendedCourses.map((course, index) => (
                   <div
                     className="course-item"
                     key={index}
                     style={styles.courseRow}
                   >
-                    <span style={styles.listBadge}>{index + 1}</span>
-                    <p style={styles.courseText}>{course}</p>
+                    <div style={styles.listBadge}>
+                      {index + 1}
+                    </div>
+
+                    <p style={styles.courseText}>
+                      {course}
+                    </p>
                   </div>
                 ))}
               </div>
-            )}
-          </div> */}
+            </div>
+          )}
 
-          {/* ================================== */}
-          {/* ROADMAP */}
-          {/* ================================== */}
+          {/* ==================================
+              ROADMAP
+          ================================== */}
+          {roadmap.length > 0 && (
+            <div style={styles.card}>
+              <div style={styles.sectionHeader}>
+                <h2 style={styles.sectionTitle}>
+                  🗺️ Recommended Roadmap
+                </h2>
+              </div>
 
-          {/* <div className="skill-section" style={styles.card}>
-            <h2 style={styles.sectionTitle}>🗺️ Recommended Roadmap</h2>
-
-            {roadmap.length === 0 ? (
-              <p style={styles.emptyText}>No roadmap available.</p>
-            ) : (
-              <div className="roadmap-list" style={styles.listContainer}>
+              <div style={styles.listContainer}>
                 {roadmap.map((step, index) => (
                   <div
                     className="roadmap-item"
                     key={index}
                     style={styles.roadmapRow}
                   >
-                    <div className="roadmap-number" style={styles.roadmapBadge}>
+                    <div style={styles.roadmapBadge}>
                       {index + 1}
                     </div>
-                    <div className="roadmap-content" style={styles.roadmapContent}>
-                      <p style={styles.roadmapText}>{step}</p>
+
+                    <div style={styles.roadmapContent}>
+                      <p style={styles.roadmapText}>
+                        {step}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div> */}
+            </div>
+          )}
         </>
       )}
+
+      {/* ==================================
+          RESPONSIVE CSS
+      ================================== */}
+      <style>
+        {`
+          .skill-gap-container {
+            width: 100%;
+            max-width: none;
+            box-sizing: border-box;
+          }
+
+          .skill-gap-container * {
+            box-sizing: border-box;
+          }
+
+          @media (max-width: 768px) {
+            .skill-gap-container {
+              padding: 20px 16px !important;
+            }
+
+            .skill-gap-container .input-row {
+              flex-direction: column;
+              align-items: stretch;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .skill-gap-container {
+              padding: 16px 12px !important;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };
@@ -326,41 +423,66 @@ const SkillGap = () => {
 // ==========================================
 // INLINE STYLES
 // ==========================================
-
 const styles = {
+  // ==========================================
+  // MAIN CONTAINER
+  // ==========================================
   container: {
-    maxWidth: "1000px",
-    margin: "0 auto",
-    padding: "32px 20px",
+    width: "100%",
+    maxWidth: "none",
+    margin: 0,
+    padding: "24px 28px",
+    boxSizing: "border-box",
     backgroundColor: "#f8fafc",
-    minHeight: "100vh",
+    minHeight: "100%",
     fontFamily:
       '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     color: "#0f172a",
   },
 
+  // ==========================================
+  // LOADING
+  // ==========================================
   loadingState: {
+    width: "100%",
+    minHeight: "60vh",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    padding: "80px 20px",
+    padding: "40px 20px",
+    boxSizing: "border-box",
+  },
+
+  loadingSpinner: {
+    width: "36px",
+    height: "36px",
+    border: "4px solid #e2e8f0",
+    borderTop: "4px solid #2563eb",
+    borderRadius: "50%",
+    animation: "spin 0.8s linear infinite",
   },
 
   loadingText: {
-    fontSize: "18px",
+    fontSize: "17px",
     fontWeight: "600",
     color: "#475569",
     marginTop: "16px",
   },
 
+  // ==========================================
+  // HEADER
+  // ==========================================
   header: {
+    width: "100%",
     backgroundColor: "#ffffff",
-    padding: "28px 32px",
+    padding: "24px 28px",
     borderRadius: "16px",
-    marginBottom: "24px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)",
+    marginBottom: "20px",
+    boxShadow:
+      "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)",
     border: "1px solid #e2e8f0",
+    boxSizing: "border-box",
   },
 
   headerTitle: {
@@ -378,7 +500,11 @@ const styles = {
     lineHeight: "1.5",
   },
 
+  // ==========================================
+  // ERROR
+  // ==========================================
   errorBox: {
+    width: "100%",
     backgroundColor: "#fef2f2",
     color: "#991b1b",
     padding: "14px 20px",
@@ -386,16 +512,23 @@ const styles = {
     border: "1px solid #fecaca",
     fontSize: "14px",
     fontWeight: "500",
-    marginBottom: "24px",
+    marginBottom: "20px",
+    boxSizing: "border-box",
   },
 
+  // ==========================================
+  // CARD
+  // ==========================================
   card: {
+    width: "100%",
     backgroundColor: "#ffffff",
-    padding: "28px 32px",
+    padding: "24px 28px",
     borderRadius: "16px",
-    marginBottom: "24px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)",
+    marginBottom: "20px",
+    boxShadow:
+      "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)",
     border: "1px solid #e2e8f0",
+    boxSizing: "border-box",
   },
 
   cardTitle: {
@@ -405,16 +538,22 @@ const styles = {
     color: "#0f172a",
   },
 
+  // ==========================================
+  // INPUT
+  // ==========================================
   inputRow: {
     display: "flex",
+    width: "100%",
     gap: "12px",
     alignItems: "center",
     flexWrap: "wrap",
+    boxSizing: "border-box",
   },
 
   input: {
-    flex: 1,
-    minWidth: "260px",
+    flex: "1 1 300px",
+    width: "100%",
+    minWidth: 0,
     padding: "12px 16px",
     borderRadius: "10px",
     border: "1px solid #cbd5e1",
@@ -422,6 +561,7 @@ const styles = {
     color: "#0f172a",
     outline: "none",
     backgroundColor: "#ffffff",
+    boxSizing: "border-box",
   },
 
   primaryButton: {
@@ -432,16 +572,23 @@ const styles = {
     borderRadius: "10px",
     fontSize: "15px",
     fontWeight: "600",
-    transition: "background-color 0.2s ease",
+    transition: "all 0.2s ease",
+    whiteSpace: "nowrap",
+    minHeight: "46px",
   },
 
+  // ==========================================
+  // EMPTY
+  // ==========================================
   emptyCard: {
+    width: "100%",
     backgroundColor: "#ffffff",
     padding: "48px 32px",
     borderRadius: "16px",
     textAlign: "center",
     border: "1px dashed #cbd5e1",
-    marginBottom: "24px",
+    marginBottom: "20px",
+    boxSizing: "border-box",
   },
 
   emptyTitle: {
@@ -464,19 +611,26 @@ const styles = {
     fontWeight: "500",
   },
 
+  // ==========================================
+  // OVERVIEW
+  // ==========================================
   overviewGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(240px, 1fr))",
     gap: "16px",
-    marginBottom: "24px",
+    marginBottom: "20px",
+    width: "100%",
   },
 
   overviewCard: {
     backgroundColor: "#ffffff",
     padding: "24px",
     borderRadius: "16px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)",
+    boxShadow:
+      "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03)",
     border: "1px solid #e2e8f0",
+    minWidth: 0,
   },
 
   cardMetaTitle: {
@@ -493,6 +647,7 @@ const styles = {
     fontSize: "22px",
     fontWeight: "700",
     color: "#0f172a",
+    overflowWrap: "break-word",
   },
 
   scoreText: {
@@ -503,20 +658,43 @@ const styles = {
     letterSpacing: "-0.03em",
   },
 
+  progressBar: {
+    width: "100%",
+    height: "7px",
+    backgroundColor: "#e2e8f0",
+    borderRadius: "10px",
+    marginTop: "12px",
+    overflow: "hidden",
+  },
+
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#2563eb",
+    borderRadius: "10px",
+    transition: "width 0.5s ease",
+  },
+
+  // ==========================================
+  // SECTION HEADER
+  // ==========================================
   sectionHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: "16px",
+    gap: "12px",
   },
 
   sectionTitle: {
-    margin: "0 0 16px 0",
+    margin: 0,
     fontSize: "18px",
     fontWeight: "700",
     color: "#0f172a",
   },
 
+  // ==========================================
+  // BADGES
+  // ==========================================
   badgeSuccess: {
     backgroundColor: "#dcfce7",
     color: "#15803d",
@@ -524,6 +702,7 @@ const styles = {
     borderRadius: "20px",
     fontSize: "13px",
     fontWeight: "700",
+    flexShrink: 0,
   },
 
   badgeDanger: {
@@ -533,12 +712,17 @@ const styles = {
     borderRadius: "20px",
     fontSize: "13px",
     fontWeight: "700",
+    flexShrink: 0,
   },
 
+  // ==========================================
+  // SKILLS
+  // ==========================================
   skillTagGrid: {
     display: "flex",
     flexWrap: "wrap",
     gap: "10px",
+    width: "100%",
   },
 
   currentSkillTag: {
@@ -549,6 +733,7 @@ const styles = {
     borderRadius: "8px",
     fontSize: "14px",
     fontWeight: "500",
+    overflowWrap: "break-word",
   },
 
   missingSkillTag: {
@@ -559,12 +744,17 @@ const styles = {
     borderRadius: "8px",
     fontSize: "14px",
     fontWeight: "500",
+    overflowWrap: "break-word",
   },
 
+  // ==========================================
+  // LIST
+  // ==========================================
   listContainer: {
     display: "flex",
     flexDirection: "column",
     gap: "12px",
+    width: "100%",
   },
 
   courseRow: {
@@ -575,6 +765,8 @@ const styles = {
     backgroundColor: "#f8fafc",
     borderRadius: "10px",
     border: "1px solid #f1f5f9",
+    width: "100%",
+    boxSizing: "border-box",
   },
 
   listBadge: {
@@ -596,8 +788,12 @@ const styles = {
     fontSize: "14px",
     color: "#334155",
     fontWeight: "500",
+    overflowWrap: "break-word",
   },
 
+  // ==========================================
+  // ROADMAP
+  // ==========================================
   roadmapRow: {
     display: "flex",
     alignItems: "flex-start",
@@ -606,6 +802,8 @@ const styles = {
     backgroundColor: "#f8fafc",
     borderRadius: "10px",
     border: "1px solid #f1f5f9",
+    width: "100%",
+    boxSizing: "border-box",
   },
 
   roadmapBadge: {
@@ -624,6 +822,7 @@ const styles = {
 
   roadmapContent: {
     flex: 1,
+    minWidth: 0,
   },
 
   roadmapText: {
@@ -631,6 +830,7 @@ const styles = {
     fontSize: "14px",
     color: "#334155",
     lineHeight: "1.5",
+    overflowWrap: "break-word",
   },
 };
 
