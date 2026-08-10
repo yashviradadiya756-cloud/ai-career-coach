@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import {
-  getLearning,
-  generateLearning,
-} from "../../api/learningApi";
+import { getLearning, generateLearning, } from "../../api/learningApi";
 
 import { getLatestSkillGap } from "../../api/skillGapApi";
 

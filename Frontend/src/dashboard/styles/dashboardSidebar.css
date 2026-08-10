@@ -1,212 +1,230 @@
-/* ============================
-   Dashboard Sidebar
-============================ */
+/* =========================================================
+   Modern Expandable Dark Sidebar
+========================================================= */
 
 .dashboard-sidebar {
-    position: fixed;
-    top: 70px;
-    left: 0;
-    width: 270px;
-    height: calc(100vh - 70px);
-
-    background: #0f172a;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-
-    padding: 18px;
-
-    overflow-y: auto;
-
-    border-right: 0.5px solid rgba(255,255,255,0.06);
-
-    box-sizing: border-box;
-
-    z-index: 1000;
+  position: fixed;
+  top: 70px;
+  left: 0;
+  height: calc(100vh - 70px);
+  background: #0d1527;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  box-sizing: border-box;
+  z-index: 1000;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ============================
-        Scrollbar
-============================ */
-
-.dashboard-sidebar::-webkit-scrollbar{
-    width:8px;
+/* Width states */
+.dashboard-sidebar.collapsed {
+  width: 76px;
 }
 
-.dashboard-sidebar::-webkit-scrollbar-track{
-    background:#111827;
+.dashboard-sidebar.expanded {
+  width: 240px;
+  padding: 16px 14px;
 }
 
-.dashboard-sidebar::-webkit-scrollbar-thumb{
-    background:#374151;
-    border-radius:20px;
+/* =========================================================
+   Scrollbar
+========================================================= */
+
+.dashboard-sidebar::-webkit-scrollbar {
+  width: 4px;
 }
 
-.dashboard-sidebar::-webkit-scrollbar-thumb:hover{
-    background:#4b5563;
+.dashboard-sidebar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* ============================
-        Menu
-============================ */
-
-.sidebar-menu{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
+.dashboard-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
 }
 
-/* ============================
-        Links
-============================ */
+/* =========================================================
+   Header & Toggle Button
+========================================================= */
 
-.sidebar-link{
-    border:1px solid transparent;
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 0 4px;
 }
 
-.sidebar-link:hover{
-    border:1px solid rgba(255,255,255,0.08);
-    background:#1e293b;
+.brand-title {
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
-.sidebar-link.active{
-    border:1px solid #3b82f6;
+.toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0 auto;
 }
 
-.sidebar-link.active::before{
-
-    content:"";
-
-    position:absolute;
-
-    left:-18px;
-
-    width:5px;
-
-    height:28px;
-
-    border-radius:0 6px 6px 0;
-
-    background:#60a5fa;
+.expanded .toggle-btn {
+  margin: 0;
 }
 
-/* ============================
-          Icons
-============================ */
-
-.sidebar-icon{
-
-    flex-shrink:0;
+.toggle-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-/* ============================
-        Footer
-============================ */
+/* =========================================================
+   Navigation Links
+========================================================= */
 
-.sidebar-footer{
-
-    padding-top:20px;
-
-    border-top:1px solid rgba(255,255,255,.08);
-
-    margin-top:25px;
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 }
 
-/* ============================
-      Logout Button
-============================ */
-
-.logout-btn{
-
-    width:100%;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:12px;
-
-    padding:14px;
-
-    background:#dc2626;
-
-    color:white;
-
-    border:none;
-
-    border-radius:12px;
-
-    font-size:15px;
-
-    font-weight:600;
-
-    cursor:pointer;
-
-    transition:.3s;
+.sidebar-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border-radius: 12px;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 12px;
 }
 
-.logout-btn:hover{
-
-    background:#ef4444;
-
-    transform:translateY(-2px);
-
-    box-shadow:0 10px 25px rgba(239,68,68,.35);
+.icon-wrapper {
+  width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-/* ============================
-      Responsive
-============================ */
-
-@media(max-width:992px){
-
-.dashboard-sidebar{
-
-    width:230px;
+.sidebar-label {
+  margin-left: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
-.sidebar-link{
-
-    padding:13px;
-}
+.expanded .sidebar-label {
+  opacity: 1;
 }
 
-@media(max-width:768px){
-
-.dashboard-sidebar{
-
-    width:80px;
-
-    padding:15px 10px;
+.collapsed .sidebar-label {
+  display: none;
 }
 
-.sidebar-link{
-
-    justify-content:center;
-
-    padding:14px 0;
+/* Hover State */
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
 }
 
-.sidebar-link span{
-
-    display:none;
+/* Active State - Matches image gradient style */
+.sidebar-link.active {
+  background: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
 }
 
-.logout-btn span{
-
-    display:none;
+.sidebar-link.active .sidebar-icon {
+  color: #ffffff;
 }
 
-.logout-btn{
+/* =========================================================
+   Floating Tooltips (Collapsed View Only)
+========================================================= */
 
-    justify-content:center;
+.floating-tooltip {
+  position: absolute;
+  left: 72px;
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  z-index: 1010;
 }
 
-.sidebar-link.active::before{
-
-    display:none;
+.sidebar-link:hover .floating-tooltip,
+.logout-btn:hover .floating-tooltip {
+  opacity: 1;
+  visibility: visible;
+  left: 68px;
 }
+
+.floating-tooltip.danger {
+  background: #991b1b;
+  border-color: #dc2626;
+}
+
+/* =========================================================
+   Footer & Logout
+========================================================= */
+
+.sidebar-bottom {
+  width: 100%;
+  padding-top: 14px;
+  margin-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.logout-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  width: 100%;
+  padding: 0 12px;
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
 }

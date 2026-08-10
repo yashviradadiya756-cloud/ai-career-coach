@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutGrid,
@@ -15,6 +15,8 @@ import {
   Bell,
   CreditCard,
   Settings,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import "../styles/dashboardSidebar.css";
 
@@ -35,6 +37,7 @@ const navItems = [
 ];
 
 const DashboardSidebar = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -44,7 +47,21 @@ const DashboardSidebar = () => {
   };
 
   return (
-    <aside className="dashboard-sidebar">
+    <aside className={`dashboard-sidebar ${isExpanded ? "expanded" : "collapsed"}`}>
+      
+      {/* Sidebar Header & Toggle Button */}
+      <div className="sidebar-header">
+        {isExpanded && <span className="brand-title">Dashboard</span>}
+        <button
+          className="toggle-btn"
+          onClick={() => setIsExpanded(!isExpanded)}
+          aria-label={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+        >
+          {isExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+        </button>
+      </div>
+
+      {/* Navigation List */}
       <nav className="sidebar-nav">
         {navItems.map((item) => {
           const IconComponent = item.icon;
@@ -57,31 +74,41 @@ const DashboardSidebar = () => {
                 isActive ? "sidebar-link active" : "sidebar-link"
               }
             >
-              <IconComponent size={18} />
-              <span>{item.name}</span>
+              <div className="icon-wrapper">
+                <IconComponent size={20} className="sidebar-icon" />
+              </div>
+              
+              <span className="sidebar-label">{item.name}</span>
+
+              {/* Tooltip visible only when collapsed */}
+              {!isExpanded && <div className="floating-tooltip">{item.name}</div>}
             </NavLink>
           );
         })}
       </nav>
 
+      {/* Footer / Logout Button */}
       <div className="sidebar-bottom">
+        <button
+          className="logout-btn"
+          onClick={() => {
+            const confirmLogout = window.confirm(
+              "Are you sure you want to logout?"
+            );
 
-        <button className ="logout-btn"
-         onClick={() => {
-           const confirmLogout = window.confirm(
-             "Are you sure you want to logout?"
-           );
-       
-           if(confirmLogout){
-             logout();
-           }
-         }}
-       >
-         <LogOut size={16}/>
-         Logout
-       </button>
+            if (confirmLogout) {
+              handleLogout();
+            }
+          }}
+        >
+          <div className="icon-wrapper">
+            <LogOut size={18} className="sidebar-icon" />
+          </div>
+          <span className="sidebar-label">Logout</span>
 
-        </div>
+          {!isExpanded && <div className="floating-tooltip danger">Logout</div>}
+        </button>
+      </div>
     </aside>
   );
 };

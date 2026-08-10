@@ -66,7 +66,16 @@ const Overview = () => {
 
   if (loading) {
     return (
-      <div>
+      <div
+        style={{
+          minHeight: "300px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "16px",
+          color: "#64748b",
+        }}
+      >
         Loading your dashboard...
       </div>
     );
@@ -74,7 +83,16 @@ const Overview = () => {
 
   if (error) {
     return (
-      <div>
+      <div
+        style={{
+          margin: "20px",
+          padding: "16px 20px",
+          borderRadius: "10px",
+          background: "#fee2e2",
+          color: "#b91c1c",
+          fontWeight: "500",
+        }}
+      >
         {error}
       </div>
     );
@@ -91,7 +109,12 @@ const Overview = () => {
     dashboard.stats || {};
 
   return (
-    <div>
+    <div
+      style={{
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
 
       {/* ================================= */}
       {/* WELCOME */}
@@ -104,35 +127,94 @@ const Overview = () => {
       {/* DASHBOARD STATISTICS */}
       {/* ================================= */}
 
-      <div className="dashboard-grid">
+      <div
+        className="dashboard-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(4, minmax(0, 1fr))",
+          gap: "20px",
+          width: "100%",
+          marginTop: "24px",
+          marginBottom: "24px",
+          alignItems: "stretch",
+        }}
+      >
 
-        <DashboardCard
-          title="Career Score"
-          value={stats.careerScore || 0}
-          colorClass="blue"
-        />
+        {/* Career Score */}
 
-        <DashboardCard
-          title="Resume ATS"
-          value={`${stats.resumeATS || 0}%`}
-          colorClass="green"
-        />
+        <div
+          style={{
+            minWidth: 0,
+            width: "100%",
+            height: "100%",
+            minHeight: "150px",
+          }}
+        >
+          <DashboardCard
+            title="Career Score"
+            value={stats.careerScore || 0}
+            colorClass="blue"
+          />
+        </div>
 
-        <DashboardCard
-          title="Skills Matched"
-          value={`${stats.skillsMatched || 0} / ${
-            stats.totalSkills || 0
-          }`}
-          colorClass="amber"
-        />
 
-        <DashboardCard
-          title="Interview Average"
-          value={`${
-            stats.interviewAverage || 0
-          }%`}
-          colorClass="red"
-        />
+        {/* Resume ATS */}
+
+        <div
+          style={{
+            minWidth: 0,
+            width: "100%",
+            height: "100%",
+            minHeight: "150px",
+          }}
+        >
+          <DashboardCard
+            title="Resume ATS"
+            value={`${stats.resumeATS || 0}%`}
+            colorClass="green"
+          />
+        </div>
+
+
+        {/* Skills Matched */}
+
+        <div
+          style={{
+            minWidth: 0,
+            width: "100%",
+            height: "100%",
+            minHeight: "150px",
+          }}
+        >
+          <DashboardCard
+            title="Skills Matched"
+            value={`${stats.skillsMatched || 0} / ${
+              stats.totalSkills || 0
+            }`}
+            colorClass="amber"
+          />
+        </div>
+
+
+        {/* Interview Average */}
+
+        <div
+          style={{
+            minWidth: 0,
+            width: "100%",
+            height: "100%",
+            minHeight: "150px",
+          }}
+        >
+          <DashboardCard
+            title="Interview Average"
+            value={`${
+              stats.interviewAverage || 0
+            }%`}
+            colorClass="red"
+          />
+        </div>
 
       </div>
 
