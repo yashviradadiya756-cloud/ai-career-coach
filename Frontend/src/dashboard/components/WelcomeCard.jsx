@@ -9,16 +9,19 @@ const WelcomeCard = ({ user }) => {
 
   return (
     <div className="welcome-card">
+
       <h2 className="welcome-title">
-        <span role="img" aria-label="wave">
-          👋
-        </span>{" "}
-        Welcome, {displayName}!
+        <span>👋</span>
+
+        <span>
+          Welcome, {displayName}!
+        </span>
       </h2>
 
       <p className="welcome-subtitle">
         Continue your AI career journey where you left off.
       </p>
+
     </div>
   );
 };

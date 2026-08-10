@@ -1,155 +1,315 @@
-/* Welcome Card */
+/* =========================================================
+   WELCOME CARD
+========================================================= */
+
 .welcome-card {
+  width: 100%;
+
   background: #ffffff;
-  padding: 24px;
-  border-radius: 12px;
+
+  padding: 30px 34px;
+
+  border-radius: 18px;
+
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  border: 1px solid #e2e8f0;
+
+  box-shadow:
+    0 5px 20px rgba(15, 23, 42, 0.04);
+
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.welcome-card:hover {
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.07);
 }
 
 .welcome-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 6px;
   display: flex;
+
   align-items: center;
-  gap: 8px;
+
+  gap: 10px;
+
+  margin-bottom: 8px;
+
+  color: #0f172a;
+
+  font-size: 24px;
+
+  font-weight: 700;
 }
 
 .welcome-subtitle {
   color: #64748b;
-  font-size: 14px;
+
+  font-size: 15px;
+
+  line-height: 1.6;
 }
 
-/* Dashboard Metric Card */
+
+/* =========================================================
+   DASHBOARD METRIC CARD
+========================================================= */
+
 .dashboard-card {
+  min-width: 0;
+
   background: #ffffff;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  padding: 28px;
+
+  border-radius: 18px;
+
+  border: 1px solid #e2e8f0;
+
+  box-shadow:
+    0 5px 20px rgba(15, 23, 42, 0.04);
+
   display: flex;
+
   flex-direction: column;
+
   justify-content: space-between;
+
+  min-height: 160px;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 12px 28px rgba(15, 23, 42, 0.08);
+
+  border-color: #dbeafe;
 }
 
 .card-title {
-  font-size: 14px;
+  font-size: 15px;
+
   color: #64748b;
-  font-weight: 500;
-  margin-bottom: 8px;
+
+  font-weight: 600;
+
+  margin-bottom: 15px;
 }
 
 .card-value {
-  font-size: 20px;
+  font-size: 36px;
+
+  line-height: 1;
+
   font-weight: 700;
 }
 
-/* Color Variants */
-.card-value.blue { color: #2563eb; }
-.card-value.green { color: #16a34a; }
-.card-value.amber { color: #d97706; }
-.card-value.red { color: #dc2626; }
 
-/* Recent Activity Card */
+/* =========================================================
+   CARD COLORS
+========================================================= */
+
+.card-value.blue {
+  color: #2563eb;
+}
+
+.card-value.green {
+  color: #16a34a;
+}
+
+.card-value.amber {
+  color: #d97706;
+}
+
+.card-value.red {
+  color: #dc2626;
+}
+
+
+/* =========================================================
+   RECENT ACTIVITY
+========================================================= */
+
 .recent-activity-card {
   background: #ffffff;
-  padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  padding: 26px 30px;
+
+  border-radius: 18px;
+
+  border: 1px solid #e2e8f0;
+
+  box-shadow:
+    0 5px 20px rgba(15, 23, 42, 0.04);
 }
 
 .activity-header {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 16px;
   display: flex;
+
   align-items: center;
-  gap: 8px;
+
+  gap: 10px;
+
+  color: #0f172a;
+
+  font-size: 18px;
+
+  font-weight: 700;
+
+  margin-bottom: 20px;
 }
 
 .activity-list {
   list-style: none;
+
   display: flex;
+
   flex-direction: column;
-  gap: 12px;
+
+  gap: 15px;
 }
 
 .activity-item {
   display: flex;
+
   align-items: center;
-  gap: 10px;
+
+  gap: 11px;
+
+  color: #475569;
+
   font-size: 14px;
-  color: #334155;
 }
 
 .icon-check {
   color: #16a34a;
-  background-color: #dcfce7;
-  border-radius: 4px;
+
+  background: #dcfce7;
+
+  border-radius: 5px;
+
   padding: 2px;
+
+  flex-shrink: 0;
 }
 
-/* Quick Actions Card */
+
+/* =========================================================
+   QUICK ACTIONS
+========================================================= */
+
 .quick-actions-card {
   background: #ffffff;
-  padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  padding: 26px 30px;
+
+  border-radius: 18px;
+
+  border: 1px solid #e2e8f0;
+
+  box-shadow:
+    0 5px 20px rgba(15, 23, 42, 0.04);
 }
 
 .actions-header {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 16px;
   display: flex;
+
   align-items: center;
-  gap: 8px;
+
+  gap: 10px;
+
+  color: #0f172a;
+
+  font-size: 18px;
+
+  font-weight: 700;
+
+  margin-bottom: 20px;
+}
+
+.quick-icon {
+  color: #eab308;
 }
 
 .actions-btn-group {
   display: flex;
+
   flex-direction: column;
-  gap: 12px;
+
+  gap: 11px;
 }
 
 .action-btn-primary {
-  background-color: #2563eb;
-  color: white;
+  width: 100%;
+
+  background: #2563eb;
+
+  color: #ffffff;
+
   border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 600;
+
+  padding: 12px 15px;
+
+  border-radius: 9px;
+
+  font-family: inherit;
+
   font-size: 14px;
+
+  font-weight: 600;
+
   cursor: pointer;
-  transition: background-color 0.2s;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .action-btn-primary:hover {
-  background-color: #1d4ed8;
+  background: #1d4ed8;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 5px 15px rgba(37, 99, 235, 0.22);
 }
 
-.dashboard-card {
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 24px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-    transition: 0.3s ease;
-}
 
-.dashboard-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-}
+/* =========================================================
+   MOBILE
+========================================================= */
 
-.card-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1f2937;
-}
+@media (max-width: 768px) {
 
-.card-content {
-    margin-top: 15px;
+  .welcome-card {
+    padding: 22px;
+  }
+
+  .welcome-title {
+    font-size: 20px;
+  }
+
+  .dashboard-card {
+    min-height: 140px;
+
+    padding: 22px;
+  }
+
+  .card-value {
+    font-size: 30px;
+  }
+
+  .recent-activity-card,
+  .quick-actions-card {
+    padding: 22px;
+  }
 }

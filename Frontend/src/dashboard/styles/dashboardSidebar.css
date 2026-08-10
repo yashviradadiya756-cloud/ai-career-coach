@@ -1,230 +1,457 @@
 /* =========================================================
-   Modern Expandable Dark Sidebar
-========================================================= */
+   SIDEBAR
+   ========================================================= */
 
 .dashboard-sidebar {
   position: fixed;
   top: 70px;
   left: 0;
   height: calc(100vh - 70px);
+
   background: #0d1527;
+
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 16px 10px;
-  overflow-y: auto;
-  overflow-x: hidden;
+
+  padding: 12px 8px;
+
+  overflow: hidden;
+
   border-right: 1px solid rgba(255, 255, 255, 0.06);
+
   box-sizing: border-box;
+
   z-index: 1000;
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  transition:
+    width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Width states */
+
+/* =========================================================
+   COLLAPSED SIDEBAR
+   Smaller: 76px → 68px
+   ========================================================= */
+
 .dashboard-sidebar.collapsed {
-  width: 76px;
+  width: 62px;
 }
+
+
+/* =========================================================
+   EXPANDED SIDEBAR
+   Smaller: 240px → 218px
+   Font size remains unchanged
+   ========================================================= */
 
 .dashboard-sidebar.expanded {
-  width: 240px;
-  padding: 16px 14px;
+  width: 218px;
+  padding: 12px 10px;
 }
 
 /* =========================================================
-   Scrollbar
-========================================================= */
-
-.dashboard-sidebar::-webkit-scrollbar {
-  width: 4px;
-}
-
-.dashboard-sidebar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.dashboard-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-}
-
-/* =========================================================
-   Header & Toggle Button
-========================================================= */
+   SIDEBAR HEADER
+   VERY SMALL
+   ========================================================= */
 
 .sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  padding: 0 4px;
+  position: relative;
+
+  flex-shrink: 0;
+
+  height: 24px;
+  min-height: 24px;
+
+  margin: 0 0 2px 0;
+
+  padding: 0;
 }
 
+
+/* =========================================================
+   DASHBOARD TITLE
+   ========================================================= */
+
 .brand-title {
+  position: center;
+
+  left: 4px;
+  top: 2px;
+
   color: #f8fafc;
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.5px;
+
+  font-size: 20px;
+  font-weight: 500;
+  
   white-space: nowrap;
 }
 
+
+/* =========================================================
+   TOGGLE BUTTON
+   ========================================================= */
+
 .toggle-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #94a3b8;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  position: absolute;
+
+  top: 0;
+  right: -8px;
+
+  width: 26px;
+  height: 26px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
+  background: #0d1527;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  color: #94a3b8;
+
+  border-radius: 50%;
+
   cursor: pointer;
+
+  z-index: 1100;
+
+  padding: 0;
+
   transition: all 0.2s ease;
-  margin: 0 auto;
 }
 
-.expanded .toggle-btn {
+
+.dashboard-sidebar.expanded .toggle-btn {
+  right: -8px;
   margin: 0;
 }
 
+
 .toggle-btn:hover {
   background: #2563eb;
+
   color: #ffffff;
+
   border-color: #2563eb;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+
+  box-shadow:
+    0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 /* =========================================================
-   Navigation Links
-========================================================= */
+   NAVIGATION
+   ONLY NAVIGATION SCROLLS
+   ========================================================= */
 
 .sidebar-nav {
   display: flex;
+
   flex-direction: column;
-  gap: 8px;
+
+  gap: 5px;
+
   width: 100%;
+
+  flex: 1;
+
+  min-height: 0;
+
+  overflow-y: auto;
+
+  overflow-x: hidden;
+
+  padding-right: 1px;
 }
+
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+
+  border-radius: 10px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+
+/* =========================================================
+   NAVIGATION LINKS
+   ========================================================= */
 
 .sidebar-link {
   position: relative;
+
   display: flex;
+
   align-items: center;
-  height: 48px;
-  border-radius: 12px;
+
+  height: 44px;
+
+  min-height: 44px;
+
+  flex-shrink: 0;
+
+  border-radius: 10px;
+
   color: #94a3b8;
+
   text-decoration: none;
+
   transition: all 0.2s ease;
+
   width: 100%;
+
   box-sizing: border-box;
-  padding: 0 12px;
+
+  padding: 0 9px;
 }
 
+
+/* =========================================================
+   ICON
+   ========================================================= */
+
 .icon-wrapper {
-  width: 28px;
+  width: 26px;
+
   display: flex;
+
   align-items: center;
+
   justify-content: center;
+
   flex-shrink: 0;
 }
 
+
+/* =========================================================
+   LABEL
+   Font size NOT changed
+   ========================================================= */
+
 .sidebar-label {
-  margin-left: 14px;
+  margin-left: 12px;
+
   font-size: 14px;
+
   font-weight: 500;
+
   white-space: nowrap;
+
   opacity: 0;
+
   transition: opacity 0.2s ease;
 }
+
+
+/* Expanded */
 
 .expanded .sidebar-label {
   opacity: 1;
 }
 
+
+/* Collapsed */
+
 .collapsed .sidebar-label {
   display: none;
 }
 
-/* Hover State */
+
+/* =========================================================
+   HOVER
+   ========================================================= */
+
 .sidebar-link:hover {
   background: rgba(255, 255, 255, 0.06);
+
   color: #ffffff;
 }
 
-/* Active State - Matches image gradient style */
+
+/* =========================================================
+   ACTIVE
+   ========================================================= */
+
 .sidebar-link.active {
   background: #3b82f6;
+
   color: #ffffff;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+
+  box-shadow:
+    0 4px 14px rgba(59, 130, 246, 0.3);
 }
+
 
 .sidebar-link.active .sidebar-icon {
   color: #ffffff;
 }
 
-/* =========================================================
-   Floating Tooltips (Collapsed View Only)
-========================================================= */
-
-.floating-tooltip {
-  position: absolute;
-  left: 72px;
-  background: #1e293b;
-  color: #f8fafc;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: all 0.2s ease;
-  z-index: 1010;
-}
-
-.sidebar-link:hover .floating-tooltip,
-.logout-btn:hover .floating-tooltip {
-  opacity: 1;
-  visibility: visible;
-  left: 68px;
-}
-
-.floating-tooltip.danger {
-  background: #991b1b;
-  border-color: #dc2626;
-}
 
 /* =========================================================
-   Footer & Logout
-========================================================= */
+   LOGOUT
+   FIXED AT BOTTOM
+   ========================================================= */
 
 .sidebar-bottom {
   width: 100%;
-  padding-top: 14px;
-  margin-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+  flex-shrink: 0;
+
+  padding-top: 10px;
+
+  margin-top: 10px;
+
+  border-top:
+    1px solid rgba(255, 255, 255, 0.06);
 }
+
+
+/* =========================================================
+   LOGOUT BUTTON
+   ========================================================= */
 
 .logout-btn {
   position: relative;
+
   display: flex;
+
   align-items: center;
-  height: 48px;
+
+  height: 44px;
+
   width: 100%;
-  padding: 0 12px;
+
+  padding: 0 9px;
+
   background: rgba(239, 68, 68, 0.08);
+
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.15);
-  border-radius: 12px;
+
+  border:
+    1px solid rgba(239, 68, 68, 0.15);
+
+  border-radius: 10px;
+
   cursor: pointer;
+
   transition: all 0.2s ease;
+
   box-sizing: border-box;
 }
 
+
 .logout-btn:hover {
   background: #dc2626;
+
   color: #ffffff;
+
   border-color: #dc2626;
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
+
+  box-shadow:
+    0 4px 14px rgba(220, 38, 38, 0.3);
+}
+
+/* =========================================================
+   COLLAPSED SIDEBAR TOOLTIP
+   ========================================================= */
+
+.floating-tooltip {
+  position: absolute;
+
+  left: 62px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  background: #1e293b;
+  color: #ffffff;
+
+  padding: 7px 12px;
+  border-radius: 7px;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  white-space: nowrap;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+
+  opacity: 0;
+  visibility: hidden;
+
+  pointer-events: none;
+
+  z-index: 2000;
+
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease,
+    left 0.15s ease;
+}
+
+
+/* Show tooltip when hovering sidebar item */
+
+.dashboard-sidebar.collapsed
+.sidebar-link:hover
+.floating-tooltip {
+
+  opacity: 1;
+  visibility: visible;
+
+  left: 68px;
+}
+
+
+/* Logout tooltip */
+
+.dashboard-sidebar.collapsed
+.logout-btn:hover
+.floating-tooltip {
+
+  opacity: 1;
+  visibility: visible;
+
+  left: 68px;
+}
+
+
+/* Logout tooltip different color */
+
+.floating-tooltip.danger {
+  background: #991b1b;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  .dashboard-sidebar.collapsed,
+  .dashboard-sidebar.expanded {
+    width: 0;
+
+    padding: 0;
+
+    border: none;
+  }
+
 }
