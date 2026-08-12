@@ -1,0 +1,1398 @@
+/* =========================================================
+   ADMIN AI COACH
+========================================================= */
+
+.admin-ai-coach-page {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.admin-ai-coach-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 22px;
+}
+
+.admin-ai-coach-eyebrow {
+  display: block;
+
+  margin-bottom: 6px;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+
+  color: #7c3aed;
+}
+
+.admin-ai-coach-header h1 {
+  margin: 0;
+
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+
+  color: #172033;
+}
+
+.admin-ai-coach-header p {
+  margin: 7px 0 0;
+
+  font-size: 12px;
+
+  color: #7b8494;
+}
+
+.admin-ai-coach-live {
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 0 11px;
+
+  border: 1px solid #dcefe2;
+  border-radius: 8px;
+
+  background: #f6fff8;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  color: #667085;
+}
+
+.admin-ai-coach-live > span {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #22c55e;
+
+  box-shadow:
+    0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+.admin-ai-coach-live strong {
+  color: #15803d;
+}
+
+/* =========================================================
+   STATS
+========================================================= */
+
+.admin-coach-stats {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 13px;
+
+  margin-bottom: 17px;
+}
+
+.admin-coach-stat-card {
+  min-height: 96px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 16px;
+
+  border: 1px solid #e7eaf0;
+  border-radius: 11px;
+
+  background: white;
+}
+
+.admin-coach-stat-icon {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+}
+
+.admin-coach-stat-icon.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.admin-coach-stat-icon.purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.admin-coach-stat-icon.green {
+  background: #ecfdf3;
+  color: #16a34a;
+}
+
+.admin-coach-stat-icon.orange {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.admin-coach-stat-card span {
+  display: block;
+
+  margin-bottom: 2px;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  color: #98a2b3;
+}
+
+.admin-coach-stat-card strong {
+  display: block;
+
+  font-size: 20px;
+  font-weight: 800;
+
+  color: #172033;
+}
+
+.admin-coach-stat-card small {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 8px;
+
+  color: #98a2b3;
+}
+
+/* =========================================================
+   OVERVIEW
+========================================================= */
+
+.admin-coach-overview-grid {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.65fr)
+    minmax(280px, 0.8fr);
+
+  gap: 13px;
+
+  margin-bottom: 17px;
+}
+
+.admin-coach-chart-card,
+.admin-coach-topic-card {
+  min-width: 0;
+
+  padding: 17px;
+
+  border: 1px solid #e7eaf0;
+  border-radius: 12px;
+
+  background: white;
+}
+
+/* =========================================================
+   CARD HEADER
+========================================================= */
+
+.admin-coach-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 15px;
+}
+
+.admin-coach-card-header span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+
+  color: #98a2b3;
+}
+
+.admin-coach-card-header h2 {
+  margin: 0;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  color: #344054;
+}
+
+.admin-coach-card-header select {
+  height: 29px;
+
+  padding: 0 7px;
+
+  border: 1px solid #e1e5eb;
+  border-radius: 6px;
+
+  outline: none;
+
+  font-size: 9px;
+  color: #667085;
+}
+
+/* =========================================================
+   CHART
+========================================================= */
+
+.admin-coach-chart {
+  height: 190px;
+
+  display: flex;
+
+  margin-top: 17px;
+}
+
+.admin-chart-y {
+  width: 27px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  padding: 0 0 24px;
+
+  font-size: 8px;
+
+  color: #a4acb9;
+
+  text-align: right;
+}
+
+.admin-chart-area {
+  position: relative;
+
+  flex: 1;
+
+  height: 100%;
+}
+
+.admin-chart-grid-line {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+
+  height: 1px;
+
+  background: #eef0f3;
+}
+
+.admin-chart-grid-line.one {
+  top: 0;
+}
+
+.admin-chart-grid-line.two {
+  top: 25%;
+}
+
+.admin-chart-grid-line.three {
+  top: 50%;
+}
+
+.admin-chart-grid-line.four {
+  top: 75%;
+}
+
+.admin-chart-bars {
+  position: absolute;
+
+  inset: 0;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+
+  gap: 10px;
+
+  padding: 0 10px 0;
+}
+
+.admin-chart-column {
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+
+  flex: 1;
+  max-width: 55px;
+
+  gap: 7px;
+
+  position: relative;
+  z-index: 2;
+}
+
+.admin-chart-bar {
+  width: 62%;
+
+  min-height: 8px;
+
+  border-radius: 5px 5px 2px 2px;
+
+  background: #7c3aed;
+
+  opacity: 0.85;
+}
+
+.admin-chart-column span {
+  font-size: 8px;
+
+  color: #98a2b3;
+}
+
+/* =========================================================
+   TOPICS
+========================================================= */
+
+.admin-coach-topic-card > .admin-coach-card-header svg {
+  color: #7c3aed;
+}
+
+.admin-topic-list {
+  margin-top: 19px;
+}
+
+.admin-topic-list > div {
+  position: relative;
+
+  margin-bottom: 14px;
+}
+
+.admin-topic-list > div:last-child {
+  margin-bottom: 0;
+}
+
+.admin-topic-list span {
+  display: inline-block;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  color: #667085;
+}
+
+.admin-topic-list strong {
+  float: right;
+
+  font-size: 9px;
+
+  color: #344054;
+}
+
+.admin-topic-list > div > div {
+  height: 5px;
+
+  overflow: hidden;
+
+  margin-top: 6px;
+
+  border-radius: 10px;
+
+  background: #f0f1f4;
+}
+
+.admin-topic-list i {
+  display: block;
+
+  height: 100%;
+
+  border-radius: 10px;
+
+  background: #7c3aed;
+}
+
+/* =========================================================
+   TABLE CARD
+========================================================= */
+
+.admin-coach-table-card {
+  overflow: visible;
+
+  border: 1px solid #e7eaf0;
+  border-radius: 12px;
+
+  background: white;
+}
+
+/* =========================================================
+   TABLE HEADER
+========================================================= */
+
+.admin-coach-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 17px 18px 13px;
+
+  gap: 15px;
+}
+
+.admin-coach-table-header > div:first-child span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+
+  color: #98a2b3;
+}
+
+.admin-coach-table-header h2 {
+  margin: 0;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  color: #344054;
+}
+
+.admin-coach-total {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  padding: 5px 8px;
+
+  border-radius: 6px;
+
+  background: #f5f3ff;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  color: #7c3aed;
+}
+
+/* =========================================================
+   TOOLBAR
+========================================================= */
+
+.admin-coach-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding: 11px 18px;
+
+  border-top: 1px solid #f0f2f5;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.admin-coach-search {
+  width: 330px;
+  height: 35px;
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 0 10px;
+
+  border: 1px solid #dfe4eb;
+  border-radius: 7px;
+
+  background: #fbfcfd;
+
+  color: #98a2b3;
+}
+
+.admin-coach-search:focus-within {
+  border-color: #a78bfa;
+
+  background: white;
+}
+
+.admin-coach-search input {
+  width: 100%;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  font-size: 10px;
+
+  color: #344054;
+}
+
+.admin-coach-search input::placeholder {
+  color: #a0a8b5;
+}
+
+.admin-coach-filters {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.admin-coach-filter,
+.admin-coach-filter-select {
+  height: 35px;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  padding: 0 9px;
+
+  border: 1px solid #dfe4eb;
+  border-radius: 7px;
+
+  background: white;
+
+  color: #667085;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.admin-coach-filter select {
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: #667085;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.admin-coach-table-wrapper {
+  overflow-x: auto;
+}
+
+.admin-coach-table {
+  width: 100%;
+  min-width: 920px;
+
+  border-collapse: collapse;
+}
+
+.admin-coach-table th {
+  height: 40px;
+
+  padding: 0 12px;
+
+  border-bottom: 1px solid #edf0f3;
+
+  background: #fafbfc;
+
+  text-align: left;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+
+  color: #98a2b3;
+}
+
+.admin-coach-table th:first-child,
+.admin-coach-table td:first-child {
+  padding-left: 18px;
+}
+
+.admin-coach-table td {
+  height: 68px;
+
+  padding: 0 12px;
+
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.admin-coach-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.admin-coach-table tbody tr:hover {
+  background: #fcfbff;
+}
+
+/* =========================================================
+   USER
+========================================================= */
+
+.admin-coach-table-user {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  min-width: 190px;
+}
+
+.admin-coach-table-avatar {
+  width: 32px;
+  height: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 8px;
+
+  background: #f1edff;
+
+  color: #7c3aed;
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.admin-coach-table-user > div:last-child {
+  min-width: 0;
+}
+
+.admin-coach-table-user strong {
+  display: block;
+
+  overflow: hidden;
+
+  font-size: 10px;
+
+  color: #344054;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-coach-table-user span {
+  display: block;
+
+  overflow: hidden;
+
+  margin-top: 3px;
+
+  font-size: 8px;
+
+  color: #98a2b3;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   TOPIC BADGE
+========================================================= */
+
+.admin-coach-topic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  max-width: 180px;
+
+  padding: 5px 7px;
+
+  border-radius: 6px;
+
+  background: #f7f5ff;
+
+  color: #6d28d9;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.admin-coach-topic-badge svg {
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.admin-coach-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.admin-coach-status i {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+}
+
+.admin-coach-status.completed {
+  color: #15803d;
+}
+
+.admin-coach-status.completed i {
+  background: #22c55e;
+}
+
+.admin-coach-status.active {
+  color: #2563eb;
+}
+
+.admin-coach-status.active i {
+  background: #3b82f6;
+}
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.admin-coach-messages-count {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  color: #667085;
+}
+
+/* =========================================================
+   DURATION
+========================================================= */
+
+.admin-coach-duration {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  color: #667085;
+}
+
+/* =========================================================
+   DATE
+========================================================= */
+
+.admin-coach-date strong {
+  display: block;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  color: #667085;
+}
+
+.admin-coach-date span {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 8px;
+
+  color: #98a2b3;
+}
+
+/* =========================================================
+   VIEW BUTTON
+========================================================= */
+
+.admin-coach-view-button {
+  height: 28px;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  padding: 0 8px;
+
+  border: 1px solid #e1e5eb;
+  border-radius: 6px;
+
+  background: white;
+
+  color: #667085;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.admin-coach-view-button:hover {
+  border-color: #c4b5fd;
+
+  background: #faf9ff;
+
+  color: #6d28d9;
+}
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.admin-coach-empty {
+  height: 220px !important;
+
+  text-align: center;
+
+  color: #98a2b3;
+}
+
+.admin-coach-empty svg {
+  display: block;
+
+  margin: 0 auto 8px;
+}
+
+.admin-coach-empty strong {
+  display: block;
+
+  font-size: 11px;
+
+  color: #667085;
+}
+
+.admin-coach-empty span {
+  display: block;
+
+  margin-top: 4px;
+
+  font-size: 9px;
+}
+
+/* =========================================================
+   PAGINATION
+========================================================= */
+
+.admin-coach-pagination {
+  min-height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding: 9px 18px;
+}
+
+.admin-coach-pagination > span {
+  font-size: 8px;
+
+  color: #98a2b3;
+}
+
+.admin-coach-pagination strong {
+  color: #667085;
+}
+
+.admin-coach-pagination > div {
+  display: flex;
+  gap: 4px;
+}
+
+.admin-coach-pagination button {
+  width: 27px;
+  height: 27px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #e1e5eb;
+  border-radius: 6px;
+
+  background: white;
+
+  color: #667085;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.admin-coach-pagination button:hover:not(:disabled) {
+  background: #f5f7fa;
+}
+
+.admin-coach-pagination button.active {
+  border-color: #7c3aed;
+
+  background: #7c3aed;
+
+  color: white;
+}
+
+.admin-coach-pagination button:disabled {
+  opacity: 0.4;
+
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.admin-coach-modal-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 3000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(15, 23, 42, 0.43);
+
+  backdrop-filter: blur(3px);
+}
+
+.admin-coach-modal {
+  width: 100%;
+  max-width: 650px;
+  max-height: 90vh;
+
+  overflow-y: auto;
+
+  border: 1px solid #e4e7ec;
+  border-radius: 15px;
+
+  background: white;
+
+  box-shadow:
+    0 25px 70px rgba(15, 23, 42, 0.22);
+
+  animation: coachModalIn 0.2s ease;
+}
+
+@keyframes coachModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.admin-coach-modal-header {
+  display: flex;
+  justify-content: space-between;
+
+  padding: 19px 21px;
+
+  border-bottom: 1px solid #edf0f3;
+}
+
+.admin-coach-modal-eyebrow {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+
+  color: #7c3aed;
+}
+
+.admin-coach-modal-header h2 {
+  margin: 4px 0 0;
+
+  font-size: 17px;
+  font-weight: 800;
+
+  color: #172033;
+}
+
+.admin-coach-close {
+  width: 30px;
+  height: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 7px;
+
+  background: #f5f7fa;
+
+  color: #667085;
+
+  cursor: pointer;
+}
+
+/* =========================================================
+   MODAL USER
+========================================================= */
+
+.admin-coach-session-info {
+  padding: 17px 21px;
+
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.admin-coach-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-coach-user-avatar {
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background: #f1edff;
+
+  color: #7c3aed;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-coach-user strong {
+  display: block;
+
+  font-size: 11px;
+
+  color: #344054;
+}
+
+.admin-coach-user span {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 8px;
+
+  color: #98a2b3;
+}
+
+.admin-coach-session-meta {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 15px;
+
+  margin-top: 12px;
+}
+
+.admin-coach-session-meta div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  font-size: 8px;
+
+  color: #667085;
+}
+
+/* =========================================================
+   MODAL TOPIC
+========================================================= */
+
+.admin-coach-topic {
+  margin: 17px 21px 0;
+
+  padding: 10px 12px;
+
+  border: 1px solid #e9e3ff;
+  border-radius: 8px;
+
+  background: #faf9ff;
+}
+
+.admin-coach-topic span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+
+  color: #98a2b3;
+}
+
+.admin-coach-topic strong {
+  font-size: 10px;
+
+  color: #6d28d9;
+}
+
+/* =========================================================
+   CONVERSATION
+========================================================= */
+
+.admin-coach-conversation {
+  padding: 18px 21px;
+}
+
+.admin-coach-conversation-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  color: #7c3aed;
+}
+
+.admin-coach-conversation-title h3 {
+  margin: 0;
+
+  font-size: 11px;
+
+  color: #344054;
+}
+
+.admin-coach-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+
+  margin-top: 13px;
+}
+
+.admin-chat-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.admin-chat-avatar {
+  width: 27px;
+  height: 27px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border-radius: 7px;
+}
+
+.admin-chat-avatar.user {
+  background: #eff6ff;
+
+  color: #2563eb;
+}
+
+.admin-chat-avatar.ai {
+  background: #f1edff;
+
+  color: #7c3aed;
+}
+
+.admin-chat-content {
+  max-width: 88%;
+
+  padding: 9px 11px;
+
+  border-radius: 8px;
+}
+
+.admin-chat-message.user
+.admin-chat-content {
+  background: #f8fafc;
+}
+
+.admin-chat-message.ai
+.admin-chat-content {
+  background: #faf9ff;
+}
+
+.admin-chat-label {
+  display: block;
+
+  margin-bottom: 4px;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  color: #667085;
+}
+
+.admin-chat-content p {
+  margin: 0;
+
+  font-size: 9px;
+  line-height: 1.55;
+
+  color: #475467;
+}
+
+/* =========================================================
+   MODAL FOOTER
+========================================================= */
+
+.admin-coach-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 13px 21px;
+
+  border-top: 1px solid #edf0f3;
+}
+
+.admin-coach-session-completed {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  color: #15803d;
+}
+
+.admin-coach-done-button {
+  height: 34px;
+
+  padding: 0 13px;
+
+  border: 1px solid #7c3aed;
+  border-radius: 7px;
+
+  background: #7c3aed;
+
+  color: white;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+  .admin-coach-stats {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-coach-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-coach-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-coach-search {
+    width: 100%;
+  }
+
+  .admin-coach-filters {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .admin-ai-coach-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-coach-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-coach-filters {
+    flex-wrap: wrap;
+  }
+
+  .admin-coach-filter,
+  .admin-coach-filter-select {
+    flex: 1;
+    min-width: 130px;
+  }
+
+  .admin-coach-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 500px) {
+  .admin-coach-modal-overlay {
+    padding: 10px;
+  }
+
+  .admin-coach-modal {
+    max-height: 94vh;
+  }
+
+  .admin-coach-modal-header,
+  .admin-coach-session-info,
+  .admin-coach-conversation {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .admin-coach-topic {
+    margin-left: 15px;
+    margin-right: 15px;
+  }
+
+  .admin-coach-modal-footer {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .admin-coach-session-meta {
+    gap: 8px;
+  }
+}

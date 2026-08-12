@@ -7,8 +7,8 @@ import Profile from "./dashboard/pages/Profile";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
-import AdminLogin from "./admin/pages/AdminLogin";
-import AdminProtectedRoute from "./components/AdminProtectedRoute";
+// import AdminLogin from "./admin/pages/AdminLogin";
+// import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 import LandingPage from "./pages/LandingPage";
 import Pricing from "./components/Pricing";
@@ -30,21 +30,27 @@ import Payment from "./dashboard/pages/Payment";
 import Notification from "./dashboard/pages/Notification";
 import Settings from "./dashboard/pages/Settings";
 
+import AdminLayout from "./admin/AdminLayout";
+import AdminDashboard from "./admin/pages/AdminDashboard";
+import AdminUsers from "./admin/pages/AdminUsers";
+import AdminAICoach from "./admin/pages/AdminAICoach";
+import AdminResumes from "./admin/pages/AdminResumes";
+import AdminRoadmaps from "./admin/pages/AdminRoadmaps";
+
 // Layout and Dashboard
-import AdminLayout from './admin/layouts/AdminLayout';
-import AdminDashboard from "./admin/pages/Dashboard/Dashboard";
-import AdminUsers from "./admin/pages/Dashboard/Users/Users";
-import AdminResumeReports from "./admin/pages/Dashboard/ResumeReports/ResumeReports";
-import AdminCareerAssessment from "./admin/pages/Dashboard/CareerAssessment/CareerAssessment";
-import AdminResumeAnalyzer from "./admin/pages/Dashboard/ResumeAnalyzer/ResumeAnalyzer";
-import AdminSkillGap from "./admin/pages/Dashboard/SkillGap/SkillGap";
-import AdminCareerRoadmaps from "./admin/pages/Dashboard/CareerRoadmaps/CareerRoadmaps";
-import AdminMockInterviews from "./admin/pages/Dashboard/MockInterviews/MockInterviews";
-import AdminLearning from "./admin/pages/Dashboard/Learning/Learning";
-import AdminPayments from "./admin/pages/Dashboard/Payments/Payments";
-import AdminAnalytics from "./admin/pages/Dashboard/Analytics/Analytics";
-import AdminNotifications from "./admin/pages/Dashboard/Notification/Notifications";
-import AdminSettings from "./admin/pages/Dashboard/Settings/Settings";
+// import AdminDashboard from "./admin/pages/Dashboard/Dashboard";
+// import AdminUsers from "./admin/pages/Dashboard/Users/Users";
+// import AdminResumeReports from "./admin/pages/Dashboard/ResumeReports/ResumeReports";
+// import AdminCareerAssessment from "./admin/pages/Dashboard/CareerAssessment/CareerAssessment";
+// import AdminResumeAnalyzer from "./admin/pages/Dashboard/ResumeAnalyzer/ResumeAnalyzer";
+// import AdminSkillGap from "./admin/pages/Dashboard/SkillGap/SkillGap";
+// import AdminCareerRoadmaps from "./admin/pages/Dashboard/CareerRoadmaps/CareerRoadmaps";
+// import AdminMockInterviews from "./admin/pages/Dashboard/MockInterviews/MockInterviews";
+// import AdminLearning from "./admin/pages/Dashboard/Learning/Learning";
+// import AdminPayments from "./admin/pages/Dashboard/Payments/Payments";
+// import AdminAnalytics from "./admin/pages/Dashboard/Analytics/Analytics";
+// import AdminNotifications from "./admin/pages/Dashboard/Notification/Notifications";
+// import AdminSettings from "./admin/pages/Dashboard/Settings/Settings";
 
 // Step 6 Quick Stand-in Component factory
 const createPlaceholder = (name) => () => (
@@ -91,35 +97,52 @@ function App() {
       <Route index element={<Overview />} />
     </Route> */}
 
-    <Route 
-  path="/dashboard/*" 
-  element={
-    <ProtectedRoute>
-      <DashboardLayout />
-    </ProtectedRoute>
-  }
->
-    <Route path="overview" element={<Overview />} />
-    <Route path="assessment" element={<Assessment />} />
-    <Route path="resume" element={<Resume />} />
-    <Route path="skill-gap" element={<SkillGap />} />
-    <Route path="roadmap" element={<Roadmap />} />
-    <Route path="interview" element={<Interview />} />
-    <Route path="ai-coach" element={<AICoach />} />
-    <Route path="learning" element={<Learning />} />
-    <Route path="progress" element={<Progress />} />
-    <Route path="achievement" element={<Achievements />} />
-    <Route path="notification" element={<Notification />} />
-    <Route path="payment" element={<Payment />} />
-    <Route path="settings" element={<Settings />} />
-</Route>   
+        <Route 
+      path="/dashboard/*" 
+      element={
+        <ProtectedRoute>
+          <DashboardLayout />
+        </ProtectedRoute>
+      }
+    >
+        <Route path="overview" element={<Overview />} />
+        <Route path="assessment" element={<Assessment />} />
+        <Route path="resume" element={<Resume />} />
+        <Route path="skill-gap" element={<SkillGap />} />
+        <Route path="roadmap" element={<Roadmap />} />
+        <Route path="interview" element={<Interview />} />
+        <Route path="ai-coach" element={<AICoach />} />
+        <Route path="learning" element={<Learning />} />
+        <Route path="progress" element={<Progress />} />
+        <Route path="achievement" element={<Achievements />} />
+        <Route path="notification" element={<Notification />} />
+        <Route path="payment" element={<Payment />} />
+        <Route path="settings" element={<Settings />} />
+    </Route>   
+
+
+      {/* Admin */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsers />}/>
+        <Route path="ai-coach" element={<AdminAICoach />}/>
+        <Route
+    path="resumes"
+    element={<AdminResumes />}
+  />
+  <Route
+    path="roadmaps"
+    element={<AdminRoadmaps />}
+  />
+      </Route>
 
       {/* Admin Login */}
-      <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
+      {/* <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
+      <Route path="/admin/login" element={<AdminLogin />} /> */}
 
       {/* Protected Admin Dashboard */}
-      <Route
+    
+      {/* <Route
         path="/admin/dashboard/*"
         element={
           <AdminProtectedRoute>
@@ -138,8 +161,8 @@ function App() {
         <Route path="payments" element={<AdminPayments />}/>
         <Route path="analytics" element={<AdminAnalytics />}/>
         <Route path="notifications" element={<AdminNotifications />}/>
-        <Route path="settings" element={<AdminSettings />}/>
-        </Route>
+        <Route path="settings" element={<AdminSettings />}/> */}
+        {/* </Route> */}
     </Routes>
   );
 }

@@ -48,6 +48,8 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 
+const adminRoutes = require("./routes/adminRoutes");
+
 const app = express();
 
 console.log("ASSESSMENT API VERSION: 2026-08-06");
@@ -129,6 +131,12 @@ app.use("/api/achievement", achievementRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/settings", settingsRoutes); 
+
+// ===============================
+// ADMIN ROUTES
+// ===============================
+
+app.use("/api/admin", adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 

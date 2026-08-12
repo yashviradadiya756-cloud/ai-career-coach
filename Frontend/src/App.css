@@ -1,0 +1,66 @@
+/* ================================
+   GLOBAL PAGE SCROLL FIX
+================================ */
+
+html {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+/* ================================
+   LANDING PAGE
+================================ */
+
+.landing-page {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+.landing-main {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+/* Prevent sections from creating their own scroll */
+.landing-page section {
+  max-width: 100%;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .landing-page {
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+}

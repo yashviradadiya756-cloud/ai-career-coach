@@ -11,10 +11,10 @@ import ContactUs from "./ContactUs";
 
 export default function LandingPage() {
   return (
-    <>
+    <div className="landing-page">
       <Navbar />
 
-      <main style={{ marginTop: "70px" }}>
+      <main className="landing-main">
         <Hero />
         <Features />
         <InteractiveDashboard />
@@ -25,6 +25,6 @@ export default function LandingPage() {
       </main>
 
       <Footer />
-    </>
+    </div>
   );
 }
