@@ -1,165 +1,188 @@
 /* =========================================================
-   GLOBAL RESET
-========================================================= */
-
-* {
-  margin: 0;
-  padding: 0;
-
-  box-sizing: border-box;
-}
-
-/* =========================================================
    DASHBOARD LAYOUT
 ========================================================= */
 
 .dashboard-layout {
-  --navbar-height: 70px;
-  --sidebar-width: 76px;
+  position: relative;
 
+  width: 100%;
+  height: 100vh;
   min-height: 100vh;
+
+  margin: 0;
+  padding: 0;
+
+  overflow: hidden;
 
   background: #f8fafc;
 
-  transition:
-    --sidebar-width 0.28s ease;
+  box-sizing: border-box;
 }
+
 
 /* =========================================================
-   COLLAPSED SIDEBAR
+   MAIN DASHBOARD AREA
 ========================================================= */
 
-.dashboard-layout.sidebar-collapsed {
-  --sidebar-width: 76px;
+.dashboard-main-area {
+  position: fixed;
+
+  top: 70px;
+  right: 0;
+  bottom: 0;
+
+  left: 62px;
+
+  height: calc(100vh - 70px);
+
+  overflow: hidden;
+
+  box-sizing: border-box;
+
+  background: #f8fafc;
+
+  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  z-index: 1;
 }
+
 
 /* =========================================================
    EXPANDED SIDEBAR
 ========================================================= */
 
-.dashboard-layout.sidebar-expanded {
-  --sidebar-width: 250px;
+.dashboard-main-area.sidebar-expanded {
+  left: 218px;
 }
 
+
 /* =========================================================
-   MAIN CONTENT
+   COLLAPSED SIDEBAR
 ========================================================= */
 
-.dashboard-content {
-  width: calc(100% - var(--sidebar-width));
+.dashboard-main-area.sidebar-collapsed {
+  left: 62px;
+}
 
-  min-height: calc(100vh - var(--navbar-height));
 
-  margin-left: var(--sidebar-width);
+/* =========================================================
+   PAGE CONTENT
+   ONLY THIS ELEMENT SCROLLS
+========================================================= */
 
-  padding: 28px;
+.dashboard-page-content {
+  width: 100%;
+  height: 100%;
 
-  padding-top: calc(
-    var(--navbar-height) + 28px
-  );
+  min-width: 0;
+  min-height: 0;
+
+  padding: 24px;
+
+  box-sizing: border-box;
+
+  overflow-x: hidden;
+  overflow-y: auto;
 
   background: #f8fafc;
 
-  transition:
-    width 0.28s ease,
-    margin-left 0.28s ease;
+  overscroll-behavior: contain;
 
-  overflow-x: hidden;
+  scrollbar-width: thin;
+
+  scrollbar-color:
+    rgba(100, 116, 139, 0.35)
+    transparent;
 }
 
+
 /* =========================================================
-   DASHBOARD GRID
+   CONTENT SCROLLBAR
 ========================================================= */
 
-.dashboard-grid {
+.dashboard-page-content::-webkit-scrollbar {
+  width: 7px;
+}
+
+.dashboard-page-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-page-content::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+
+  border-radius: 10px;
+}
+
+.dashboard-page-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.5);
+}
+
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+html,
+body,
+#root {
   width: 100%;
+  height: 100%;
 
-  display: grid;
-
-  grid-template-columns:
-    repeat(4, minmax(0, 1fr));
-
-  gap: 20px;
-
-  margin-bottom: 24px;
+  margin: 0;
+  padding: 0;
 }
+
 
 /* =========================================================
-   BOTTOM SECTION
+   BODY DOES NOT SCROLL
 ========================================================= */
 
-.bottom-section {
-  width: 100%;
-
-  display: grid;
-
-  grid-template-columns:
-    minmax(0, 2fr)
-    minmax(280px, 1fr);
-
-  gap: 20px;
+body {
+  overflow: hidden;
 }
 
-/* =========================================================
-   LARGE TABLET
-========================================================= */
-
-@media (max-width: 1200px) {
-  .dashboard-grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* =========================================================
-   TABLET
-========================================================= */
-
-@media (max-width: 900px) {
-  .dashboard-content {
-    padding-left: 20px;
-
-    padding-right: 20px;
-  }
-
-  .bottom-section {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* =========================================================
    MOBILE
 ========================================================= */
 
 @media (max-width: 768px) {
-  .dashboard-layout {
-    --navbar-height: 64px;
-    --sidebar-width: 0px;
-  }
 
-  .dashboard-layout.sidebar-expanded {
-    --sidebar-width: 0px;
-  }
+  .dashboard-main-area,
+  .dashboard-main-area.sidebar-expanded,
+  .dashboard-main-area.sidebar-collapsed {
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
 
-  .dashboard-content {
     width: 100%;
 
-    margin-left: 0;
-
-    padding: 20px;
-
-    padding-top: 84px;
+    height: calc(100vh - 60px);
   }
 
-  .dashboard-grid {
-    grid-template-columns: 1fr;
+  .dashboard-page-content {
+    padding: 16px;
+  }
+}
 
-    gap: 15px;
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .dashboard-main-area,
+  .dashboard-main-area.sidebar-expanded,
+  .dashboard-main-area.sidebar-collapsed {
+    top: 60px;
+
+    height: calc(100vh - 60px);
   }
 
-  .bottom-section {
-    grid-template-columns: 1fr;
-
-    gap: 15px;
+  .dashboard-page-content {
+    padding: 12px;
   }
 }

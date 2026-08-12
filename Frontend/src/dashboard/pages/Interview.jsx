@@ -12,23 +12,102 @@ const Interview = () => {
 
   const [targetRole, setTargetRole] = useState("");
 
-  const [interview, setInterview] = useState(null);
+  const [interviewType, setInterviewType] =
+    useState("Student / Fresher");
+
+  const [difficulty, setDifficulty] =
+    useState("Medium");
+
+  const [questionCount, setQuestionCount] =
+    useState("5");
+
+  const [customType, setCustomType] =
+    useState("");
+
+  const [interview, setInterview] =
+    useState(null);
 
   const [currentQuestion, setCurrentQuestion] =
     useState(0);
 
   const [answer, setAnswer] = useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
   const [submitting, setSubmitting] =
     useState(false);
 
   const [error, setError] = useState("");
 
-  const [success, setSuccess] = useState("");
+  const [success, setSuccess] =
+    useState("");
 
-  const [result, setResult] = useState(null);
+  const [result, setResult] =
+    useState(null);
+
+  // ==========================================
+  // INTERVIEW TYPES
+  // ==========================================
+
+  const interviewTypes = [
+    {
+      id: "Student / Fresher",
+      icon: "🎓",
+      title: "Student / Fresher",
+      description:
+        "Fundamentals, projects, academics and beginner questions",
+    },
+    {
+      id: "Job Seeker",
+      icon: "💼",
+      title: "Job Seeker",
+      description:
+        "Technical, behavioral and job-focused questions",
+    },
+    {
+      id: "Experienced Professional",
+      icon: "👨‍💻",
+      title: "Experienced",
+      description:
+        "Advanced technical and real-world scenario questions",
+    },
+    {
+      id: "Career Switcher",
+      icon: "🔄",
+      title: "Career Switcher",
+      description:
+        "Transition, transferable skills and role-specific questions",
+    },
+    {
+      id: "HR / Behavioral",
+      icon: "🧑‍💼",
+      title: "HR / Behavioral",
+      description:
+        "Communication, teamwork, leadership and situational questions",
+    },
+    {
+      id: "Technical",
+      icon: "⚙️",
+      title: "Technical",
+      description:
+        "Technical concepts, coding and problem-solving questions",
+    },
+    {
+      id: "Internship",
+      icon: "🚀",
+      title: "Internship",
+      description:
+        "Internship-level technical and behavioral questions",
+    },
+    {
+      id: "Custom",
+      icon: "✨",
+      title: "Custom",
+      description:
+        "Create an interview based on your own requirements",
+    },
+  ];
 
   // ==========================================
   // START INTERVIEW
@@ -47,12 +126,44 @@ const Interview = () => {
         return;
       }
 
+      if (
+        interviewType === "Custom" &&
+        !customType.trim()
+      ) {
+        setError(
+          "Please describe your custom interview type."
+        );
+        return;
+      }
+
       setLoading(true);
 
       console.log(
         "Starting interview:",
-        targetRole
+        {
+          targetRole,
+          interviewType,
+          difficulty,
+          questionCount,
+          customType,
+        }
       );
+
+      /*
+       * CURRENT BACKEND
+       *
+       * Your existing API accepts only targetRole.
+       *
+       * Later, when you update the backend, change this to:
+       *
+       * generateInterview({
+       *   targetRole,
+       *   interviewType,
+       *   difficulty,
+       *   questionCount,
+       *   customType,
+       * });
+       */
 
       const data = await generateInterview(
         targetRole.trim()
@@ -82,7 +193,18 @@ const Interview = () => {
         );
       }
 
-      setInterview(data.interview);
+      // Add frontend metadata temporarily.
+      const interviewWithSettings = {
+        ...data.interview,
+        frontendInterviewType:
+          interviewType === "Custom"
+            ? customType
+            : interviewType,
+        frontendDifficulty: difficulty,
+        frontendQuestionCount: questionCount,
+      };
+
+      setInterview(interviewWithSettings);
 
       setCurrentQuestion(0);
 
@@ -108,18 +230,11 @@ const Interview = () => {
   };
 
   // ==========================================
-  // NEXT QUESTION
+  // SAVE CURRENT ANSWER
   // ==========================================
 
-  const nextQuestion = () => {
-    if (!answer.trim()) {
-      setError(
-        "Please answer the question before continuing."
-      );
-      return;
-    }
-
-    setError("");
+  const saveCurrentAnswer = () => {
+    if (!interview) return;
 
     const updatedQuestions = [
       ...interview.questions,
@@ -134,16 +249,37 @@ const Interview = () => {
       ...interview,
       questions: updatedQuestions,
     });
+  };
+
+  // ==========================================
+  // NEXT QUESTION
+  // ==========================================
+
+  const nextQuestion = () => {
+    if (!answer.trim()) {
+      setError(
+        "Please answer the question before continuing."
+      );
+      return;
+    }
+
+    setError("");
+
+    saveCurrentAnswer();
 
     if (
       currentQuestion <
       interview.questions.length - 1
     ) {
-      setCurrentQuestion(
-        currentQuestion + 1
-      );
+      const nextIndex =
+        currentQuestion + 1;
 
-      setAnswer("");
+      setCurrentQuestion(nextIndex);
+
+      setAnswer(
+        interview.questions[nextIndex]
+          ?.answer || ""
+      );
     } else {
       setSuccess(
         "All questions answered. Submit your interview."
@@ -160,19 +296,7 @@ const Interview = () => {
       return;
     }
 
-    const updatedQuestions = [
-      ...interview.questions,
-    ];
-
-    updatedQuestions[currentQuestion] = {
-      ...updatedQuestions[currentQuestion],
-      answer: answer.trim(),
-    };
-
-    setInterview({
-      ...interview,
-      questions: updatedQuestions,
-    });
+    saveCurrentAnswer();
 
     const previousIndex =
       currentQuestion - 1;
@@ -180,7 +304,7 @@ const Interview = () => {
     setCurrentQuestion(previousIndex);
 
     setAnswer(
-      updatedQuestions[previousIndex]
+      interview.questions[previousIndex]
         ?.answer || ""
     );
 
@@ -271,6 +395,16 @@ const Interview = () => {
 
     setTargetRole("");
 
+    setInterviewType(
+      "Student / Fresher"
+    );
+
+    setDifficulty("Medium");
+
+    setQuestionCount("5");
+
+    setCustomType("");
+
     setCurrentQuestion(0);
 
     setAnswer("");
@@ -283,39 +417,97 @@ const Interview = () => {
   };
 
   // ==========================================
-  // RESULT
+  // RESULT SCREEN
   // ==========================================
 
   if (result) {
+    const finalScore =
+      result.interview?.totalScore ??
+      result.totalScore ??
+      0;
+
+    const improvement =
+      result.interview?.improvement ??
+      result.improvement ??
+      "Keep practicing to improve your interview performance.";
+
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>
-            🎯 Interview Result
-          </h1>
+          <div style={styles.headerIcon}>
+            🎯
+          </div>
 
-          <p style={styles.subtitle}>
-            Your AI interview has been evaluated.
-          </p>
+          <div>
+            <h1 style={styles.title}>
+              Interview Result
+            </h1>
+
+            <p style={styles.subtitle}>
+              Your AI interview has been
+              evaluated.
+            </p>
+          </div>
         </div>
 
         <div style={styles.resultCard}>
-          <h2>
-            Interview Completed
-          </h2>
-
-          <div style={styles.score}>
-            {result.interview?.totalScore ??
-              result.totalScore ??
-              0}
-            %
+          <div style={styles.resultIcon}>
+            🏆
           </div>
 
-          <p>
-            {result.interview?.improvement ||
-              result.improvement ||
-              "Keep practicing to improve your interview performance."}
+          <p style={styles.resultLabel}>
+            Your Interview Score
           </p>
+
+          <div style={styles.score}>
+            {finalScore}%
+          </div>
+
+          <div style={styles.scoreTrack}>
+            <div
+              style={{
+                ...styles.scoreFill,
+                width: `${Math.min(
+                  Number(finalScore) || 0,
+                  100
+                )}%`,
+              }}
+            />
+          </div>
+
+          <div style={styles.resultInfoGrid}>
+            <div style={styles.resultInfo}>
+              <span>Role</span>
+              <strong>
+                {interview?.targetRole ||
+                  targetRole}
+              </strong>
+            </div>
+
+            <div style={styles.resultInfo}>
+              <span>Interview Type</span>
+              <strong>
+                {interview?.frontendInterviewType ||
+                  interviewType}
+              </strong>
+            </div>
+
+            <div style={styles.resultInfo}>
+              <span>Difficulty</span>
+              <strong>
+                {interview?.frontendDifficulty ||
+                  difficulty}
+              </strong>
+            </div>
+          </div>
+
+          <div style={styles.improvementBox}>
+            <h3>
+              💡 AI Feedback
+            </h3>
+
+            <p>{improvement}</p>
+          </div>
 
           <button
             style={styles.primaryButton}
@@ -339,19 +531,37 @@ const Interview = () => {
     const totalQuestions =
       interview.questions.length;
 
+    const progress =
+      ((currentQuestion + 1) /
+        totalQuestions) *
+      100;
+
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>
-            🎤 AI Mock Interview
-          </h1>
+          <div>
+            <h1 style={styles.title}>
+              🎤 AI Mock Interview
+            </h1>
 
-          <p style={styles.subtitle}>
-            Target Role:{" "}
-            <strong>
-              {interview.targetRole}
-            </strong>
-          </p>
+            <p style={styles.subtitle}>
+              Target Role:{" "}
+              <strong>
+                {interview.targetRole}
+              </strong>
+            </p>
+          </div>
+
+          <div style={styles.interviewBadge}>
+            <span>
+              {interview.frontendInterviewType ===
+              "Student / Fresher"
+                ? "🎓"
+                : "🎯"}
+            </span>
+
+            {interview.frontendInterviewType}
+          </div>
         </div>
 
         {error && (
@@ -366,20 +576,46 @@ const Interview = () => {
           </div>
         )}
 
-        <div style={styles.progressText}>
-          Question {currentQuestion + 1} of{" "}
-          {totalQuestions}
+        <div style={styles.interviewMeta}>
+          <div>
+            <span>Interview Type</span>
+            <strong>
+              {interview.frontendInterviewType}
+            </strong>
+          </div>
+
+          <div>
+            <span>Difficulty</span>
+            <strong>
+              {interview.frontendDifficulty}
+            </strong>
+          </div>
+
+          <div>
+            <span>Questions</span>
+            <strong>
+              {totalQuestions}
+            </strong>
+          </div>
+        </div>
+
+        <div style={styles.progressHeader}>
+          <span>
+            Question{" "}
+            {currentQuestion + 1} of{" "}
+            {totalQuestions}
+          </span>
+
+          <strong>
+            {Math.round(progress)}%
+          </strong>
         </div>
 
         <div style={styles.progressContainer}>
           <div
             style={{
               ...styles.progressBar,
-              width: `${
-                ((currentQuestion + 1) /
-                  totalQuestions) *
-                100
-              }%`,
+              width: `${progress}%`,
             }}
           />
         </div>
@@ -403,10 +639,28 @@ const Interview = () => {
             rows={8}
           />
 
+          <div style={styles.answerHint}>
+            💡 Try to provide a clear,
+            structured answer with examples
+            where possible.
+          </div>
+
           <div style={styles.buttonRow}>
             <button
-              style={styles.secondaryButton}
-              onClick={previousQuestion}
+              style={{
+                ...styles.secondaryButton,
+                opacity:
+                  currentQuestion === 0
+                    ? 0.5
+                    : 1,
+                cursor:
+                  currentQuestion === 0
+                    ? "not-allowed"
+                    : "pointer",
+              }}
+              onClick={
+                previousQuestion
+              }
               disabled={
                 currentQuestion === 0
               }
@@ -417,20 +671,24 @@ const Interview = () => {
             {currentQuestion <
             totalQuestions - 1 ? (
               <button
-                style={styles.primaryButton}
+                style={
+                  styles.primaryButton
+                }
                 onClick={nextQuestion}
               >
-                Next →
+                Save & Next →
               </button>
             ) : (
               <button
-                style={styles.submitButton}
+                style={
+                  styles.submitButton
+                }
                 onClick={handleSubmit}
                 disabled={submitting}
               >
                 {submitting
                   ? "Submitting..."
-                  : "Submit Interview"}
+                  : "Submit Interview ✓"}
               </button>
             )}
           </div>
@@ -446,14 +704,21 @@ const Interview = () => {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>
-          🎤 AI Mock Interview
-        </h1>
+        <div style={styles.headerIcon}>
+          🎤
+        </div>
 
-        <p style={styles.subtitle}>
-          Practice with AI-generated interview
-          questions based on your target role.
-        </p>
+        <div>
+          <h1 style={styles.title}>
+            AI Mock Interview
+          </h1>
+
+          <p style={styles.subtitle}>
+            Practice with AI-generated
+            questions based on your career
+            goals and interview type.
+          </p>
+        </div>
       </div>
 
       {error && (
@@ -468,43 +733,250 @@ const Interview = () => {
         </div>
       )}
 
-      <div style={styles.startCard}>
-        <div style={styles.icon}>
-          🤖
+      <div style={styles.setupCard}>
+        <div style={styles.setupHeader}>
+          <div>
+            <h2 style={styles.setupTitle}>
+              Prepare Your Interview
+            </h2>
+
+            <p style={styles.setupSubtitle}>
+              Customize your mock interview
+              before you begin.
+            </p>
+          </div>
+
+          <div style={styles.setupIcon}>
+            🤖
+          </div>
         </div>
 
-        <h2>
-          Start Your AI Interview
-        </h2>
+        {/* TARGET ROLE */}
 
-        <p>
-          Enter your target role and CareerPilot
-          will generate technical interview
-          questions for you.
-        </p>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>
+            Target Job Role
+          </label>
 
-        <label style={styles.label}>
-          Target Job Role
-        </label>
+          <input
+            type="text"
+            value={targetRole}
+            onChange={(e) =>
+              setTargetRole(e.target.value)
+            }
+            placeholder="e.g. React Developer"
+            style={styles.input}
+          />
 
-        <input
-          type="text"
-          value={targetRole}
-          onChange={(e) =>
-            setTargetRole(e.target.value)
-          }
-          placeholder="e.g. React Developer"
-          style={styles.input}
-        />
+          <p style={styles.fieldHint}>
+            Enter the job role you want to
+            practice for.
+          </p>
+        </div>
+
+        {/* INTERVIEW TYPE */}
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>
+            Select Interview Type
+          </label>
+
+          <div style={styles.typeGrid}>
+            {interviewTypes.map((type) => {
+              const selected =
+                interviewType === type.id;
+
+              return (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() =>
+                    setInterviewType(
+                      type.id
+                    )
+                  }
+                  style={{
+                    ...styles.typeCard,
+                    ...(selected
+                      ? styles.typeCardSelected
+                      : {}),
+                  }}
+                >
+                  <div
+                    style={
+                      styles.typeIcon
+                    }
+                  >
+                    {type.icon}
+                  </div>
+
+                  <div
+                    style={
+                      styles.typeContent
+                    }
+                  >
+                    <strong>
+                      {type.title}
+                    </strong>
+
+                    <span>
+                      {type.description}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      ...styles.radio,
+                      ...(selected
+                        ? styles.radioSelected
+                        : {}),
+                    }}
+                  >
+                    {selected && "✓"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* CUSTOM TYPE */}
+
+        {interviewType === "Custom" && (
+          <div style={styles.formGroup}>
+            <label style={styles.label}>
+              Describe Your Interview
+            </label>
+
+            <textarea
+              value={customType}
+              onChange={(e) =>
+                setCustomType(
+                  e.target.value
+                )
+              }
+              placeholder="Example: Product Manager interview focused on leadership and product strategy..."
+              style={
+                styles.customTextarea
+              }
+              rows={4}
+            />
+          </div>
+        )}
+
+        {/* DIFFICULTY + QUESTIONS */}
+
+        <div style={styles.settingsGrid}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>
+              Difficulty Level
+            </label>
+
+            <select
+              value={difficulty}
+              onChange={(e) =>
+                setDifficulty(
+                  e.target.value
+                )
+              }
+              style={styles.select}
+            >
+              <option value="Easy">
+                🟢 Easy
+              </option>
+
+              <option value="Medium">
+                🟡 Medium
+              </option>
+
+              <option value="Hard">
+                🔴 Hard
+              </option>
+            </select>
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>
+              Number of Questions
+            </label>
+
+            <select
+              value={questionCount}
+              onChange={(e) =>
+                setQuestionCount(
+                  e.target.value
+                )
+              }
+              style={styles.select}
+            >
+              <option value="5">
+                5 Questions
+              </option>
+
+              <option value="10">
+                10 Questions
+              </option>
+
+              <option value="15">
+                15 Questions
+              </option>
+            </select>
+          </div>
+        </div>
+
+        {/* SELECTED SUMMARY */}
+
+        <div style={styles.summaryBox}>
+          <div>
+            <span>Role</span>
+            <strong>
+              {targetRole ||
+                "Not selected"}
+            </strong>
+          </div>
+
+          <div>
+            <span>Type</span>
+            <strong>
+              {interviewType ===
+              "Custom"
+                ? customType ||
+                  "Custom"
+                : interviewType}
+            </strong>
+          </div>
+
+          <div>
+            <span>Level</span>
+            <strong>
+              {difficulty}
+            </strong>
+          </div>
+
+          <div>
+            <span>Questions</span>
+            <strong>
+              {questionCount}
+            </strong>
+          </div>
+        </div>
+
+        {/* START BUTTON */}
 
         <button
-          style={styles.primaryButton}
+          style={{
+            ...styles.startButton,
+            opacity: loading ? 0.7 : 1,
+            cursor: loading
+              ? "not-allowed"
+              : "pointer",
+          }}
           onClick={startInterview}
           disabled={loading}
         >
           {loading
             ? "Generating Questions..."
-            : "Start Interview"}
+            : "🚀 Start AI Interview"}
         </button>
       </div>
     </div>
@@ -517,199 +989,496 @@ const Interview = () => {
 
 const styles = {
   container: {
-    padding: "30px",
+    width: "100%",
+    maxWidth: "1200px",
+    margin: "0 auto",
+    padding: "24px",
     minHeight: "100vh",
-    background: "#f5f7fb",
+    background: "#f8fafc",
+    boxSizing: "border-box",
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    color: "#111827",
   },
 
   header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "16px",
     background: "#ffffff",
-    padding: "28px",
+    padding: "24px",
     borderRadius: "16px",
     marginBottom: "20px",
+    border: "1px solid #e5e7eb",
     boxShadow:
-      "0 4px 15px rgba(0,0,0,0.08)",
+      "0 2px 8px rgba(15, 23, 42, 0.04)",
+  },
+
+  headerIcon: {
+    width: "52px",
+    height: "52px",
+    borderRadius: "14px",
+    background: "#eff6ff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "26px",
+    flexShrink: 0,
   },
 
   title: {
     margin: 0,
-    fontSize: "30px",
+    fontSize: "28px",
+    fontWeight: "750",
     color: "#111827",
+    letterSpacing: "-0.02em",
   },
 
   subtitle: {
-    marginTop: "8px",
-    color: "#6b7280",
+    margin: "6px 0 0",
+    color: "#64748b",
+    fontSize: "14px",
+    lineHeight: "1.5",
   },
 
-  startCard: {
-    maxWidth: "650px",
-    margin: "40px auto",
+  interviewBadge: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "8px 12px",
+    borderRadius: "999px",
+    background: "#eff6ff",
+    color: "#1d4ed8",
+    fontSize: "13px",
+    fontWeight: "700",
+    whiteSpace: "nowrap",
+  },
+
+  error: {
+    padding: "13px 16px",
+    background: "#fef2f2",
+    color: "#991b1b",
+    border: "1px solid #fecaca",
+    borderRadius: "10px",
+    marginBottom: "20px",
+    fontSize: "14px",
+    fontWeight: "500",
+  },
+
+  success: {
+    padding: "13px 16px",
+    background: "#f0fdf4",
+    color: "#166534",
+    border: "1px solid #bbf7d0",
+    borderRadius: "10px",
+    marginBottom: "20px",
+    fontSize: "14px",
+    fontWeight: "500",
+  },
+
+  setupCard: {
     background: "#ffffff",
-    padding: "40px",
     borderRadius: "18px",
-    textAlign: "center",
+    padding: "28px",
+    border: "1px solid #e5e7eb",
     boxShadow:
-      "0 5px 20px rgba(0,0,0,0.08)",
+      "0 2px 8px rgba(15, 23, 42, 0.04)",
   },
 
-  icon: {
-    fontSize: "50px",
-    marginBottom: "10px",
+  setupHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "28px",
+    paddingBottom: "20px",
+    borderBottom: "1px solid #f1f5f9",
+  },
+
+  setupTitle: {
+    margin: 0,
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  setupSubtitle: {
+    margin: "5px 0 0",
+    color: "#64748b",
+    fontSize: "14px",
+  },
+
+  setupIcon: {
+    width: "50px",
+    height: "50px",
+    borderRadius: "14px",
+    background: "#f8fafc",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "25px",
+  },
+
+  formGroup: {
+    marginBottom: "24px",
   },
 
   label: {
     display: "block",
-    textAlign: "left",
-    fontWeight: "600",
-    marginBottom: "8px",
-    marginTop: "25px",
+    fontSize: "14px",
+    fontWeight: "700",
+    color: "#334155",
+    marginBottom: "9px",
   },
 
   input: {
     width: "100%",
-    padding: "13px",
-    border:
-      "1px solid #d1d5db",
-    borderRadius: "8px",
-    fontSize: "16px",
+    padding: "13px 15px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "10px",
+    fontSize: "15px",
     boxSizing: "border-box",
-    marginBottom: "20px",
-  },
-
-  questionCard: {
-    maxWidth: "900px",
-    margin: "25px auto",
+    outline: "none",
+    color: "#111827",
     background: "#ffffff",
-    padding: "35px",
-    borderRadius: "18px",
+  },
+
+  fieldHint: {
+    margin: "6px 0 0",
+    fontSize: "12px",
+    color: "#94a3b8",
+  },
+
+  typeGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "12px",
+  },
+
+  typeCard: {
+    position: "relative",
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "12px",
+    textAlign: "left",
+    width: "100%",
+    padding: "16px",
+    borderRadius: "12px",
+    border: "1px solid #e2e8f0",
+    background: "#ffffff",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    boxSizing: "border-box",
+  },
+
+  typeCardSelected: {
+    border: "1.5px solid #2563eb",
+    background: "#eff6ff",
     boxShadow:
-      "0 5px 20px rgba(0,0,0,0.08)",
+      "0 0 0 3px rgba(37, 99, 235, 0.08)",
   },
 
-  questionNumber: {
-    color: "#2563eb",
-    fontWeight: "700",
-    marginBottom: "15px",
+  typeIcon: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "10px",
+    background: "#f8fafc",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "20px",
+    flexShrink: 0,
   },
 
-  question: {
-    fontSize: "22px",
-    lineHeight: "1.5",
-    marginBottom: "25px",
+  typeContent: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+    paddingRight: "18px",
+  },
+
+  typeContentStrong: {
+    fontSize: "14px",
+  },
+
+  typeContentSpan: {
+    fontSize: "12px",
+  },
+
+  radio: {
+    position: "absolute",
+    top: "14px",
+    right: "14px",
+    width: "20px",
+    height: "20px",
+    borderRadius: "50%",
+    border: "1px solid #cbd5e1",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "11px",
+    color: "#ffffff",
+    background: "#ffffff",
+  },
+
+  radioSelected: {
+    background: "#2563eb",
+    borderColor: "#2563eb",
+  },
+
+  customTextarea: {
+    width: "100%",
+    padding: "13px 15px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "10px",
+    fontSize: "14px",
+    boxSizing: "border-box",
+    outline: "none",
+    resize: "vertical",
     color: "#111827",
   },
 
-  textarea: {
+  settingsGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "16px",
+  },
+
+  select: {
     width: "100%",
-    padding: "15px",
-    border:
-      "1px solid #d1d5db",
+    padding: "13px 15px",
+    border: "1px solid #cbd5e1",
     borderRadius: "10px",
-    fontSize: "16px",
-    resize: "vertical",
-    boxSizing: "border-box",
+    background: "#ffffff",
+    color: "#111827",
+    fontSize: "14px",
+    outline: "none",
+    cursor: "pointer",
+  },
+
+  summaryBox: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(150px, 1fr))",
+    gap: "12px",
+    padding: "16px",
+    borderRadius: "12px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
     marginBottom: "20px",
   },
 
-  progressText: {
+  summaryItem: {
+    display: "flex",
+    flexDirection: "column",
+  },
+
+  startButton: {
+    width: "100%",
+    padding: "14px 20px",
+    background: "#2563eb",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "10px",
+    fontSize: "15px",
+    fontWeight: "700",
+  },
+
+  interviewMeta: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(160px, 1fr))",
+    gap: "12px",
+    marginBottom: "20px",
+  },
+
+  progressHeader: {
     maxWidth: "900px",
     margin: "0 auto 8px",
+    display: "flex",
+    justifyContent: "space-between",
+    color: "#475569",
+    fontSize: "13px",
     fontWeight: "600",
-    color: "#374151",
   },
 
   progressContainer: {
     maxWidth: "900px",
-    margin: "0 auto",
     height: "8px",
-    background: "#e5e7eb",
-    borderRadius: "10px",
+    margin: "0 auto",
+    background: "#e2e8f0",
+    borderRadius: "99px",
     overflow: "hidden",
   },
 
   progressBar: {
     height: "100%",
     background: "#2563eb",
-    borderRadius: "10px",
+    borderRadius: "99px",
     transition: "width 0.3s ease",
+  },
+
+  questionCard: {
+    maxWidth: "900px",
+    margin: "22px auto",
+    background: "#ffffff",
+    padding: "28px",
+    borderRadius: "16px",
+    border: "1px solid #e5e7eb",
+    boxShadow:
+      "0 2px 8px rgba(15, 23, 42, 0.04)",
+  },
+
+  questionNumber: {
+    display: "inline-block",
+    padding: "6px 10px",
+    background: "#eff6ff",
+    color: "#2563eb",
+    borderRadius: "7px",
+    fontSize: "12px",
+    fontWeight: "700",
+    marginBottom: "14px",
+  },
+
+  question: {
+    margin: "0 0 20px",
+    fontSize: "21px",
+    lineHeight: "1.5",
+    color: "#111827",
+  },
+
+  textarea: {
+    width: "100%",
+    padding: "15px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "10px",
+    fontSize: "15px",
+    resize: "vertical",
+    boxSizing: "border-box",
+    outline: "none",
+    color: "#111827",
+    lineHeight: "1.6",
+  },
+
+  answerHint: {
+    marginTop: "8px",
+    color: "#64748b",
+    fontSize: "12px",
   },
 
   buttonRow: {
     display: "flex",
     justifyContent: "space-between",
     gap: "12px",
+    marginTop: "22px",
   },
 
   primaryButton: {
-    padding: "12px 24px",
+    padding: "12px 22px",
     background: "#2563eb",
     color: "#ffffff",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "9px",
     cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "15px",
+    fontWeight: "700",
+    fontSize: "14px",
   },
 
   secondaryButton: {
-    padding: "12px 24px",
-    background: "#e5e7eb",
-    color: "#111827",
-    border: "none",
-    borderRadius: "8px",
+    padding: "12px 22px",
+    background: "#f1f5f9",
+    color: "#334155",
+    border: "1px solid #e2e8f0",
+    borderRadius: "9px",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "15px",
+    fontSize: "14px",
   },
 
   submitButton: {
-    padding: "12px 24px",
+    padding: "12px 22px",
     background: "#16a34a",
     color: "#ffffff",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "9px",
     cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "15px",
-  },
-
-  error: {
-    maxWidth: "900px",
-    margin: "0 auto 20px",
-    padding: "14px 18px",
-    background: "#fee2e2",
-    color: "#991b1b",
-    borderRadius: "8px",
-    fontWeight: "500",
-  },
-
-  success: {
-    maxWidth: "900px",
-    margin: "0 auto 20px",
-    padding: "14px 18px",
-    background: "#dcfce7",
-    color: "#166534",
-    borderRadius: "8px",
-    fontWeight: "500",
+    fontWeight: "700",
+    fontSize: "14px",
   },
 
   resultCard: {
-    maxWidth: "650px",
-    margin: "40px auto",
+    maxWidth: "700px",
+    margin: "30px auto",
     background: "#ffffff",
-    padding: "40px",
+    padding: "35px",
     borderRadius: "18px",
     textAlign: "center",
+    border: "1px solid #e5e7eb",
     boxShadow:
-      "0 5px 20px rgba(0,0,0,0.08)",
+      "0 4px 15px rgba(15, 23, 42, 0.06)",
+  },
+
+  resultIcon: {
+    fontSize: "45px",
+    marginBottom: "8px",
+  },
+
+  resultLabel: {
+    margin: 0,
+    color: "#64748b",
+    fontSize: "14px",
+    fontWeight: "600",
   },
 
   score: {
-    fontSize: "60px",
+    fontSize: "58px",
     fontWeight: "800",
     color: "#2563eb",
-    margin: "20px 0",
+    margin: "8px 0 15px",
+  },
+
+  scoreTrack: {
+    width: "100%",
+    height: "9px",
+    background: "#e2e8f0",
+    borderRadius: "99px",
+    overflow: "hidden",
+    marginBottom: "25px",
+  },
+
+  scoreFill: {
+    height: "100%",
+    background: "#2563eb",
+    borderRadius: "99px",
+  },
+
+  resultInfoGrid: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(150px, 1fr))",
+    gap: "12px",
+    marginBottom: "22px",
+  },
+
+  resultInfo: {
+    padding: "14px",
+    borderRadius: "10px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+  },
+
+  improvementBox: {
+    textAlign: "left",
+    padding: "18px",
+    borderRadius: "12px",
+    background: "#eff6ff",
+    border: "1px solid #dbeafe",
+    marginBottom: "22px",
   },
 };
 

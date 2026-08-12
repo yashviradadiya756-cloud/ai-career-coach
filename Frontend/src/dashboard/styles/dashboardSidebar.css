@@ -1,37 +1,40 @@
 /* =========================================================
-   SIDEBAR
-   ========================================================= */
+   DASHBOARD SIDEBAR
+========================================================= */
 
 .dashboard-sidebar {
   position: fixed;
+
   top: 70px;
   left: 0;
-  height: calc(100vh - 70px);
 
-  background: #0d1527;
+  width: 62px;
+  height: calc(100vh - 70px);
 
   display: flex;
   flex-direction: column;
 
   padding: 12px 8px;
 
-  overflow: hidden;
+  box-sizing: border-box;
+
+  background: #0d1527;
 
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 
-  box-sizing: border-box;
+  overflow: hidden;
 
   z-index: 1000;
 
   transition:
-    width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.25s ease;
 }
 
 
 /* =========================================================
-   COLLAPSED SIDEBAR
-   Smaller: 76px → 68px
-   ========================================================= */
+   COLLAPSED
+========================================================= */
 
 .dashboard-sidebar.collapsed {
   width: 62px;
@@ -39,66 +42,72 @@
 
 
 /* =========================================================
-   EXPANDED SIDEBAR
-   Smaller: 240px → 218px
-   Font size remains unchanged
-   ========================================================= */
+   EXPANDED
+========================================================= */
 
 .dashboard-sidebar.expanded {
   width: 218px;
-  padding: 12px 10px;
+
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
+
 /* =========================================================
-   SIDEBAR HEADER
-   VERY SMALL
-   ========================================================= */
+   HEADER
+========================================================= */
 
 .sidebar-header {
   position: relative;
 
+  width: 100%;
+
+  height: 30px;
+  min-height: 30px;
+
+  margin-bottom: 6px;
+
+  display: flex;
+  align-items: center;
+
   flex-shrink: 0;
-
-  height: 24px;
-  min-height: 24px;
-
-  margin: 0 0 2px 0;
-
-  padding: 0;
 }
 
 
 /* =========================================================
-   DASHBOARD TITLE
-   ========================================================= */
+   BRAND
+========================================================= */
 
 .brand-title {
-  position: center;
-
-  left: 4px;
-  top: 2px;
+  margin-left: 4px;
 
   color: #f8fafc;
 
   font-size: 20px;
+
   font-weight: 500;
-  
+
+  line-height: 1;
+
   white-space: nowrap;
 }
 
 
 /* =========================================================
    TOGGLE BUTTON
-   ========================================================= */
+========================================================= */
 
 .toggle-btn {
   position: absolute;
 
-  top: 0;
-  right: -8px;
+  top: 2px;
+
+  right: -5px;
 
   width: 26px;
   height: 26px;
+
+  padding: 0;
 
   display: flex;
   align-items: center;
@@ -106,9 +115,9 @@
 
   background: #0d1527;
 
-  border: 1px solid rgba(255, 255, 255, 0.12);
-
   color: #94a3b8;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
 
   border-radius: 50%;
 
@@ -116,15 +125,12 @@
 
   z-index: 1100;
 
-  padding: 0;
-
-  transition: all 0.2s ease;
-}
-
-
-.dashboard-sidebar.expanded .toggle-btn {
-  right: -8px;
-  margin: 0;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 
@@ -137,40 +143,52 @@
 
   box-shadow:
     0 4px 12px rgba(37, 99, 235, 0.3);
+
+  transform: scale(1.05);
 }
 
+
 /* =========================================================
-   NAVIGATION
-   ONLY NAVIGATION SCROLLS
-   ========================================================= */
+   SIDEBAR NAVIGATION
+========================================================= */
 
 .sidebar-nav {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 5px;
-
   width: 100%;
 
   flex: 1;
 
   min-height: 0;
 
-  overflow-y: auto;
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
 
   overflow-x: hidden;
 
-  padding-right: 1px;
+  overflow-y: auto;
+
+  padding-right: 2px;
+
+  box-sizing: border-box;
+
+  overscroll-behavior: contain;
+
+  scrollbar-width: thin;
+
+  scrollbar-color:
+    rgba(255, 255, 255, 0.12)
+    transparent;
 }
 
 
 /* =========================================================
-   SCROLLBAR
-   ========================================================= */
+   SIDEBAR SCROLLBAR
+========================================================= */
 
 .sidebar-nav::-webkit-scrollbar {
-  width: 3px;
+  width: 4px;
 }
 
 .sidebar-nav::-webkit-scrollbar-track {
@@ -178,32 +196,35 @@
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
 
   border-radius: 10px;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 
 /* =========================================================
-   NAVIGATION LINKS
-   ========================================================= */
+   SIDEBAR LINK
+========================================================= */
 
 .sidebar-link {
   position: relative;
 
-  display: flex;
-
-  align-items: center;
-
+  width: 100%;
   height: 44px;
-
   min-height: 44px;
 
   flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 9px;
+
+  box-sizing: border-box;
 
   border-radius: 10px;
 
@@ -211,27 +232,30 @@
 
   text-decoration: none;
 
-  transition: all 0.2s ease;
+  cursor: pointer;
 
-  width: 100%;
+  user-select: none;
 
-  box-sizing: border-box;
-
-  padding: 0 9px;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 
 /* =========================================================
-   ICON
-   ========================================================= */
+   ICON WRAPPER
+========================================================= */
 
 .icon-wrapper {
   width: 26px;
+  min-width: 26px;
+
+  height: 26px;
 
   display: flex;
 
   align-items: center;
-
   justify-content: center;
 
   flex-shrink: 0;
@@ -239,42 +263,66 @@
 
 
 /* =========================================================
+   ICON
+========================================================= */
+
+.sidebar-icon {
+  width: 20px;
+  height: 20px;
+
+  flex-shrink: 0;
+}
+
+
+/* =========================================================
    LABEL
-   Font size NOT changed
-   ========================================================= */
+========================================================= */
 
 .sidebar-label {
   margin-left: 12px;
+
+  color: inherit;
 
   font-size: 14px;
 
   font-weight: 500;
 
+  line-height: 1;
+
   white-space: nowrap;
 
   opacity: 0;
 
-  transition: opacity 0.2s ease;
+  overflow: hidden;
+
+  pointer-events: none;
+
+  transition:
+    opacity 0.2s ease;
 }
 
 
-/* Expanded */
+/* =========================================================
+   EXPANDED LABEL
+========================================================= */
 
-.expanded .sidebar-label {
+.dashboard-sidebar.expanded .sidebar-label {
   opacity: 1;
 }
 
 
-/* Collapsed */
+/* =========================================================
+   COLLAPSED LABEL
+========================================================= */
 
-.collapsed .sidebar-label {
+.dashboard-sidebar.collapsed .sidebar-label {
   display: none;
 }
 
 
 /* =========================================================
-   HOVER
-   ========================================================= */
+   LINK HOVER
+========================================================= */
 
 .sidebar-link:hover {
   background: rgba(255, 255, 255, 0.06);
@@ -284,8 +332,8 @@
 
 
 /* =========================================================
-   ACTIVE
-   ========================================================= */
+   ACTIVE LINK
+========================================================= */
 
 .sidebar-link.active {
   background: #3b82f6;
@@ -303,9 +351,19 @@
 
 
 /* =========================================================
-   LOGOUT
-   FIXED AT BOTTOM
-   ========================================================= */
+   ACTIVE HOVER
+========================================================= */
+
+.sidebar-link.active:hover {
+  background: #2563eb;
+
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   LOGOUT AREA
+========================================================= */
 
 .sidebar-bottom {
   width: 100%;
@@ -316,6 +374,8 @@
 
   margin-top: 10px;
 
+  box-sizing: border-box;
+
   border-top:
     1px solid rgba(255, 255, 255, 0.06);
 }
@@ -323,20 +383,21 @@
 
 /* =========================================================
    LOGOUT BUTTON
-   ========================================================= */
+========================================================= */
 
 .logout-btn {
   position: relative;
 
-  display: flex;
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
 
+  display: flex;
   align-items: center;
 
-  height: 44px;
-
-  width: 100%;
-
   padding: 0 9px;
+
+  box-sizing: border-box;
 
   background: rgba(239, 68, 68, 0.08);
 
@@ -349,9 +410,11 @@
 
   cursor: pointer;
 
-  transition: all 0.2s ease;
-
-  box-sizing: border-box;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 
@@ -366,33 +429,41 @@
     0 4px 14px rgba(220, 38, 38, 0.3);
 }
 
+
 /* =========================================================
-   COLLAPSED SIDEBAR TOOLTIP
-   ========================================================= */
+   TOOLTIP
+========================================================= */
 
 .floating-tooltip {
   position: absolute;
 
-  left: 62px;
+  left: 68px;
   top: 50%;
+
   transform: translateY(-50%);
 
   background: #1e293b;
+
   color: #ffffff;
 
   padding: 7px 12px;
+
   border-radius: 7px;
 
   font-size: 13px;
+
   font-weight: 500;
 
   white-space: nowrap;
 
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
 
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.3);
 
   opacity: 0;
+
   visibility: hidden;
 
   pointer-events: none;
@@ -401,57 +472,30 @@
 
   transition:
     opacity 0.15s ease,
-    visibility 0.15s ease,
-    left 0.15s ease;
+    visibility 0.15s ease;
 }
 
-
-/* Show tooltip when hovering sidebar item */
-
-.dashboard-sidebar.collapsed
-.sidebar-link:hover
-.floating-tooltip {
-
-  opacity: 1;
-  visibility: visible;
-
-  left: 68px;
-}
-
-
-/* Logout tooltip */
-
-.dashboard-sidebar.collapsed
-.logout-btn:hover
-.floating-tooltip {
-
-  opacity: 1;
-  visibility: visible;
-
-  left: 68px;
-}
-
-
-/* Logout tooltip different color */
-
-.floating-tooltip.danger {
-  background: #991b1b;
-  border-color: rgba(239, 68, 68, 0.4);
-}
 
 /* =========================================================
-   RESPONSIVE
-   ========================================================= */
+   MOBILE
+========================================================= */
 
 @media (max-width: 768px) {
 
+  .dashboard-sidebar,
   .dashboard-sidebar.collapsed,
   .dashboard-sidebar.expanded {
+    top: 60px;
+
     width: 0;
+
+    height: calc(100vh - 60px);
 
     padding: 0;
 
     border: none;
+
+    overflow: hidden;
   }
 
 }

@@ -22,6 +22,11 @@ import {
 
 import "../styles/dashboardSidebar.css";
 
+
+/* =========================================================
+   SIDEBAR NAVIGATION ITEMS
+========================================================= */
+
 const navItems = [
   {
     name: "Overview",
@@ -90,26 +95,49 @@ const navItems = [
   },
 ];
 
-const DashboardSidebar = ({ isExpanded, onToggle }) => {
+
+/* =========================================================
+   DASHBOARD SIDEBAR
+========================================================= */
+
+const DashboardSidebar = ({
+  isExpanded,
+  onToggle,
+}) => {
+
   const navigate = useNavigate();
+
+
+  /* =======================================================
+     LOGOUT
+  ======================================================= */
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
-    navigate("/login");
+    navigate("/login", {
+      replace: true,
+    });
   };
+
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <aside
       className={`dashboard-sidebar ${
-        isExpanded ? "expanded" : "collapsed"
+        isExpanded
+          ? "expanded"
+          : "collapsed"
       }`}
     >
 
-      {/* =====================================================
-          SMALL SIDEBAR HEADER
-          ===================================================== */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
       <div className="sidebar-header">
 
@@ -139,33 +167,44 @@ const DashboardSidebar = ({ isExpanded, onToggle }) => {
       </div>
 
 
-      {/* =====================================================
+      {/* =================================================
           NAVIGATION
-          ===================================================== */}
+      ================================================= */}
 
       <nav className="sidebar-nav">
 
         {navItems.map((item) => {
+
           const IconComponent = item.icon;
 
           return (
             <NavLink
-              key={item.name}
+              key={item.path}
               to={item.path}
-              title={!isExpanded ? item.name : ""}
+              title={
+                !isExpanded
+                  ? item.name
+                  : undefined
+              }
               className={({ isActive }) =>
-                isActive
-                  ? "sidebar-link active"
-                  : "sidebar-link"
+                `sidebar-link ${
+                  isActive
+                    ? "active"
+                    : ""
+                }`
               }
             >
 
               <div className="icon-wrapper">
+
                 <IconComponent
                   size={20}
+                  strokeWidth={2}
                   className="sidebar-icon"
                 />
+
               </div>
+
 
               <span className="sidebar-label">
                 {item.name}
@@ -178,33 +217,44 @@ const DashboardSidebar = ({ isExpanded, onToggle }) => {
       </nav>
 
 
-      {/* =====================================================
+      {/* =================================================
           LOGOUT
-          ===================================================== */}
+      ================================================= */}
 
       <div className="sidebar-bottom">
 
         <button
           type="button"
           className="logout-btn"
-          title={!isExpanded ? "Logout" : ""}
+          title={
+            !isExpanded
+              ? "Logout"
+              : undefined
+          }
           onClick={() => {
-            const confirmLogout = window.confirm(
-              "Are you sure you want to logout?"
-            );
+
+            const confirmLogout =
+              window.confirm(
+                "Are you sure you want to logout?"
+              );
 
             if (confirmLogout) {
               handleLogout();
             }
+
           }}
         >
 
           <div className="icon-wrapper">
+
             <LogOut
-              size={18}
+              size={19}
+              strokeWidth={2}
               className="sidebar-icon"
             />
+
           </div>
+
 
           <span className="sidebar-label">
             Logout

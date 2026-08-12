@@ -8,7 +8,6 @@ import {
 
 import { getLatestSkillGap } from "../../api/skillGapApi";
 
-
 // ======================================================
 // SUMMARY CARD COMPONENT
 // ======================================================
@@ -39,6 +38,32 @@ function SummaryCard({ children, color }) {
   );
 }
 
+// ======================================================
+// SMALL LOADING SPINNER
+// ======================================================
+
+function SmallLoader() {
+  const bars = Array.from({ length: 12 });
+
+  return (
+    <div style={styles.simpleLoader}>
+      <div className="loader-spinner">
+        {bars.map((_, index) => (
+          <span
+            key={index}
+            className="loader-bar"
+            style={{
+              transform: `rotate(${index * 30}deg)`,
+              animationDelay: `${index * 0.08}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      <div style={styles.loadingLabel}>Loading</div>
+    </div>
+  );
+}
 
 // ======================================================
 // ROADMAP COMPONENT
@@ -49,7 +74,6 @@ export default function Roadmap() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-
   // ======================================================
   // UPDATE PHASE COMPLETION
   // ======================================================
@@ -59,21 +83,18 @@ export default function Roadmap() {
     completed
   ) => {
     try {
-      const response =
-        await updatePhaseCompletion(
-          phaseId,
-          completed
-        );
+      const response = await updatePhaseCompletion(
+        phaseId,
+        completed
+      );
 
       if (response.data?.success) {
         setRoadmap(response.data.roadmap);
       }
-
     } catch (error) {
       console.error(
         "PHASE UPDATE ERROR:",
-        error.response?.data ||
-          error.message
+        error.response?.data || error.message
       );
 
       alert(
@@ -82,7 +103,6 @@ export default function Roadmap() {
       );
     }
   };
-
 
   // ======================================================
   // LOAD EXISTING ROADMAP
@@ -96,8 +116,7 @@ export default function Roadmap() {
         "STEP 1: Loading saved roadmap..."
       );
 
-      const response =
-        await getRoadmap();
+      const response = await getRoadmap();
 
       console.log(
         "STEP 2: Saved roadmap response:",
@@ -113,9 +132,7 @@ export default function Roadmap() {
           response.data.roadmap
         );
 
-        setRoadmap(
-          response.data.roadmap
-        );
+        setRoadmap(response.data.roadmap);
       } else {
         console.log(
           "STEP 3: No saved roadmap found"
@@ -123,21 +140,17 @@ export default function Roadmap() {
 
         setRoadmap(null);
       }
-
     } catch (error) {
       console.error(
         "GET ROADMAP ERROR:",
-        error.response?.data ||
-          error.message
+        error.response?.data || error.message
       );
 
       setRoadmap(null);
-
     } finally {
       setLoading(false);
     }
   };
-
 
   // ======================================================
   // INITIAL LOAD
@@ -146,7 +159,6 @@ export default function Roadmap() {
   useEffect(() => {
     loadRoadmap();
   }, []);
-
 
   // ======================================================
   // GENERATE ROADMAP
@@ -180,8 +192,7 @@ export default function Roadmap() {
         return;
       }
 
-      const role =
-        latestSkillGap.targetRole;
+      const role = latestSkillGap.targetRole;
 
       if (!role) {
         alert(
@@ -199,8 +210,7 @@ export default function Roadmap() {
         "STEP 3: Calling roadmap generate API..."
       );
 
-      const response =
-        await generateRoadmap(role);
+      const response = await generateRoadmap(role);
 
       console.log(
         "STEP 4: Generate API response:",
@@ -216,9 +226,7 @@ export default function Roadmap() {
           response.data.roadmap
         );
 
-        setRoadmap(
-          response.data.roadmap
-        );
+        setRoadmap(response.data.roadmap);
 
         alert(
           "Roadmap Generated Successfully!"
@@ -234,7 +242,6 @@ export default function Roadmap() {
             "Roadmap generated but no roadmap data was returned."
         );
       }
-
     } catch (error) {
       console.error(
         "========== ROADMAP ERROR =========="
@@ -264,12 +271,10 @@ export default function Roadmap() {
           error.message ||
           "Failed to generate roadmap."
       );
-
     } finally {
       setGenerating(false);
     }
   };
-
 
   // ======================================================
   // PAGE LOADING
@@ -277,27 +282,58 @@ export default function Roadmap() {
 
   if (loading) {
     return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.loadingCard}>
-
-          <div style={styles.spinner}>
-            ⏳
-          </div>
-
-          <h2>
-            Loading Your Roadmap...
-          </h2>
-
-          <p>
-            Please wait while we load your
-            personalized career roadmap.
-          </p>
-
+      <>
+        <div style={styles.loadingContainer}>
+          <SmallLoader />
         </div>
-      </div>
+
+        <style>
+          {`
+            .loader-spinner {
+              position: relative;
+              width: 36px;
+              height: 36px;
+              animation: loaderRotate 1.2s linear infinite;
+            }
+
+            .loader-bar {
+              position: absolute;
+              width: 2px;
+              height: 9px;
+              background: #9ca3af;
+              border-radius: 2px;
+              left: 17px;
+              top: 0;
+              transform-origin: 1px 18px;
+              animation: loaderFade 1.2s linear infinite;
+            }
+
+            @keyframes loaderRotate {
+              from {
+                transform: rotate(0deg);
+              }
+
+              to {
+                transform: rotate(360deg);
+              }
+            }
+
+            @keyframes loaderFade {
+              0% {
+                opacity: 1;
+                background: #111827;
+              }
+
+              100% {
+                opacity: 0.2;
+                background: #d1d5db;
+              }
+            }
+          `}
+        </style>
+      </>
     );
   }
-
 
   // ======================================================
   // NO ROADMAP
@@ -306,9 +342,7 @@ export default function Roadmap() {
   if (!roadmap) {
     return (
       <div style={styles.emptyContainer}>
-
         <div style={styles.emptyCard}>
-
           <div style={styles.emptyIcon}>
             🗺️
           </div>
@@ -341,45 +375,36 @@ export default function Roadmap() {
           <p style={styles.smallText}>
             Powered by AI Career Coach
           </p>
-
         </div>
-
       </div>
     );
   }
-
 
   // ======================================================
   // ROADMAP DATA
   // ======================================================
 
-  const phases =
-    Array.isArray(roadmap.phases)
-      ? roadmap.phases
-      : [];
+  const phases = Array.isArray(roadmap.phases)
+    ? roadmap.phases
+    : [];
 
+  const totalTopics = phases.reduce(
+    (total, phase) =>
+      total +
+      (Array.isArray(phase.topics)
+        ? phase.topics.length
+        : 0),
+    0
+  );
 
-  const totalTopics =
-    phases.reduce(
-      (total, phase) =>
-        total +
-        (Array.isArray(phase.topics)
-          ? phase.topics.length
-          : 0),
-      0
-    );
-
-
-  const totalProjects =
-    phases.reduce(
-      (total, phase) =>
-        total +
-        (Array.isArray(phase.projects)
-          ? phase.projects.length
-          : 0),
-      0
-    );
-
+  const totalProjects = phases.reduce(
+    (total, phase) =>
+      total +
+      (Array.isArray(phase.projects)
+        ? phase.projects.length
+        : 0),
+    0
+  );
 
   // ======================================================
   // MAIN UI
@@ -387,15 +412,12 @@ export default function Roadmap() {
 
   return (
     <div style={styles.container}>
-
       {/* ================================================= */}
       {/* HERO */}
       {/* ================================================= */}
 
       <div style={styles.hero}>
-
         <div>
-
           <div style={styles.heroIcon}>
             🗺️
           </div>
@@ -413,13 +435,11 @@ export default function Roadmap() {
 
           <div style={styles.roleBadge}>
             🎯 Target Role:{" "}
-
             <strong>
               {roadmap.targetRole ||
                 "Career Goal"}
             </strong>
           </div>
-
         </div>
 
         <button
@@ -436,26 +456,19 @@ export default function Roadmap() {
             ? "⏳ Generating..."
             : "🔄 Regenerate Roadmap"}
         </button>
-
       </div>
-
 
       {/* ================================================= */}
       {/* SUMMARY CARDS */}
       {/* ================================================= */}
 
       <div style={styles.cards}>
-
-        {/* TOTAL PHASES */}
-
         <SummaryCard color="#2563eb">
-
           <div style={styles.cardIcon}>
             📚
           </div>
 
           <div>
-
             <p style={styles.cardLabel}>
               Total Phases
             </p>
@@ -463,22 +476,15 @@ export default function Roadmap() {
             <h2 style={styles.cardNumber}>
               {phases.length}
             </h2>
-
           </div>
-
         </SummaryCard>
 
-
-        {/* LEARNING TOPICS */}
-
         <SummaryCard color="#7c3aed">
-
           <div style={styles.cardIcon}>
             📝
           </div>
 
           <div>
-
             <p style={styles.cardLabel}>
               Learning Topics
             </p>
@@ -486,22 +492,15 @@ export default function Roadmap() {
             <h2 style={styles.cardNumber}>
               {totalTopics}
             </h2>
-
           </div>
-
         </SummaryCard>
 
-
-        {/* PROJECTS */}
-
         <SummaryCard color="#0891b2">
-
           <div style={styles.cardIcon}>
             💻
           </div>
 
           <div>
-
             <p style={styles.cardLabel}>
               Projects
             </p>
@@ -509,22 +508,15 @@ export default function Roadmap() {
             <h2 style={styles.cardNumber}>
               {totalProjects}
             </h2>
-
           </div>
-
         </SummaryCard>
 
-
-        {/* STATUS */}
-
         <SummaryCard color="#16a34a">
-
           <div style={styles.cardIcon}>
             🚀
           </div>
 
           <div>
-
             <p style={styles.cardLabel}>
               Status
             </p>
@@ -537,24 +529,17 @@ export default function Roadmap() {
             >
               Started
             </h2>
-
           </div>
-
         </SummaryCard>
-
       </div>
-
 
       {/* ================================================= */}
       {/* LEARNING ROADMAP */}
       {/* ================================================= */}
 
       <div style={styles.section}>
-
         <div style={styles.sectionHeader}>
-
           <div>
-
             <h2 style={styles.sectionTitle}>
               📚 Learning Roadmap
             </h2>
@@ -563,18 +548,12 @@ export default function Roadmap() {
               Follow each phase step-by-step to
               build your career skills.
             </p>
-
           </div>
-
         </div>
 
-
         <div style={styles.timeline}>
-
           {phases.length === 0 ? (
-
             <div style={styles.noPhase}>
-
               <h3>
                 No phases available
               </h3>
@@ -587,7 +566,6 @@ export default function Roadmap() {
               <details
                 style={styles.debugDetails}
               >
-
                 <summary>
                   View roadmap data
                 </summary>
@@ -601,23 +579,17 @@ export default function Roadmap() {
                     2
                   )}
                 </pre>
-
               </details>
-
             </div>
-
           ) : (
-
             phases.map(
               (phase, index) => {
-
                 const topics =
                   Array.isArray(
                     phase.topics
                   )
                     ? phase.topics
                     : [];
-
 
                 const projects =
                   Array.isArray(
@@ -626,14 +598,12 @@ export default function Roadmap() {
                     ? phase.projects
                     : [];
 
-
                 const resources =
                   Array.isArray(
                     phase.resources
                   )
                     ? phase.resources
                     : [];
-
 
                 return (
                   <div
@@ -645,7 +615,6 @@ export default function Roadmap() {
                       styles.phaseCard
                     }
                   >
-
                     {/* PHASE NUMBER */}
 
                     <div
@@ -656,13 +625,11 @@ export default function Roadmap() {
                       {index + 1}
                     </div>
 
-
                     <div
                       style={
                         styles.phaseContent
                       }
                     >
-
                       {/* PHASE HEADER */}
 
                       <div
@@ -670,9 +637,7 @@ export default function Roadmap() {
                           styles.phaseHeader
                         }
                       >
-
                         <div>
-
                           <span
                             style={
                               styles.phaseLabel
@@ -692,9 +657,7 @@ export default function Roadmap() {
                                 index + 1
                               }`}
                           </h3>
-
                         </div>
-
 
                         <div
                           style={
@@ -705,9 +668,7 @@ export default function Roadmap() {
                           {phase.duration ||
                             "Flexible"}
                         </div>
-
                       </div>
-
 
                       {/* TOPICS */}
 
@@ -716,7 +677,6 @@ export default function Roadmap() {
                           styles.phaseSection
                         }
                       >
-
                         <h4
                           style={
                             styles.subTitle
@@ -725,21 +685,17 @@ export default function Roadmap() {
                           📖 Topics to Learn
                         </h4>
 
-
                         {topics.length > 0 ? (
-
                           <div
                             style={
                               styles.tagContainer
                             }
                           >
-
                             {topics.map(
                               (
                                 topic,
                                 i
                               ) => (
-
                                 <span
                                   key={i}
                                   style={
@@ -749,14 +705,10 @@ export default function Roadmap() {
                                   ✓{" "}
                                   {topic}
                                 </span>
-
                               )
                             )}
-
                           </div>
-
                         ) : (
-
                           <p
                             style={
                               styles.mutedText
@@ -764,11 +716,8 @@ export default function Roadmap() {
                           >
                             No topics available.
                           </p>
-
                         )}
-
                       </div>
-
 
                       {/* PROJECTS */}
 
@@ -777,7 +726,6 @@ export default function Roadmap() {
                           styles.phaseSection
                         }
                       >
-
                         <h4
                           style={
                             styles.subTitle
@@ -786,28 +734,23 @@ export default function Roadmap() {
                           💻 Projects
                         </h4>
 
-
                         {projects.length > 0 ? (
-
                           <ul
                             style={
                               styles.list
                             }
                           >
-
                             {projects.map(
                               (
                                 project,
                                 i
                               ) => (
-
                                 <li
                                   key={i}
                                   style={
                                     styles.listItem
                                   }
                                 >
-
                                   <span>
                                     🚀
                                   </span>
@@ -815,16 +758,11 @@ export default function Roadmap() {
                                   <span>
                                     {project}
                                   </span>
-
                                 </li>
-
                               )
                             )}
-
                           </ul>
-
                         ) : (
-
                           <p
                             style={
                               styles.mutedText
@@ -832,11 +770,8 @@ export default function Roadmap() {
                           >
                             No projects available.
                           </p>
-
                         )}
-
                       </div>
-
 
                       {/* RESOURCES */}
 
@@ -845,7 +780,6 @@ export default function Roadmap() {
                           styles.phaseSection
                         }
                       >
-
                         <h4
                           style={
                             styles.subTitle
@@ -854,28 +788,23 @@ export default function Roadmap() {
                           🔗 Learning Resources
                         </h4>
 
-
                         {resources.length > 0 ? (
-
                           <ul
                             style={
                               styles.list
                             }
                           >
-
                             {resources.map(
                               (
                                 resource,
                                 i
                               ) => (
-
                                 <li
                                   key={i}
                                   style={
                                     styles.listItem
                                   }
                                 >
-
                                   <span>
                                     📘
                                   </span>
@@ -883,16 +812,11 @@ export default function Roadmap() {
                                   <span>
                                     {resource}
                                   </span>
-
                                 </li>
-
                               )
                             )}
-
                           </ul>
-
                         ) : (
-
                           <p
                             style={
                               styles.mutedText
@@ -900,11 +824,8 @@ export default function Roadmap() {
                           >
                             No resources available.
                           </p>
-
                         )}
-
                       </div>
-
 
                       {/* COMPLETION STATUS */}
 
@@ -913,11 +834,9 @@ export default function Roadmap() {
                           styles.completedBox
                         }
                       >
-
                         <span
                           style={{
                             ...styles.completedDot,
-
                             background:
                               phase.completed
                                 ? "#16a34a"
@@ -925,13 +844,11 @@ export default function Roadmap() {
                           }}
                         />
 
-
                         <span>
                           {phase.completed
                             ? "Phase Completed"
                             : "Phase Not Completed"}
                         </span>
-
 
                         <button
                           onClick={() =>
@@ -942,12 +859,10 @@ export default function Roadmap() {
                           }
                           style={{
                             ...styles.completionButton,
-
                             background:
                               phase.completed
                                 ? "#fee2e2"
                                 : "#dcfce7",
-
                             color:
                               phase.completed
                                 ? "#dc2626"
@@ -958,29 +873,21 @@ export default function Roadmap() {
                             ? "↩ Mark Incomplete"
                             : "✓ Mark Complete"}
                         </button>
-
                       </div>
-
                     </div>
-
                   </div>
                 );
               }
             )
-
           )}
-
         </div>
-
       </div>
-
 
       {/* ================================================= */}
       {/* UPCOMING TOPICS */}
       {/* ================================================= */}
 
       <div style={styles.section}>
-
         <h2 style={styles.sectionTitle}>
           🎯 Upcoming Learning Topics
         </h2>
@@ -990,13 +897,11 @@ export default function Roadmap() {
           career learning journey.
         </p>
 
-
         <div
           style={
             styles.upcomingGrid
           }
         >
-
           {phases
             .flatMap(
               (phase) =>
@@ -1008,14 +913,12 @@ export default function Roadmap() {
             )
             .map(
               (topic, index) => (
-
                 <div
                   key={index}
                   style={
                     styles.upcomingCard
                   }
                 >
-
                   <span
                     style={
                       styles.checkIcon
@@ -1027,29 +930,22 @@ export default function Roadmap() {
                   <span>
                     {topic}
                   </span>
-
                 </div>
-
               )
             )}
-
         </div>
-
       </div>
-
 
       {/* ================================================= */}
       {/* AI RECOMMENDATION */}
       {/* ================================================= */}
 
       <div style={styles.aiCard}>
-
         <div style={styles.aiIcon}>
           🤖
         </div>
 
         <div>
-
           <h2 style={styles.aiTitle}>
             AI Career Recommendation
           </h2>
@@ -1061,24 +957,19 @@ export default function Roadmap() {
             Building practical projects alongside
             learning will help improve your job readiness.
           </p>
-
         </div>
-
       </div>
-
 
       {/* ================================================= */}
       {/* WEEKLY GOAL */}
       {/* ================================================= */}
 
       <div style={styles.weeklyCard}>
-
         <div style={styles.weeklyIcon}>
           🎯
         </div>
 
         <div>
-
           <h2 style={styles.weeklyTitle}>
             Weekly Goal
           </h2>
@@ -1088,22 +979,17 @@ export default function Roadmap() {
             practice the recommended topics, and
             build at least one practical project.
           </p>
-
         </div>
-
       </div>
-
     </div>
   );
 }
-
 
 // ======================================================
 // STYLES
 // ======================================================
 
 const styles = {
-
   // ====================================================
   // MAIN CONTAINER
   // ====================================================
@@ -1117,34 +1003,33 @@ const styles = {
       "Arial, Helvetica, sans-serif",
   },
 
-
   // ====================================================
-  // LOADING
+  // SIMPLE LOADING
   // ====================================================
 
   loadingContainer: {
     minHeight: "80vh",
+    width: "100%",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "#f5f7fb",
-    padding: "30px",
+    background: "#ffffff",
   },
 
-  loadingCard: {
-    background: "#fff",
-    padding: "50px",
-    borderRadius: "20px",
-    textAlign: "center",
-    boxShadow:
-      "0 15px 40px rgba(0,0,0,.08)",
+  simpleLoader: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  spinner: {
-    fontSize: "50px",
-    marginBottom: "15px",
+  loadingLabel: {
+    marginTop: "9px",
+    fontSize: "13px",
+    fontWeight: "400",
+    color: "#333333",
+    lineHeight: "1",
   },
-
 
   // ====================================================
   // EMPTY ROADMAP
@@ -1214,7 +1099,6 @@ const styles = {
     fontSize: "13px",
   },
 
-
   // ====================================================
   // HERO
   // ====================================================
@@ -1270,7 +1154,6 @@ const styles = {
     whiteSpace: "nowrap",
   },
 
-
   // ====================================================
   // SUMMARY CARDS
   // ====================================================
@@ -1285,84 +1168,50 @@ const styles = {
 
   card: {
     background: "#ffffff",
-
     padding: "20px 22px",
-
     borderRadius: "12px",
-
-    /* Simple colored left border */
     borderLeft: "4px solid #2563eb",
-
-    borderTop:
-      "1px solid #e5e7eb",
-
-    borderRight:
-      "1px solid #e5e7eb",
-
-    borderBottom:
-      "1px solid #e5e7eb",
-
+    borderTop: "1px solid #e5e7eb",
+    borderRight: "1px solid #e5e7eb",
+    borderBottom: "1px solid #e5e7eb",
     display: "flex",
-
     alignItems: "center",
-
     gap: "16px",
-
     boxShadow:
       "0 3px 10px rgba(0, 0, 0, 0.05)",
-
     transition:
       "transform 0.25s ease, box-shadow 0.25s ease",
-
     cursor: "grab",
-
     position: "relative",
   },
 
   cardIcon: {
     width: "46px",
     height: "46px",
-
     borderRadius: "10px",
-
     background: "#f8fafc",
-
     display: "flex",
-
     alignItems: "center",
-
     justifyContent: "center",
-
     fontSize: "23px",
-
     flexShrink: 0,
-
-    border:
-      "1px solid #e5e7eb",
+    border: "1px solid #e5e7eb",
   },
 
   cardLabel: {
     margin: "0 0 5px",
-
     color: "#64748b",
-
     fontSize: "13px",
-
     fontWeight: "600",
-
     letterSpacing: "0.2px",
   },
 
   cardNumber: {
     margin: 0,
-
     fontSize: "24px",
-
     fontWeight: "700",
-
     color: "#111827",
   },
-
 
   // ====================================================
   // SECTIONS
@@ -1394,7 +1243,6 @@ const styles = {
     color: "#6b7280",
   },
 
-
   // ====================================================
   // TIMELINE
   // ====================================================
@@ -1409,8 +1257,7 @@ const styles = {
     display: "flex",
     gap: "20px",
     background: "#f8fafc",
-    border:
-      "1px solid #e5e7eb",
+    border: "1px solid #e5e7eb",
     borderRadius: "18px",
     padding: "25px",
   },
@@ -1559,7 +1406,6 @@ const styles = {
     fontSize: "12px",
   },
 
-
   // ====================================================
   // UPCOMING TOPICS
   // ====================================================
@@ -1595,7 +1441,6 @@ const styles = {
     fontWeight: "bold",
   },
 
-
   // ====================================================
   // AI CARD
   // ====================================================
@@ -1626,7 +1471,6 @@ const styles = {
     color: "#4b5563",
     lineHeight: "1.6",
   },
-
 
   // ====================================================
   // WEEKLY GOAL

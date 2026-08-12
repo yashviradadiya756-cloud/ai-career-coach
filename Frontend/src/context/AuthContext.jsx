@@ -1,7 +1,11 @@
-import { createContext,useContext,useEffect,useState, } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
-import { loginUser,registerUser, } from "../api/authApi";
-
+import { loginUser, registerUser } from "../api/authApi";
 import { getProfile } from "../api/userApi";
 
 const AuthContext = createContext();
@@ -10,37 +14,79 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ==========================================
+  // SAVE USER DATA
+  // ==========================================
+
+  const saveUserData = (userData) => {
+    if (!userData) return;
+
+    setUser(userData);
+
+    // Save username
+    if (userData.username) {
+      localStorage.setItem("username", userData.username);
+    }
+
+    // Save name if available
+    if (userData.name) {
+      localStorage.setItem("name", userData.name);
+    }
+
+    // Save email if available
+    if (userData.email) {
+      localStorage.setItem("email", userData.email);
+    }
+
+    console.log("User saved:", userData);
+  };
 
   // ==========================================
   // LOGIN
   // ==========================================
 
   const login = async (data) => {
-    const res = await loginUser(data);
+    try {
+      const res = await loginUser(data);
 
-    localStorage.setItem(
-      "token",
-      res.data.token
-    );
+      console.log("LOGIN RESPONSE:", res.data);
 
-    const profile = await getProfile();
+      // Save JWT token
+      localStorage.setItem("token", res.data.token);
 
-    setUser(profile.data.user);
+      // Get complete profile
+      const profile = await getProfile();
 
-    return res.data;
+      console.log("PROFILE RESPONSE:", profile.data);
+
+      const userData = profile.data.user;
+
+      // Save user in state + localStorage
+      saveUserData(userData);
+
+      return res.data;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   };
-
 
   // ==========================================
   // REGISTER
   // ==========================================
 
   const register = async (userData) => {
-    const response = await registerUser(userData);
+    try {
+      const response = await registerUser(userData);
 
-    return response.data;
+      console.log("REGISTER RESPONSE:", response.data);
+
+      return response.data;
+    } catch (error) {
+      console.error("Register error:", error);
+      throw error;
+    }
   };
-
 
   // ==========================================
   // LOGOUT
@@ -48,19 +94,23 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("name");
+    localStorage.removeItem("email");
+
     setUser(null);
   };
 
-
   // ==========================================
-  // LOAD USER
+  // LOAD USER WHEN PAGE REFRESHES
   // ==========================================
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const token =
-          localStorage.getItem("token");
+        const token = localStorage.getItem("token");
+
+        console.log("Token exists:", !!token);
 
         if (!token) {
           setLoading(false);
@@ -69,11 +119,20 @@ export const AuthProvider = ({ children }) => {
 
         const res = await getProfile();
 
-        setUser(res.data.user);
+        console.log("PROFILE ON REFRESH:", res.data);
+
+        const userData = res.data.user;
+
+        // Restore user
+        saveUserData(userData);
       } catch (error) {
-        console.log(error);
+        console.error("Load user error:", error);
 
         localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        localStorage.removeItem("name");
+        localStorage.removeItem("email");
+
         setUser(null);
       } finally {
         setLoading(false);
@@ -83,6 +142,9 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
+  // ==========================================
+  // CONTEXT
+  // ==========================================
 
   return (
     <AuthContext.Provider
@@ -99,6 +161,10 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// ==========================================
+// useAuth HOOK
+// ==========================================
 
-export const useAuth = () =>
-  useContext(AuthContext);
+export const useAuth = () => {
+  return useContext(AuthContext);
+};

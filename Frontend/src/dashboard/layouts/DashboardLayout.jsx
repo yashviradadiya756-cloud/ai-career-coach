@@ -1,81 +1,70 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
-import DashboardNavbar from "../components/DashboardNavbar";
 import DashboardSidebar from "../components/DashboardSidebar";
+import DashboardNavbar from "../components/DashboardNavbar";
 
-import "../styles/dashboard.css";
+import "../styles/dashboardLayout.css";
 
-export default function DashboardLayout() {
-  const [isExpanded, setIsExpanded] = useState(false);
+const DashboardLayout = () => {
+  // Sidebar stays in the same state while navigating
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const location = useLocation();
 
-  const handleSidebarToggle = () => {
-    setIsExpanded((prev) => !prev);
-  };
-
-  /* ==========================================
-     SCROLL DASHBOARD CONTENT TO TOP
-  ========================================== */
-
+  // Scroll dashboard content to top whenever page changes
   useEffect(() => {
-    // Browser/page scroll
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "instant",
-    });
-
-    // Dashboard content scroll
-    const content = document.querySelector(
-      ".dashboard-content"
-    );
+    const content = document.querySelector(".dashboard-page-content");
 
     if (content) {
-      content.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: "instant",
-      });
-    }
-
-    // Sidebar navigation scroll
-    const sidebarNav = document.querySelector(
-      ".sidebar-nav"
-    );
-
-    if (sidebarNav) {
-      sidebarNav.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: "instant",
-      });
+      content.scrollTop = 0;
     }
   }, [location.pathname]);
 
+  const handleSidebarToggle = () => {
+    setIsExpanded((previousState) => !previousState);
+  };
+
   return (
-    <div
-      className={`dashboard-layout ${
-        isExpanded
-          ? "sidebar-expanded"
-          : "sidebar-collapsed"
-      }`}
-    >
+    <div className="dashboard-layout">
+
+      {/* =====================================================
+          TOP NAVBAR
+      ===================================================== */}
+
       <DashboardNavbar />
 
-      <div className="dashboard-body">
 
-        <DashboardSidebar
-          isExpanded={isExpanded}
-          onToggle={handleSidebarToggle}
-        />
+      {/* =====================================================
+          SIDEBAR
+      ===================================================== */}
 
-        <main className="dashboard-content">
+      <DashboardSidebar
+        isExpanded={isExpanded}
+        onToggle={handleSidebarToggle}
+      />
+
+
+      {/* =====================================================
+          MAIN DASHBOARD AREA
+      ===================================================== */}
+
+      <main
+        className={
+          isExpanded
+            ? "dashboard-main-area sidebar-expanded"
+            : "dashboard-main-area sidebar-collapsed"
+        }
+      >
+
+        <div className="dashboard-page-content">
           <Outlet />
-        </main>
+        </div>
 
-      </div>
+      </main>
+
     </div>
   );
-}
+};
+
+export default DashboardLayout;

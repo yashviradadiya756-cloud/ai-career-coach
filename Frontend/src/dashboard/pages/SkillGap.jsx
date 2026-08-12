@@ -39,7 +39,6 @@ const SkillGap = () => {
         error.response?.data || error.message
       );
 
-      // 404 means no Skill Gap exists yet
       if (error.response?.status === 404) {
         setSkillGap(null);
       } else {
@@ -95,17 +94,10 @@ const SkillGap = () => {
   };
 
   // ==========================================
-  // LOADING
+  // SMALL CLEAN LOADING SCREEN
   // ==========================================
   if (loading) {
-    return (
-      <div style={styles.loadingState}>
-        <div style={styles.loadingSpinner}></div>
-        <p style={styles.loadingText}>
-          Loading Skill Gap Analysis...
-        </p>
-      </div>
-    );
+    return <SkillGapLoading />;
   }
 
   // ==========================================
@@ -133,7 +125,7 @@ const SkillGap = () => {
     Number(skillGap?.readinessScore) || 0;
 
   // ==========================================
-  // UI
+  // MAIN UI
   // ==========================================
   return (
     <div
@@ -144,14 +136,16 @@ const SkillGap = () => {
           HEADER
       ================================== */}
       <div style={styles.header}>
-        <h1 style={styles.headerTitle}>
-          🎯 Skill Gap Analysis
-        </h1>
+        <div>
+          <h1 style={styles.headerTitle}>
+            🎯 Skill Gap Analysis
+          </h1>
 
-        <p style={styles.headerSubtitle}>
-          Identify the skills you already have and discover
-          what you need to learn for your target career.
-        </p>
+          <p style={styles.headerSubtitle}>
+            Identify the skills you already have and discover
+            what you need to learn for your target career.
+          </p>
+        </div>
       </div>
 
       {/* ==================================
@@ -171,13 +165,18 @@ const SkillGap = () => {
           Target Career Role
         </h2>
 
-        <div style={styles.inputRow}>
+        <div className="input-row" style={styles.inputRow}>
           <input
             type="text"
             value={targetRole}
             onChange={(e) => setTargetRole(e.target.value)}
             placeholder="Example: Full Stack Developer"
             style={styles.input}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleAnalyze();
+              }
+            }}
           />
 
           <button
@@ -191,18 +190,43 @@ const SkillGap = () => {
                 : "pointer",
             }}
           >
-            {analyzing
-              ? "Analyzing..."
-              : "Analyze Skill Gap"}
+            {analyzing ? (
+              <>
+                <span style={styles.buttonSpinner}></span>
+                Analyzing...
+              </>
+            ) : (
+              "Analyze Skill Gap"
+            )}
           </button>
         </div>
       </div>
 
       {/* ==================================
+          ANALYZING LOADING
+      ================================== */}
+      {analyzing && (
+        <div style={styles.analyzingLoading}>
+          <SmallLoadingCircle />
+
+          <h3 style={styles.analyzingTitle}>
+            Preparing your skill gap
+          </h3>
+
+          <p style={styles.analyzingSubtitle}>
+            Setting up your skill analysis and
+            preparing your personalized insights...
+          </p>
+        </div>
+      )}
+
+      {/* ==================================
           NO DATA
       ================================== */}
-      {!skillGap ? (
+      {!skillGap && !analyzing ? (
         <div style={styles.emptyCard}>
+          <div style={styles.emptyIcon}>🎯</div>
+
           <h2 style={styles.emptyTitle}>
             No Skill Gap Analysis Found
           </h2>
@@ -213,178 +237,180 @@ const SkillGap = () => {
           </p>
         </div>
       ) : (
-        <>
-          {/* ==================================
-              TARGET ROLE + SCORE
-          ================================== */}
-          <div style={styles.overviewGrid}>
-            <div style={styles.overviewCard}>
-              <p style={styles.cardMetaTitle}>
-                Target Role
-              </p>
+        !analyzing && (
+          <>
+            {/* ==================================
+                TARGET ROLE + SCORE
+            ================================== */}
+            <div style={styles.overviewGrid}>
+              <div style={styles.overviewCard}>
+                <p style={styles.cardMetaTitle}>
+                  Target Role
+                </p>
 
-              <h2 style={styles.roleTitle}>
-                {skillGap.targetRole || targetRole}
-              </h2>
-            </div>
-
-            <div style={styles.overviewCard}>
-              <p style={styles.cardMetaTitle}>
-                Readiness Score
-              </p>
-
-              <p style={styles.scoreText}>
-                {readinessScore}%
-              </p>
-
-              <div style={styles.progressBar}>
-                <div
-                  style={{
-                    ...styles.progressFill,
-                    width: `${Math.min(
-                      Math.max(readinessScore, 0),
-                      100
-                    )}%`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ==================================
-              CURRENT SKILLS
-          ================================== */}
-          <div style={styles.card}>
-            <div style={styles.sectionHeader}>
-              <h2 style={styles.sectionTitle}>
-                ✅ Current Skills
-              </h2>
-
-              <span style={styles.badgeSuccess}>
-                {currentSkills.length}
-              </span>
-            </div>
-
-            {currentSkills.length === 0 ? (
-              <p style={styles.emptyText}>
-                No current skills found.
-              </p>
-            ) : (
-              <div style={styles.skillTagGrid}>
-                {currentSkills.map((skill, index) => (
-                  <span
-                    className="skill-tag current"
-                    key={index}
-                    style={styles.currentSkillTag}
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ==================================
-              MISSING SKILLS
-          ================================== */}
-          <div style={styles.card}>
-            <div style={styles.sectionHeader}>
-              <h2 style={styles.sectionTitle}>
-                ⚠️ Missing Skills
-              </h2>
-
-              <span style={styles.badgeDanger}>
-                {missingSkills.length}
-              </span>
-            </div>
-
-            {missingSkills.length === 0 ? (
-              <p style={styles.successText}>
-                🎉 No major skill gaps found!
-              </p>
-            ) : (
-              <div style={styles.skillTagGrid}>
-                {missingSkills.map((skill, index) => (
-                  <span
-                    className="skill-tag missing"
-                    key={index}
-                    style={styles.missingSkillTag}
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ==================================
-              RECOMMENDED COURSES
-          ================================== */}
-          {recommendedCourses.length > 0 && (
-            <div style={styles.card}>
-              <div style={styles.sectionHeader}>
-                <h2 style={styles.sectionTitle}>
-                  📚 Recommended Courses
+                <h2 style={styles.roleTitle}>
+                  {skillGap.targetRole || targetRole}
                 </h2>
               </div>
 
-              <div style={styles.listContainer}>
-                {recommendedCourses.map((course, index) => (
-                  <div
-                    className="course-item"
-                    key={index}
-                    style={styles.courseRow}
-                  >
-                    <div style={styles.listBadge}>
-                      {index + 1}
-                    </div>
+              <div style={styles.overviewCard}>
+                <p style={styles.cardMetaTitle}>
+                  Readiness Score
+                </p>
 
-                    <p style={styles.courseText}>
-                      {course}
-                    </p>
-                  </div>
-                ))}
+                <p style={styles.scoreText}>
+                  {readinessScore}%
+                </p>
+
+                <div style={styles.progressBar}>
+                  <div
+                    style={{
+                      ...styles.progressFill,
+                      width: `${Math.min(
+                        Math.max(readinessScore, 0),
+                        100
+                      )}%`,
+                    }}
+                  />
+                </div>
               </div>
             </div>
-          )}
 
-          {/* ==================================
-              ROADMAP
-          ================================== */}
-          {roadmap.length > 0 && (
+            {/* ==================================
+                CURRENT SKILLS
+            ================================== */}
             <div style={styles.card}>
               <div style={styles.sectionHeader}>
                 <h2 style={styles.sectionTitle}>
-                  🗺️ Recommended Roadmap
+                  ✅ Current Skills
                 </h2>
+
+                <span style={styles.badgeSuccess}>
+                  {currentSkills.length}
+                </span>
               </div>
 
-              <div style={styles.listContainer}>
-                {roadmap.map((step, index) => (
-                  <div
-                    className="roadmap-item"
-                    key={index}
-                    style={styles.roadmapRow}
-                  >
-                    <div style={styles.roadmapBadge}>
-                      {index + 1}
-                    </div>
+              {currentSkills.length === 0 ? (
+                <p style={styles.emptyText}>
+                  No current skills found.
+                </p>
+              ) : (
+                <div style={styles.skillTagGrid}>
+                  {currentSkills.map((skill, index) => (
+                    <span
+                      className="skill-tag current"
+                      key={index}
+                      style={styles.currentSkillTag}
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                    <div style={styles.roadmapContent}>
-                      <p style={styles.roadmapText}>
-                        {step}
+            {/* ==================================
+                MISSING SKILLS
+            ================================== */}
+            <div style={styles.card}>
+              <div style={styles.sectionHeader}>
+                <h2 style={styles.sectionTitle}>
+                  ⚠️ Missing Skills
+                </h2>
+
+                <span style={styles.badgeDanger}>
+                  {missingSkills.length}
+                </span>
+              </div>
+
+              {missingSkills.length === 0 ? (
+                <p style={styles.successText}>
+                  🎉 No major skill gaps found!
+                </p>
+              ) : (
+                <div style={styles.skillTagGrid}>
+                  {missingSkills.map((skill, index) => (
+                    <span
+                      className="skill-tag missing"
+                      key={index}
+                      style={styles.missingSkillTag}
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ==================================
+                RECOMMENDED COURSES
+            ================================== */}
+            {recommendedCourses.length > 0 && (
+              <div style={styles.card}>
+                <div style={styles.sectionHeader}>
+                  <h2 style={styles.sectionTitle}>
+                    📚 Recommended Courses
+                  </h2>
+                </div>
+
+                <div style={styles.listContainer}>
+                  {recommendedCourses.map((course, index) => (
+                    <div
+                      className="course-item"
+                      key={index}
+                      style={styles.courseRow}
+                    >
+                      <div style={styles.listBadge}>
+                        {index + 1}
+                      </div>
+
+                      <p style={styles.courseText}>
+                        {course}
                       </p>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </>
+            )}
+
+            {/* ==================================
+                ROADMAP
+            ================================== */}
+            {roadmap.length > 0 && (
+              <div style={styles.card}>
+                <div style={styles.sectionHeader}>
+                  <h2 style={styles.sectionTitle}>
+                    🗺️ Recommended Roadmap
+                  </h2>
+                </div>
+
+                <div style={styles.listContainer}>
+                  {roadmap.map((step, index) => (
+                    <div
+                      className="roadmap-item"
+                      key={index}
+                      style={styles.roadmapRow}
+                    >
+                      <div style={styles.roadmapBadge}>
+                        {index + 1}
+                      </div>
+
+                      <div style={styles.roadmapContent}>
+                        <p style={styles.roadmapText}>
+                          {step}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )
       )}
 
       {/* ==================================
-          RESPONSIVE CSS
+          RESPONSIVE CSS + ANIMATIONS
       ================================== */}
       <style>
         {`
@@ -398,6 +424,86 @@ const SkillGap = () => {
             box-sizing: border-box;
           }
 
+          .skill-gap-container input:focus {
+            border-color: #10b981 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.10);
+          }
+
+          .skill-gap-container button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.20);
+          }
+
+          .skill-tag {
+            transition: all 0.2s ease;
+          }
+
+          .skill-tag:hover {
+            transform: translateY(-2px);
+          }
+
+          .course-item {
+            transition: all 0.2s ease;
+          }
+
+          .course-item:hover {
+            transform: translateX(3px);
+            border-color: #cbd5e1 !important;
+          }
+
+          .roadmap-item {
+            transition: all 0.2s ease;
+          }
+
+          .roadmap-item:hover {
+            transform: translateX(3px);
+          }
+
+          @keyframes circleRotate {
+            from {
+              transform: rotate(0deg);
+            }
+
+            to {
+              transform: rotate(360deg);
+            }
+          }
+
+          @keyframes circleRotateReverse {
+            from {
+              transform: rotate(360deg);
+            }
+
+            to {
+              transform: rotate(0deg);
+            }
+          }
+
+          @keyframes centerPulse {
+            0% {
+              transform: scale(1);
+            }
+
+            50% {
+              transform: scale(1.06);
+            }
+
+            100% {
+              transform: scale(1);
+            }
+          }
+
+          @keyframes dotPulse {
+            0%,
+            100% {
+              opacity: 0.35;
+            }
+
+            50% {
+              opacity: 1;
+            }
+          }
+
           @media (max-width: 768px) {
             .skill-gap-container {
               padding: 20px 16px !important;
@@ -407,11 +513,19 @@ const SkillGap = () => {
               flex-direction: column;
               align-items: stretch;
             }
+
+            .skill-gap-container .input-row button {
+              width: 100%;
+            }
           }
 
           @media (max-width: 480px) {
             .skill-gap-container {
               padding: 16px 12px !important;
+            }
+
+            .skill-gap-container .overview-grid {
+              grid-template-columns: 1fr !important;
             }
           }
         `}
@@ -420,13 +534,86 @@ const SkillGap = () => {
   );
 };
 
-// ==========================================
-// INLINE STYLES
-// ==========================================
+// =====================================================
+// SMALL LOADING CIRCLE
+// =====================================================
+
+const SmallLoadingCircle = () => {
+  return (
+    <div style={styles.loaderCircleWrapper}>
+      <div style={styles.loaderCircle}>
+        <div style={styles.loaderCenter}>
+          <div style={styles.loaderBars}>
+            <span style={styles.loaderBar}></span>
+            <span
+              style={{
+                ...styles.loaderBar,
+                height: "9px",
+                animationDelay: "0.15s",
+              }}
+            ></span>
+            <span
+              style={{
+                ...styles.loaderBar,
+                height: "12px",
+                animationDelay: "0.3s",
+              }}
+            ></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =====================================================
+// INITIAL PAGE LOADING
+// =====================================================
+
+const SkillGapLoading = () => {
+  return (
+    <div className="skill-gap-loading" style={styles.loadingPage}>
+      <SmallLoadingCircle />
+
+      <h2 style={styles.loadingTitle}>
+        Preparing your skill gap
+      </h2>
+
+      <p style={styles.loadingSubtitle}>
+        Setting up your skill analysis and
+        analyzing your profile...
+      </p>
+
+      <div style={styles.loadingDots}>
+        <span style={styles.loadingDot}></span>
+
+        <span
+          style={{
+            ...styles.loadingDot,
+            animationDelay: "0.15s",
+          }}
+        ></span>
+
+        <span
+          style={{
+            ...styles.loadingDot,
+            animationDelay: "0.3s",
+          }}
+        ></span>
+      </div>
+    </div>
+  );
+};
+
+// =====================================================
+// STYLES
+// =====================================================
+
 const styles = {
   // ==========================================
   // MAIN CONTAINER
   // ==========================================
+
   container: {
     width: "100%",
     maxWidth: "none",
@@ -441,9 +628,10 @@ const styles = {
   },
 
   // ==========================================
-  // LOADING
+  // SMALL LOADING PAGE
   // ==========================================
-  loadingState: {
+
+  loadingPage: {
     width: "100%",
     minHeight: "60vh",
     display: "flex",
@@ -452,27 +640,108 @@ const styles = {
     justifyContent: "center",
     padding: "40px 20px",
     boxSizing: "border-box",
+    backgroundColor: "#ffffff",
+    textAlign: "center",
   },
 
-  loadingSpinner: {
-    width: "36px",
-    height: "36px",
-    border: "4px solid #e2e8f0",
-    borderTop: "4px solid #2563eb",
+  loadingTitle: {
+    margin: "20px 0 5px",
+    fontSize: "15px",
+    lineHeight: "1.4",
+    fontWeight: "700",
+    color: "#111827",
+    letterSpacing: "-0.01em",
+  },
+
+  loadingSubtitle: {
+    width: "100%",
+    maxWidth: "270px",
+    margin: 0,
+    fontSize: "10px",
+    lineHeight: "1.5",
+    color: "#9ca3af",
+  },
+
+  loadingDots: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "4px",
+    marginTop: "13px",
+  },
+
+  loadingDot: {
+    width: "3px",
+    height: "3px",
     borderRadius: "50%",
-    animation: "spin 0.8s linear infinite",
+    backgroundColor: "#10b981",
+    animation: "dotPulse 1.1s ease-in-out infinite",
   },
 
-  loadingText: {
-    fontSize: "17px",
-    fontWeight: "600",
-    color: "#475569",
-    marginTop: "16px",
+  // ==========================================
+  // SMALL CIRCLE LOADER
+  // ==========================================
+
+  loaderCircleWrapper: {
+    width: "58px",
+    height: "58px",
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  loaderCircle: {
+    position: "relative",
+    width: "58px",
+    height: "58px",
+    borderRadius: "50%",
+    border: "1px solid #d7eee6",
+    animation:
+      "circleRotate 1.4s linear infinite",
+  },
+
+  loaderCenter: {
+    position: "absolute",
+    width: "32px",
+    height: "32px",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    borderRadius: "50%",
+    backgroundColor: "#22b573",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow:
+      "0 3px 10px rgba(34, 181, 115, 0.20)",
+    animation:
+      "centerPulse 1.5s ease-in-out infinite",
+  },
+
+  loaderBars: {
+    height: "15px",
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: "2px",
+    transform: "rotate(-360deg)",
+  },
+
+  loaderBar: {
+    width: "2px",
+    height: "6px",
+    borderRadius: "2px",
+    backgroundColor: "#ffffff",
+    display: "block",
+    animation:
+      "centerPulse 0.8s ease-in-out infinite",
   },
 
   // ==========================================
   // HEADER
   // ==========================================
+
   header: {
     width: "100%",
     backgroundColor: "#ffffff",
@@ -486,7 +755,7 @@ const styles = {
   },
 
   headerTitle: {
-    margin: "0 0 8px 0",
+    margin: "0 0 8px",
     fontSize: "26px",
     fontWeight: "700",
     letterSpacing: "-0.02em",
@@ -503,6 +772,7 @@ const styles = {
   // ==========================================
   // ERROR
   // ==========================================
+
   errorBox: {
     width: "100%",
     backgroundColor: "#fef2f2",
@@ -519,6 +789,7 @@ const styles = {
   // ==========================================
   // CARD
   // ==========================================
+
   card: {
     width: "100%",
     backgroundColor: "#ffffff",
@@ -532,22 +803,18 @@ const styles = {
   },
 
   cardTitle: {
-    margin: "0 0 16px 0",
+    margin: "0 0 16px",
     fontSize: "18px",
     fontWeight: "700",
     color: "#0f172a",
   },
 
-  // ==========================================
-  // INPUT
-  // ==========================================
   inputRow: {
     display: "flex",
     width: "100%",
     gap: "12px",
     alignItems: "center",
     flexWrap: "wrap",
-    boxSizing: "border-box",
   },
 
   input: {
@@ -577,9 +844,54 @@ const styles = {
     minHeight: "46px",
   },
 
+  buttonSpinner: {
+    width: "15px",
+    height: "15px",
+    border: "2px solid rgba(255,255,255,0.4)",
+    borderTopColor: "#ffffff",
+    borderRadius: "50%",
+    display: "inline-block",
+    animation: "circleRotate 0.7s linear infinite",
+  },
+
+  // ==========================================
+  // ANALYZING
+  // ==========================================
+
+  analyzingLoading: {
+    width: "100%",
+    minHeight: "260px",
+    backgroundColor: "#ffffff",
+    borderRadius: "16px",
+    border: "1px solid #e2e8f0",
+    marginBottom: "20px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "40px 20px",
+    textAlign: "center",
+  },
+
+  analyzingTitle: {
+    margin: "20px 0 5px",
+    fontSize: "15px",
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  analyzingSubtitle: {
+    maxWidth: "300px",
+    margin: 0,
+    fontSize: "10px",
+    lineHeight: "1.5",
+    color: "#9ca3af",
+  },
+
   // ==========================================
   // EMPTY
   // ==========================================
+
   emptyCard: {
     width: "100%",
     backgroundColor: "#ffffff",
@@ -591,8 +903,13 @@ const styles = {
     boxSizing: "border-box",
   },
 
+  emptyIcon: {
+    fontSize: "30px",
+    marginBottom: "12px",
+  },
+
   emptyTitle: {
-    margin: "0 0 8px 0",
+    margin: "0 0 8px",
     fontSize: "20px",
     fontWeight: "700",
     color: "#334155",
@@ -614,6 +931,7 @@ const styles = {
   // ==========================================
   // OVERVIEW
   // ==========================================
+
   overviewGrid: {
     display: "grid",
     gridTemplateColumns:
@@ -634,7 +952,7 @@ const styles = {
   },
 
   cardMetaTitle: {
-    margin: "0 0 8px 0",
+    margin: "0 0 8px",
     fontSize: "13px",
     fontWeight: "600",
     textTransform: "uppercase",
@@ -675,8 +993,9 @@ const styles = {
   },
 
   // ==========================================
-  // SECTION HEADER
+  // SECTION
   // ==========================================
+
   sectionHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -695,6 +1014,7 @@ const styles = {
   // ==========================================
   // BADGES
   // ==========================================
+
   badgeSuccess: {
     backgroundColor: "#dcfce7",
     color: "#15803d",
@@ -718,6 +1038,7 @@ const styles = {
   // ==========================================
   // SKILLS
   // ==========================================
+
   skillTagGrid: {
     display: "flex",
     flexWrap: "wrap",
@@ -750,6 +1071,7 @@ const styles = {
   // ==========================================
   // LIST
   // ==========================================
+
   listContainer: {
     display: "flex",
     flexDirection: "column",
@@ -794,6 +1116,7 @@ const styles = {
   // ==========================================
   // ROADMAP
   // ==========================================
+
   roadmapRow: {
     display: "flex",
     alignItems: "flex-start",
