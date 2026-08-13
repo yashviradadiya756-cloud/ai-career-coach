@@ -1,11 +1,123 @@
 const { GoogleGenAI } = require("@google/genai");
+require("dotenv").config();
+
+// =====================================================
+// GEMINI CLIENT
+// =====================================================
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+if (!GEMINI_API_KEY) {
+  throw new Error(
+    "GEMINI_API_KEY is not configured."
+  );
+}
 
 const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey: GEMINI_API_KEY,
 });
 
 // =====================================================
-// ANALYZE SKILL GAP WITH GEMINI
+// CURRENT GEMINI MODEL
+// =====================================================
+
+const MODEL = "gemini-3.6-flash";
+
+// =====================================================
+// HELPER - EXTRACT JSON
+// =====================================================
+
+const extractJson = (text) => {
+  if (!text) {
+    throw new Error(
+      "Gemini returned an empty response."
+    );
+  }
+
+  let cleanText = text.trim();
+
+  // Remove markdown fences
+  cleanText = cleanText
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  // Try direct JSON parse first
+  try {
+    return JSON.parse(cleanText);
+  } catch (error) {
+    // Continue below
+  }
+
+  // Try extracting JSON object
+  const start = cleanText.indexOf("{");
+  const end = cleanText.lastIndexOf("}");
+
+  if (start === -1 || end === -1) {
+    throw new Error(
+      "Gemini returned invalid JSON."
+    );
+  }
+
+  const jsonText = cleanText.substring(
+    start,
+    end + 1
+  );
+
+  return JSON.parse(jsonText);
+};
+
+// =====================================================
+// NORMALIZE ROADMAP
+// =====================================================
+
+const normalizeRoadmap = (roadmap) => {
+  if (!Array.isArray(roadmap)) {
+    return [];
+  }
+
+  return roadmap
+    .map((item) => {
+      // -----------------------------------------------
+      // Correct format
+      // -----------------------------------------------
+
+      if (
+        item &&
+        typeof item === "object" &&
+        !Array.isArray(item)
+      ) {
+        return {
+          phase: String(
+            item.phase || ""
+          ).trim(),
+
+          duration: String(
+            item.duration || ""
+          ).trim(),
+
+          actionItems:
+            Array.isArray(item.actionItems)
+              ? item.actionItems
+                  .map((action) =>
+                    String(action).trim()
+                  )
+                  .filter(Boolean)
+              : [],
+        };
+      }
+
+      // -----------------------------------------------
+      // Ignore invalid string roadmap entries
+      // -----------------------------------------------
+
+      return null;
+    })
+    .filter(Boolean);
+};
+
+// =====================================================
+// ANALYZE SKILL GAP
 // =====================================================
 
 const analyzeSkillGap = async (
@@ -13,10 +125,27 @@ const analyzeSkillGap = async (
   targetRole
 ) => {
   try {
-    console.log("================================");
-    console.log("GEMINI SKILL GAP ANALYSIS");
-    console.log("TARGET ROLE:", targetRole);
-    console.log("================================");
+    console.log(
+      "================================"
+    );
+
+    console.log(
+      "GEMINI SKILL GAP ANALYSIS"
+    );
+
+    console.log(
+      "MODEL:",
+      MODEL
+    );
+
+    console.log(
+      "TARGET ROLE:",
+      targetRole
+    );
+
+    console.log(
+      "================================"
+    );
 
     const prompt = `
 You are an expert AI Career Coach.
@@ -48,35 +177,33 @@ Identify:
 5. A structured learning roadmap.
 
 ========================
-IMPORTANT OUTPUT RULES
+OUTPUT
 ========================
 
 Return ONLY valid JSON.
 
-Do NOT return Markdown.
+Do not return Markdown.
+Do not use code fences.
+Do not write explanations before or after JSON.
 
-Do NOT use code fences.
-
-Do NOT write explanations before or after JSON.
-
-The JSON MUST exactly follow this structure:
+Use EXACTLY this structure:
 
 {
   "currentSkills": [
-    "skill 1",
-    "skill 2"
+    "React",
+    "JavaScript"
   ],
 
   "missingSkills": [
-    "skill 1",
-    "skill 2"
+    "SEO",
+    "Google Analytics"
   ],
 
   "readinessScore": 70,
 
   "recommendedCourses": [
-    "Course 1",
-    "Course 2"
+    "Google Digital Marketing Course",
+    "Google Analytics Course"
   ],
 
   "roadmap": [
@@ -84,17 +211,17 @@ The JSON MUST exactly follow this structure:
       "phase": "Phase 1: Foundations",
       "duration": "Month 1",
       "actionItems": [
-        "Action item 1",
-        "Action item 2",
-        "Action item 3"
+        "Learn marketing fundamentals",
+        "Learn buyer personas",
+        "Learn conversion funnels"
       ]
     },
     {
       "phase": "Phase 2: Intermediate Skills",
       "duration": "Month 2",
       "actionItems": [
-        "Action item 1",
-        "Action item 2"
+        "Learn SEO",
+        "Learn Google Analytics"
       ]
     }
   ]
@@ -117,164 +244,125 @@ recommendedCourses:
 - MUST be an array of strings.
 
 roadmap:
-- MUST be an array of objects.
+- MUST be an array of OBJECTS.
 
 Every roadmap object MUST contain:
-- phase: string
-- duration: string
-- actionItems: array of strings
 
-Never return roadmap as an array of strings.
+phase:
+- string
 
-Never return roadmap as a single string.
+duration:
+- string
 
-Never return actionItems as a single string.
+actionItems:
+- array of strings
+
+NEVER return roadmap as an array of strings.
+
+NEVER return roadmap as a single string.
+
+NEVER return actionItems as a single string.
 `;
 
-    // ==========================================
+    // =================================================
     // GEMINI REQUEST
-    // ==========================================
+    // =================================================
 
-    const response = await ai.models.generateContent({
-      // Keep your currently working Gemini model here
-      model: "gemini-3.6-flash",
-      contents: prompt,
-    });
+    const response =
+      await ai.models.generateContent({
+        model: MODEL,
+        contents: prompt,
+      });
 
     const text = response.text;
 
-    console.log("================================");
-    console.log("GEMINI RAW RESPONSE");
-    console.log("================================");
+    console.log(
+      "================================"
+    );
+
+    console.log(
+      "GEMINI RAW RESPONSE"
+    );
+
+    console.log(
+      "================================"
+    );
 
     console.log(text);
 
-    if (!text) {
-      throw new Error(
-        "Gemini returned an empty response."
-      );
-    }
+    // =================================================
+    // PARSE
+    // =================================================
 
-    // ==========================================
-    // CLEAN GEMINI RESPONSE
-    // ==========================================
+    const parsedResult =
+      extractJson(text);
 
-    const cleanText = text
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
+    // =================================================
+    // NORMALIZE
+    // =================================================
 
-    const match = cleanText.match(
-      /\{[\s\S]*\}/
+    const readinessScore = Math.min(
+      100,
+      Math.max(
+        0,
+        Number(
+          parsedResult.readinessScore
+        ) || 0
+      )
     );
-
-    if (!match) {
-      throw new Error(
-        "Gemini returned invalid JSON."
-      );
-    }
-
-    // ==========================================
-    // PARSE JSON
-    // ==========================================
-
-    const parsedResult = JSON.parse(
-      match[0]
-    );
-
-    // ==========================================
-    // NORMALIZE RESULT
-    // ==========================================
 
     const normalizedResult = {
       currentSkills:
         Array.isArray(
           parsedResult.currentSkills
         )
-          ? parsedResult.currentSkills.map(
-              String
-            )
+          ? parsedResult.currentSkills
+              .map((item) =>
+                String(item).trim()
+              )
+              .filter(Boolean)
           : [],
 
       missingSkills:
         Array.isArray(
           parsedResult.missingSkills
         )
-          ? parsedResult.missingSkills.map(
-              String
-            )
+          ? parsedResult.missingSkills
+              .map((item) =>
+                String(item).trim()
+              )
+              .filter(Boolean)
           : [],
 
-      readinessScore:
-        Math.min(
-          100,
-          Math.max(
-            0,
-            Number(
-              parsedResult.readinessScore
-            ) || 0
-          )
-        ),
+      readinessScore,
 
       recommendedCourses:
         Array.isArray(
           parsedResult.recommendedCourses
         )
-          ? parsedResult.recommendedCourses.map(
-              String
-            )
-          : [],
-
-      roadmap:
-        Array.isArray(parsedResult.roadmap)
-          ? parsedResult.roadmap
-              .map((item) => {
-                // ----------------------------
-                // Expected object format
-                // ----------------------------
-
-                if (
-                  item &&
-                  typeof item === "object" &&
-                  !Array.isArray(item)
-                ) {
-                  return {
-                    phase:
-                      String(
-                        item.phase || ""
-                      ),
-
-                    duration:
-                      String(
-                        item.duration || ""
-                      ),
-
-                    actionItems:
-                      Array.isArray(
-                        item.actionItems
-                      )
-                        ? item.actionItems.map(
-                            String
-                          )
-                        : [],
-                  };
-                }
-
-                // ----------------------------
-                // If Gemini accidentally sends
-                // a string, ignore it instead
-                // of crashing MongoDB
-                // ----------------------------
-
-                return null;
-              })
+          ? parsedResult.recommendedCourses
+              .map((item) =>
+                String(item).trim()
+              )
               .filter(Boolean)
           : [],
+
+      roadmap: normalizeRoadmap(
+        parsedResult.roadmap
+      ),
     };
 
-    console.log("================================");
-    console.log("NORMALIZED SKILL GAP");
-    console.log("================================");
+    console.log(
+      "================================"
+    );
+
+    console.log(
+      "NORMALIZED SKILL GAP"
+    );
+
+    console.log(
+      "================================"
+    );
 
     console.log(
       JSON.stringify(
@@ -286,12 +374,19 @@ Never return actionItems as a single string.
 
     return normalizedResult;
   } catch (error) {
-    console.error("================================");
+    console.error(
+      "================================"
+    );
+
     console.error(
       "GEMINI SKILL GAP ERROR"
     );
+
     console.error(error);
-    console.error("================================");
+
+    console.error(
+      "================================"
+    );
 
     throw error;
   }

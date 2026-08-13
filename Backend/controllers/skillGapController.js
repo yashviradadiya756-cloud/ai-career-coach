@@ -1,7 +1,8 @@
 const Resume = require("../models/Resume");
 const SkillGap = require("../models/SkillGap");
 
-const analyzeSkillGap = require("../utils/geminiSkillGap");
+const analyzeSkillGap =
+  require("../utils/geminiSkillGap");
 
 // =====================================================
 // ANALYZE SKILL GAP
@@ -12,18 +13,34 @@ const analyzeSkillGapController = async (
   res
 ) => {
   try {
-    console.log("================================");
-    console.log("SKILL GAP REQUEST RECEIVED");
-    console.log("================================");
+    console.log(
+      "================================"
+    );
 
-    console.log("BODY:", req.body);
-    console.log("USER:", req.user?._id);
+    console.log(
+      "SKILL GAP REQUEST RECEIVED"
+    );
 
-    const { targetRole } = req.body;
+    console.log(
+      "================================"
+    );
 
-    // ==========================================
-    // VALIDATE TARGET ROLE
-    // ==========================================
+    console.log(
+      "BODY:",
+      req.body
+    );
+
+    console.log(
+      "USER:",
+      req.user?._id
+    );
+
+    const { targetRole } =
+      req.body || {};
+
+    // =================================================
+    // VALIDATE
+    // =================================================
 
     if (
       typeof targetRole !== "string" ||
@@ -39,14 +56,9 @@ const analyzeSkillGapController = async (
     const cleanTargetRole =
       targetRole.trim();
 
-    console.log(
-      "TARGET ROLE:",
-      cleanTargetRole
-    );
-
-    // ==========================================
-    // FIND LATEST RESUME
-    // ==========================================
+    // =================================================
+    // FIND RESUME
+    // =================================================
 
     const resume =
       await Resume.findOne({
@@ -68,9 +80,9 @@ const analyzeSkillGapController = async (
       resume._id
     );
 
-    // ==========================================
+    // =================================================
     // CHECK RESUME TEXT
-    // ==========================================
+    // =================================================
 
     if (
       !resume.resumeText ||
@@ -83,15 +95,13 @@ const analyzeSkillGapController = async (
       });
     }
 
-    // ==========================================
-    // AI ANALYSIS
-    // ==========================================
+    // =================================================
+    // GEMINI
+    // =================================================
 
-    console.log("================================");
     console.log(
-      "STARTING GEMINI ANALYSIS"
+      "STARTING GEMINI ANALYSIS..."
     );
-    console.log("================================");
 
     const analysis =
       await analyzeSkillGap(
@@ -99,20 +109,50 @@ const analyzeSkillGapController = async (
         cleanTargetRole
       );
 
-    console.log("================================");
-    console.log("AI RESULT");
-    console.log(
-      JSON.stringify(
-        analysis,
-        null,
-        2
+    // =================================================
+    // FINAL NORMALIZATION
+    // =================================================
+
+    const currentSkills =
+      Array.isArray(
+        analysis.currentSkills
+      )
+        ? analysis.currentSkills.map(
+            String
+          )
+        : [];
+
+    const missingSkills =
+      Array.isArray(
+        analysis.missingSkills
+      )
+        ? analysis.missingSkills.map(
+            String
+          )
+        : [];
+
+    const recommendedCourses =
+      Array.isArray(
+        analysis.recommendedCourses
+      )
+        ? analysis.recommendedCourses.map(
+            String
+          )
+        : [];
+
+    const readinessScore = Math.min(
+      100,
+      Math.max(
+        0,
+        Number(
+          analysis.readinessScore
+        ) || 0
       )
     );
-    console.log("================================");
 
-    // ==========================================
-    // NORMALIZE ROADMAP
-    // ==========================================
+    // =================================================
+    // ROADMAP
+    // =================================================
 
     const roadmap =
       Array.isArray(analysis.roadmap)
@@ -120,40 +160,67 @@ const analyzeSkillGapController = async (
             .map((item) => {
               if (
                 !item ||
-                typeof item !==
-                  "object" ||
+                typeof item !== "object" ||
                 Array.isArray(item)
               ) {
                 return null;
               }
 
               return {
-                phase:
-                  String(
-                    item.phase || ""
-                  ),
+                phase: String(
+                  item.phase || ""
+                ).trim(),
 
-                duration:
-                  String(
-                    item.duration || ""
-                  ),
+                duration: String(
+                  item.duration || ""
+                ).trim(),
 
                 actionItems:
                   Array.isArray(
                     item.actionItems
                   )
-                    ? item.actionItems.map(
-                        String
-                      )
+                    ? item.actionItems
+                        .map((action) =>
+                          String(
+                            action
+                          ).trim()
+                        )
+                        .filter(Boolean)
                     : [],
               };
             })
             .filter(Boolean)
         : [];
 
-    // ==========================================
-    // CREATE DATABASE RECORD
-    // ==========================================
+    console.log(
+      "================================"
+    );
+
+    console.log(
+      "FINAL SKILL GAP DATA"
+    );
+
+    console.log(
+      JSON.stringify(
+        {
+          currentSkills,
+          missingSkills,
+          readinessScore,
+          recommendedCourses,
+          roadmap,
+        },
+        null,
+        2
+      )
+    );
+
+    console.log(
+      "================================"
+    );
+
+    // =================================================
+    // SAVE
+    // =================================================
 
     const skillGap =
       await SkillGap.create({
@@ -161,50 +228,28 @@ const analyzeSkillGapController = async (
 
         resume: resume._id,
 
-        targetRole: cleanTargetRole,
+        targetRole:
+          cleanTargetRole,
 
-        currentSkills:
-          Array.isArray(
-            analysis.currentSkills
-          )
-            ? analysis.currentSkills
-            : [],
+        currentSkills,
 
-        missingSkills:
-          Array.isArray(
-            analysis.missingSkills
-          )
-            ? analysis.missingSkills
-            : [],
+        missingSkills,
 
-        readinessScore:
-          Number(
-            analysis.readinessScore
-          ) || 0,
+        readinessScore,
 
-        recommendedCourses:
-          Array.isArray(
-            analysis.recommendedCourses
-          )
-            ? analysis.recommendedCourses
-            : [],
+        recommendedCourses,
 
         roadmap,
       });
 
-    console.log("================================");
     console.log(
-      "SKILL GAP SAVED SUCCESSFULLY"
-    );
-    console.log(
-      "SKILL GAP ID:",
+      "SKILL GAP SAVED:",
       skillGap._id
     );
-    console.log("================================");
 
-    // ==========================================
+    // =================================================
     // RESPONSE
-    // ==========================================
+    // =================================================
 
     return res.status(200).json({
       success: true,
@@ -215,28 +260,60 @@ const analyzeSkillGapController = async (
       skillGap,
     });
   } catch (error) {
-    console.error("================================");
+    console.error(
+      "================================"
+    );
+
     console.error(
       "SKILL GAP ERROR"
     );
+
     console.error(error);
-    console.error("================================");
+
+    console.error(
+      "================================"
+    );
+
+    // =================================================
+    // GEMINI ERROR
+    // =================================================
+
+    const errorMessage =
+      error?.message || "";
 
     if (
-      error.message &&
-      error.message.includes("503")
+      errorMessage.includes(
+        "NOT_FOUND"
+      ) ||
+      errorMessage.includes(
+        "model"
+      )
     ) {
       return res.status(503).json({
         success: false,
         message:
-          "AI service is temporarily busy. Please try again in a few moments.",
+          "Gemini AI model is unavailable. Please check the configured Gemini model.",
+      });
+    }
+
+    if (
+      errorMessage.includes("503") ||
+      errorMessage.includes(
+        "UNAVAILABLE"
+      )
+    ) {
+      return res.status(503).json({
+        success: false,
+        message:
+          "AI service is temporarily busy. Please try again.",
       });
     }
 
     return res.status(500).json({
       success: false,
+
       message:
-        error.message ||
+        errorMessage ||
         "Skill Gap Analysis Failed.",
     });
   }
@@ -251,15 +328,9 @@ const getLatestSkillGap = async (
   res
 ) => {
   try {
-    console.log("================================");
     console.log(
       "GET LATEST SKILL GAP"
     );
-    console.log(
-      "USER:",
-      req.user._id
-    );
-    console.log("================================");
 
     const skillGap =
       await SkillGap.findOne({
@@ -268,28 +339,17 @@ const getLatestSkillGap = async (
         createdAt: -1,
       });
 
-    // ==========================================
-    // NO RESULT
-    // ==========================================
-
     if (!skillGap) {
       return res.status(200).json({
         success: true,
-
         skillGap: null,
-
         message:
           "No Skill Gap Analysis found.",
       });
     }
 
-    // ==========================================
-    // RESULT
-    // ==========================================
-
     return res.status(200).json({
       success: true,
-
       skillGap,
     });
   } catch (error) {
@@ -300,9 +360,8 @@ const getLatestSkillGap = async (
 
     return res.status(500).json({
       success: false,
-
       message:
-        error.message ||
+        error?.message ||
         "Failed to get Skill Gap.",
     });
   }

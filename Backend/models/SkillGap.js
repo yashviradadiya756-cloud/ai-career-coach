@@ -8,11 +8,13 @@ const roadmapItemSchema = new mongoose.Schema(
   {
     phase: {
       type: String,
+      required: true,
       default: "",
     },
 
     duration: {
       type: String,
+      required: true,
       default: "",
     },
 
@@ -32,19 +34,11 @@ const roadmapItemSchema = new mongoose.Schema(
 
 const skillGapSchema = new mongoose.Schema(
   {
-    // ==========================================
-    // USER
-    // ==========================================
-
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
-    // ==========================================
-    // RESUME
-    // ==========================================
 
     resume: {
       type: mongoose.Schema.Types.ObjectId,
@@ -52,37 +46,21 @@ const skillGapSchema = new mongoose.Schema(
       required: true,
     },
 
-    // ==========================================
-    // TARGET ROLE
-    // ==========================================
-
     targetRole: {
       type: String,
       required: true,
       trim: true,
     },
 
-    // ==========================================
-    // CURRENT SKILLS
-    // ==========================================
-
     currentSkills: {
       type: [String],
       default: [],
     },
 
-    // ==========================================
-    // MISSING SKILLS
-    // ==========================================
-
     missingSkills: {
       type: [String],
       default: [],
     },
-
-    // ==========================================
-    // READINESS SCORE
-    // ==========================================
 
     readinessScore: {
       type: Number,
@@ -91,25 +69,26 @@ const skillGapSchema = new mongoose.Schema(
       max: 100,
     },
 
-    // ==========================================
-    // RECOMMENDED COURSES
-    // ==========================================
-
     recommendedCourses: {
       type: [String],
       default: [],
     },
 
-    // ==========================================
-    // ROADMAP
-    // ==========================================
+    // =================================================
+    // IMPORTANT
+    // =================================================
+    // DO NOT use:
+    //
+    // roadmap: [String]
+    //
+    // because roadmap is now an array of objects.
+    // =================================================
 
     roadmap: {
       type: [roadmapItemSchema],
       default: [],
     },
   },
-
   {
     timestamps: true,
   }
