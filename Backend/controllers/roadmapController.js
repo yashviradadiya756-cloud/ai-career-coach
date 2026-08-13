@@ -1,173 +1,72 @@
+const { GoogleGenAI } = require("@google/genai");
+
 const Roadmap = require("../models/Roadmap");
-const Resume = require("../models/Resume");
-const SkillGap = require("../models/SkillGap");
-const Interview = require("../models/Interview");
 
-const {
-  generateContent,
-} = require("../config/gemini");
+// =====================================================
+// GEMINI
+// =====================================================
 
-/* =====================================================
-   GENERATE ROADMAP
-===================================================== */
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
-const generateRoadmapController = async (
-  req,
-  res
-) => {
+// =====================================================
+// GENERATE ROADMAP
+// =====================================================
+
+const generateRoadmapController = async (req, res) => {
   try {
-    const { targetRole } = req.body;
+    console.log("======================================");
+    console.log("ROADMAP GENERATION START");
+    console.log("======================================");
 
-    console.log(
-      "===================================="
-    );
+    console.log("USER:", req.user?._id);
+    console.log("BODY:", req.body);
 
-    console.log(
-      "GENERATE ROADMAP STARTED"
-    );
+    const targetRole = req.body?.targetRole;
 
-    console.log(
-      "USER:",
-      req.user._id.toString()
-    );
+    // ---------------------------------------------------
+    // CHECK USER
+    // ---------------------------------------------------
 
-    console.log(
-      "TARGET ROLE:",
-      targetRole
-    );
+    if (!req.user?._id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
 
-    console.log(
-      "===================================="
-    );
+    // ---------------------------------------------------
+    // CHECK TARGET ROLE
+    // ---------------------------------------------------
 
-    /* =================================================
-       VALIDATE ROLE
-    ================================================= */
-
-    if (
-      !targetRole ||
-      !targetRole.trim()
-    ) {
+    if (!targetRole || !targetRole.trim()) {
       return res.status(400).json({
         success: false,
-
-        message:
-          "Target role is required",
+        message: "Target role is required",
       });
     }
 
-    /* =================================================
-       GET LATEST SKILL GAP
-    ================================================= */
+    const cleanRole = targetRole.trim();
 
-    const latestSkillGap =
-      await SkillGap.findOne({
-        user: req.user._id,
-      }).sort({
-        createdAt: -1,
-      });
+    console.log("TARGET ROLE:", cleanRole);
 
-    console.log(
-      "LATEST SKILL GAP:",
-      latestSkillGap
-        ? latestSkillGap._id
-        : "NONE"
-    );
-
-    /* =================================================
-       CHECK SKILL GAP
-    ================================================= */
-
-    if (!latestSkillGap) {
-      return res.status(404).json({
-        success: false,
-
-        message:
-          "Please complete Skill Gap Analysis before generating a roadmap.",
-      });
-    }
-
-    /* =================================================
-       GET MISSING SKILLS
-    ================================================= */
-
-    let missingSkills = [];
-
-    if (
-      Array.isArray(
-        latestSkillGap.missingSkills
-      )
-    ) {
-      missingSkills =
-        latestSkillGap.missingSkills;
-    }
-
-    console.log(
-      "MISSING SKILLS:"
-    );
-
-    console.log(
-      missingSkills
-    );
-
-    /* =================================================
-       GEMINI PROMPT
-    ================================================= */
+    // ---------------------------------------------------
+    // PROMPT
+    // ---------------------------------------------------
 
     const prompt = `
-You are an expert AI Career Coach.
+You are an expert career roadmap generator.
 
-Create a learning roadmap specifically for the following target role.
+Create a detailed learning roadmap for this target role:
 
-TARGET ROLE:
-${targetRole.trim()}
+${cleanRole}
 
-The candidate's missing skills are:
+The roadmap must focus specifically on the target role.
 
-${
-  missingSkills.length > 0
-    ? missingSkills.join(", ")
-    : "No missing skills available"
-}
+Return ONLY valid JSON.
 
-IMPORTANT RULES:
-
-1. The roadmap MUST be specifically designed for the TARGET ROLE.
-
-2. Do NOT generate a roadmap for another career.
-
-3. If the target role is "Full Stack Developer", generate a Full Stack Developer roadmap.
-
-4. Do NOT generate an AI/ML roadmap unless the target role explicitly contains:
-AI, ML, Machine Learning, or Artificial Intelligence.
-
-5. Use the missing skills to personalize the roadmap.
-
-6. For Full Stack Development, include relevant topics such as:
-frontend,
-backend,
-database,
-APIs,
-authentication,
-deployment,
-testing,
-and projects.
-
-7. Create 5 to 6 phases.
-
-8. Each phase must contain useful topics.
-
-9. Each phase must contain practical projects.
-
-10. Each phase must contain learning resources.
-
-11. Return ONLY valid JSON.
-
-12. Do not use markdown.
-
-13. Do not use code fences.
-
-Return exactly this structure:
+Use exactly this structure:
 
 {
   "roadmapTitle": "string",
@@ -182,156 +81,177 @@ Return exactly this structure:
     }
   ]
 }
+
+Requirements:
+
+- Create 5 to 6 learning phases.
+- The roadmap must be suitable for a Full Stack Developer career when the target role is Full Stack Developer.
+- Include frontend development.
+- Include backend development.
+- Include databases.
+- Include APIs.
+- Include authentication.
+- Include Git/GitHub.
+- Include deployment.
+- Include practical projects.
+- Every phase must have useful topics.
+- Every phase must have practical projects.
+- Every phase must have learning resources.
+- Duration should be realistic.
+- Do not generate AI/ML topics unless the target role explicitly requires them.
+- Do not use markdown.
+- Do not use code fences.
+- Return JSON only.
 `;
 
-    console.log(
-      "GENERATING ROADMAP WITH GEMINI..."
-    );
+    // ---------------------------------------------------
+    // GEMINI REQUEST
+    // ---------------------------------------------------
 
-    /* =================================================
-       GEMINI
-    ================================================= */
+    console.log("Calling Gemini...");
 
-    const response =
-      await generateContent(
-        prompt
-      );
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
 
-    let text =
-      response.text;
+    let text = response.text;
 
-    console.log(
-      "RAW GEMINI RESPONSE:"
-    );
-
+    console.log("RAW GEMINI RESPONSE:");
     console.log(text);
 
-    /* =================================================
-       CLEAN JSON
-    ================================================= */
+    if (!text) {
+      throw new Error("Gemini returned an empty response");
+    }
+
+    // ---------------------------------------------------
+    // CLEAN RESPONSE
+    // ---------------------------------------------------
 
     text = text
-      .replace(/```json/g, "")
+      .replace(/```json/gi, "")
       .replace(/```/g, "")
       .trim();
 
-    const roadmapData =
-      JSON.parse(text);
+    // ---------------------------------------------------
+    // PARSE JSON
+    // ---------------------------------------------------
 
-    /* =================================================
-       VALIDATE
-    ================================================= */
+    let aiRoadmap;
 
-    if (
-      !roadmapData ||
-      !Array.isArray(
-        roadmapData.phases
-      )
-    ) {
-      throw new Error(
-        "Invalid roadmap generated by AI"
-      );
+    try {
+      aiRoadmap = JSON.parse(text);
+    } catch (parseError) {
+      console.error("GEMINI JSON PARSE ERROR:");
+      console.error(parseError);
+      console.error("TEXT:", text);
+
+      return res.status(500).json({
+        success: false,
+        message: "AI returned invalid roadmap data",
+      });
     }
 
-    /* =================================================
-       SAVE ROADMAP
-    ================================================= */
+    console.log("PARSED AI ROADMAP:");
+    console.log(JSON.stringify(aiRoadmap, null, 2));
 
-    const roadmap =
-      await Roadmap.create({
-        user: req.user._id,
+    // ---------------------------------------------------
+    // VALIDATE PHASES
+    // ---------------------------------------------------
 
-        targetRole:
-          targetRole.trim(),
-
-        roadmapTitle:
-          roadmapData.roadmapTitle ||
-          `${targetRole} Career Roadmap`,
-
-        phases:
-          roadmapData.phases.map(
-            (phase) => ({
-              title:
-                phase.title || "",
-
-              duration:
-                phase.duration || "",
-
-              topics:
-                Array.isArray(
-                  phase.topics
-                )
-                  ? phase.topics
-                  : [],
-
-              projects:
-                Array.isArray(
-                  phase.projects
-                )
-                  ? phase.projects
-                  : [],
-
-              resources:
-                Array.isArray(
-                  phase.resources
-                )
-                  ? phase.resources
-                  : [],
-
-              completed:
-                phase.completed ===
-                true,
-            })
-          ),
+    if (
+      !aiRoadmap ||
+      !Array.isArray(aiRoadmap.phases)
+    ) {
+      return res.status(500).json({
+        success: false,
+        message: "AI roadmap does not contain valid phases",
       });
+    }
 
-    console.log(
-      "===================================="
-    );
+    // ---------------------------------------------------
+    // NORMALIZE PHASES
+    // ---------------------------------------------------
 
-    console.log(
-      "ROADMAP SAVED:"
-    );
+    const phases = aiRoadmap.phases.map((phase) => ({
+      title:
+        phase.title ||
+        "Learning Phase",
 
-    console.log(
-      roadmap._id
-    );
+      duration:
+        phase.duration ||
+        "Flexible",
 
-    console.log(
-      "===================================="
-    );
+      topics:
+        Array.isArray(phase.topics)
+          ? phase.topics
+          : [],
 
-    /* =================================================
-       RESPONSE
-    ================================================= */
+      projects:
+        Array.isArray(phase.projects)
+          ? phase.projects
+          : [],
+
+      resources:
+        Array.isArray(phase.resources)
+          ? phase.resources
+          : [],
+
+      completed: false,
+    }));
+
+    // ---------------------------------------------------
+    // DELETE OLD ROADMAP
+    // ---------------------------------------------------
+
+    console.log("Removing previous roadmap...");
+
+    await Roadmap.deleteMany({
+      user: req.user._id,
+    });
+
+    // ---------------------------------------------------
+    // SAVE NEW ROADMAP
+    // ---------------------------------------------------
+
+    console.log("Saving new roadmap to MongoDB...");
+
+    const roadmap = await Roadmap.create({
+      user: req.user._id,
+
+      targetRole: cleanRole,
+
+      roadmapTitle:
+        aiRoadmap.roadmapTitle ||
+        `${cleanRole} Career Roadmap`,
+
+      phases,
+    });
+
+    console.log("ROADMAP SAVED:");
+    console.log(roadmap._id);
+
+    console.log("======================================");
+    console.log("ROADMAP GENERATION SUCCESS");
+    console.log("======================================");
+
+    // ---------------------------------------------------
+    // RESPONSE
+    // ---------------------------------------------------
 
     return res.status(201).json({
       success: true,
-
-      message:
-        "Roadmap generated successfully",
-
+      message: "Roadmap generated successfully",
       roadmap,
     });
-
   } catch (error) {
-    console.error(
-      "===================================="
-    );
-
-    console.error(
-      "ROADMAP GENERATION ERROR:"
-    );
-
+    console.error("======================================");
+    console.error("ROADMAP GENERATION ERROR");
     console.error(error);
-
-    console.error(
-      "===================================="
-    );
+    console.error("======================================");
 
     return res.status(500).json({
       success: false,
-
       message:
         error.message ||
         "Failed to generate roadmap",
@@ -339,59 +259,47 @@ Return exactly this structure:
   }
 };
 
-/* =====================================================
-   GET SAVED ROADMAP
-===================================================== */
+// =====================================================
+// GET ROADMAP
+// =====================================================
 
-const getRoadmapController = async (
-  req,
-  res
-) => {
+const getRoadmapController = async (req, res) => {
   try {
-    console.log(
-      "===================================="
-    );
+    console.log("======================================");
+    console.log("GET ROADMAP");
+    console.log("USER:", req.user?._id);
+    console.log("======================================");
 
-    console.log(
-      "GET ROADMAP"
-    );
-
-    console.log(
-      "USER:",
-      req.user._id.toString()
-    );
-
-    /* =================================================
-       FIND ROADMAP
-    ================================================= */
-
-    const roadmap =
-      await Roadmap.findOne({
-        user: req.user._id,
-      }).sort({
-        createdAt: -1,
-      });
-
-    /* =================================================
-       NO ROADMAP
-    ================================================= */
-
-    if (!roadmap) {
-      console.log(
-        "NO ROADMAP FOUND"
-      );
-
-      return res.status(404).json({
+    if (!req.user?._id) {
+      return res.status(401).json({
         success: false,
-
-        message:
-          "No roadmap found",
+        message: "Authentication required",
       });
     }
 
-    /* =================================================
-       SUCCESS
-    ================================================= */
+    const roadmap = await Roadmap.findOne({
+      user: req.user._id,
+    }).sort({
+      createdAt: -1,
+    });
+
+    // ---------------------------------------------------
+    // NO ROADMAP
+    // ---------------------------------------------------
+
+    if (!roadmap) {
+      console.log("NO ROADMAP FOUND FOR USER");
+
+      return res.status(200).json({
+        success: true,
+        roadmap: null,
+        message: "No roadmap found",
+      });
+    }
+
+    // ---------------------------------------------------
+    // ROADMAP FOUND
+    // ---------------------------------------------------
 
     console.log(
       "ROADMAP FOUND:",
@@ -400,10 +308,8 @@ const getRoadmapController = async (
 
     return res.status(200).json({
       success: true,
-
       roadmap,
     });
-
   } catch (error) {
     console.error(
       "GET ROADMAP ERROR:",
@@ -412,345 +318,89 @@ const getRoadmapController = async (
 
     return res.status(500).json({
       success: false,
-
       message:
+        error.message ||
         "Failed to get roadmap",
     });
   }
 };
 
-/* =====================================================
-   UPDATE PHASE COMPLETION
-===================================================== */
+// =====================================================
+// UPDATE PHASE COMPLETION
+// =====================================================
 
-const updatePhaseCompletionController =
-  async (req, res) => {
-    try {
-      const {
-        phaseId,
-        completed,
-      } = req.body;
-
-      if (!phaseId) {
-        return res.status(400).json({
-          success: false,
-
-          message:
-            "Phase ID is required",
-        });
-      }
-
-      const roadmap =
-        await Roadmap.findOne({
-          user: req.user._id,
-
-          "phases._id": phaseId,
-        });
-
-      if (!roadmap) {
-        return res.status(404).json({
-          success: false,
-
-          message:
-            "Roadmap or phase not found",
-        });
-      }
-
-      const phase =
-        roadmap.phases.id(
-          phaseId
-        );
-
-      phase.completed =
-        completed === true;
-
-      await roadmap.save();
-
-      return res.status(200).json({
-        success: true,
-
-        message:
-          phase.completed
-            ? "Phase marked as completed"
-            : "Phase marked as incomplete",
-
-        roadmap,
-      });
-
-    } catch (error) {
-      console.error(
-        "UPDATE PHASE ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-
-        message:
-          error.message,
-      });
-    }
-  };
-
-/* =====================================================
-   COACH DASHBOARD
-===================================================== */
-
-const getCoachDashboardController =
-  async (req, res) => {
-    try {
-      const latestResume =
-        await Resume.findOne({
-          user: req.user._id,
-        }).sort({
-          createdAt: -1,
-        });
-
-      const resumeScore =
-        latestResume
-          ? Number(
-              latestResume.atsScore
-            ) || 0
-          : 0;
-
-      const latestRoadmap =
-        await Roadmap.findOne({
-          user: req.user._id,
-        }).sort({
-          createdAt: -1,
-        });
-
-      let roadmapProgress = 0;
-
-      if (latestRoadmap) {
-        const phases =
-          latestRoadmap.phases ||
-          [];
-
-        if (phases.length > 0) {
-          const completedPhases =
-            phases.filter(
-              (phase) =>
-                phase.completed ===
-                true
-            ).length;
-
-          roadmapProgress =
-            Math.round(
-              (completedPhases /
-                phases.length) *
-                100
-            );
-        }
-      }
-
-      const interviews =
-        await Interview.find({
-          user: req.user._id,
-        }).sort({
-          createdAt: -1,
-        });
-
-      const scores = [];
-
-      for (const interview of interviews) {
-        let score = null;
-
-        if (
-          interview.score !==
-            undefined &&
-          interview.score !== null
-        ) {
-          score = Number(
-            interview.score
-          );
-        } else if (
-          interview.overallScore !==
-            undefined &&
-          interview.overallScore !==
-            null
-        ) {
-          score = Number(
-            interview.overallScore
-          );
-        } else if (
-          interview.percentage !==
-            undefined &&
-          interview.percentage !==
-            null
-        ) {
-          score = Number(
-            interview.percentage
-          );
-        }
-
-        if (
-          score !== null &&
-          !Number.isNaN(score)
-        ) {
-          score = Math.max(
-            0,
-            Math.min(100, score)
-          );
-
-          scores.push(score);
-        }
-      }
-
-      let interviewScore = 0;
-
-      if (scores.length > 0) {
-        const total =
-          scores.reduce(
-            (sum, score) =>
-              sum + score,
-            0
-          );
-
-        interviewScore =
-          Math.round(
-            total / scores.length
-          );
-      }
-
-      const careerScore =
-        Math.round(
-          (
-            resumeScore +
-            roadmapProgress +
-            interviewScore
-          ) / 3
-        );
-
-      return res.status(200).json({
-        success: true,
-
-        scores: {
-          careerScore,
-          roadmapProgress,
-          resumeScore,
-          interviewScore,
-        },
-      });
-
-    } catch (error) {
-      console.error(
-        "COACH DASHBOARD ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-
-        message:
-          error.message,
-      });
-    }
-  };
-
-/* =====================================================
-   ASK COACH
-===================================================== */
-
-const askCoachController = async (
+const updatePhaseCompletionController = async (
   req,
   res
 ) => {
   try {
-    const { message } =
-      req.body;
+    const { phaseId } = req.params;
+    const { completed } = req.body;
 
-    if (
-      !message ||
-      !message.trim()
-    ) {
-      return res.status(400).json({
+    if (!req.user?._id) {
+      return res.status(401).json({
         success: false,
-
-        message:
-          "Message is required",
+        message: "Authentication required",
       });
     }
 
-    const prompt = `
-You are an AI Career Coach.
+    if (!phaseId) {
+      return res.status(400).json({
+        success: false,
+        message: "Phase ID is required",
+      });
+    }
 
-User question:
-${message}
+    const roadmap = await Roadmap.findOne({
+      user: req.user._id,
+    });
 
-Give a helpful and practical answer related to career development.
-`;
+    if (!roadmap) {
+      return res.status(404).json({
+        success: false,
+        message: "Roadmap not found",
+      });
+    }
 
-    const response =
-      await generateContent(
-        prompt
-      );
+    const phase = roadmap.phases.id(phaseId);
+
+    if (!phase) {
+      return res.status(404).json({
+        success: false,
+        message: "Phase not found",
+      });
+    }
+
+    phase.completed = Boolean(completed);
+
+    await roadmap.save();
 
     return res.status(200).json({
       success: true,
-
-      reply: response.text,
+      message: "Phase updated successfully",
+      roadmap,
     });
-
   } catch (error) {
     console.error(
-      "ASK COACH ERROR:",
+      "PHASE UPDATE ERROR:",
       error
     );
 
     return res.status(500).json({
       success: false,
-
       message:
-        "Failed to get AI Coach response",
+        error.message ||
+        "Failed to update phase",
     });
   }
 };
 
-/* =====================================================
-   COACH HISTORY
-===================================================== */
-
-const getCoachHistoryController =
-  async (req, res) => {
-    try {
-      const roadmaps =
-        await Roadmap.find({
-          user: req.user._id,
-        }).sort({
-          createdAt: -1,
-        });
-
-      return res.status(200).json({
-        success: true,
-
-        roadmaps,
-      });
-
-    } catch (error) {
-      console.error(
-        "COACH HISTORY ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-
-        message:
-          "Failed to get coach history",
-      });
-    }
-  };
-
-/* =====================================================
-   EXPORT
-===================================================== */
+// =====================================================
+// EXPORTS
+// =====================================================
 
 module.exports = {
   generateRoadmapController,
   getRoadmapController,
-  getCoachDashboardController,
-  askCoachController,
-  getCoachHistoryController,
   updatePhaseCompletionController,
 };

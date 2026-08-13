@@ -2,54 +2,25 @@ const express = require("express");
 
 const router = express.Router();
 
-const protect = require("../middleware/authMiddleware");
-
 const {
   generateRoadmapController,
   getRoadmapController,
   updatePhaseCompletionController,
 } = require("../controllers/roadmapController");
 
-console.log(
-  "================================"
-);
+const protect = require("../middleware/authMiddleware");
 
-console.log(
-  "ROADMAP ROUTES LOADED"
-);
+// =====================================================
+// GET SAVED ROADMAP
+// GET /api/roadmap
+// =====================================================
 
-console.log(
-  "generateRoadmapController:",
-  typeof generateRoadmapController
-);
+router.get("/", protect, getRoadmapController);
 
-console.log(
-  "getRoadmapController:",
-  typeof getRoadmapController
-);
-
-console.log(
-  "updatePhaseCompletionController:",
-  typeof updatePhaseCompletionController
-);
-
-console.log(
-  "================================"
-);
-
-/* =====================================================
-   GET SAVED ROADMAP
-===================================================== */
-
-router.get(
-  "/",
-  protect,
-  getRoadmapController
-);
-
-/* =====================================================
-   GENERATE ROADMAP
-===================================================== */
+// =====================================================
+// GENERATE ROADMAP
+// POST /api/roadmap/generate
+// =====================================================
 
 router.post(
   "/generate",
@@ -57,9 +28,10 @@ router.post(
   generateRoadmapController
 );
 
-/* =====================================================
-   UPDATE PHASE
-===================================================== */
+// =====================================================
+// UPDATE PHASE COMPLETION
+// PUT /api/roadmap/phase/:phaseId
+// =====================================================
 
 router.put(
   "/phase/:phaseId",

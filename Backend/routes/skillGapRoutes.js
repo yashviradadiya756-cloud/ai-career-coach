@@ -11,42 +11,31 @@ const {
 
 console.log("================================");
 console.log("SKILL GAP ROUTES LOADED");
-
-console.log(
-  "protect:",
-  typeof protect
-);
-
+console.log("protect:", typeof protect);
 console.log(
   "analyzeSkillGapController:",
   typeof analyzeSkillGapController
 );
-
 console.log(
   "getLatestSkillGap:",
   typeof getLatestSkillGap
 );
-
 console.log("================================");
 
-/* =====================================================
-   TEST
-===================================================== */
+// ======================================================
+// TEST
+// ======================================================
 
-router.get(
-  "/test",
-  (req, res) => {
-    res.json({
-      success: true,
-      message:
-        "Skill Gap API is working",
-    });
-  }
-);
+router.get("/test", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Skill Gap API is working",
+  });
+});
 
-/* =====================================================
-   ANALYZE SKILL GAP
-===================================================== */
+// ======================================================
+// ANALYZE
+// ======================================================
 
 router.post(
   "/analyze",
@@ -54,9 +43,9 @@ router.post(
   analyzeSkillGapController
 );
 
-/* =====================================================
-   GET LATEST SKILL GAP
-===================================================== */
+// ======================================================
+// GET LATEST
+// ======================================================
 
 router.get(
   "/latest",

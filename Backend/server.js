@@ -121,7 +121,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/assessment", assessmentRoutes);
 app.use("/api/resume", resumeRoutes);
-app.use("/api/skill-gap", skillGapRoutes);
+app.use("/api/skillgap", skillGapRoutes);
 app.use("/api/roadmap", roadmapRoutes);
 app.use("/api/interview", interviewRoutes);
 app.use("/api/coach", coachRoutes);
