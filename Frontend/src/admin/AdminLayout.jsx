@@ -7,31 +7,19 @@ import AdminNavbar from "./components/AdminNavbar";
 import "./styles/adminLayout.css";
 
 const AdminLayout = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   return (
-    <div
-      className={`admin-layout ${
-        sidebarCollapsed ? "sidebar-collapsed" : ""
-      }`}
-    >
-      {/* Sidebar */}
-      <AdminSidebar
-        collapsed={sidebarCollapsed}
-        setCollapsed={setSidebarCollapsed}
-      />
+    <div className="admin-layout">
 
-      {/* Main Area */}
-      <div className="admin-main">
-        <AdminNavbar
-          sidebarCollapsed={sidebarCollapsed}
-          setSidebarCollapsed={setSidebarCollapsed}
-        />
+      <AdminSidebar />
 
-        <main className="admin-content">
-          <Outlet />
-        </main>
-      </div>
+      <main className="admin-main">
+
+        <AdminNavbar />
+
+        <Outlet />
+
+      </main>
+
     </div>
   );
 };

@@ -1,761 +1,499 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import {
-  Search,
-  Filter,
-  MoreHorizontal,
-  Eye,
-  Ban,
-  Trash2,
-  UserCheck,
   Users,
-  Crown,
-  UserX,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  UserPlus,
+  Search,
+  RefreshCw,
+  Trash2,
+  ShieldCheck,
+  UserRound,
+  Mail,
+  Phone,
+  CalendarDays,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 
-import AdminUserModal from "../components/AdminUserModal";
+import {
+  getAdminUsers,
+  deleteAdminUser,
+} from "../../api/adminApi";
 
 import "../styles/adminUsers.css";
 
 const AdminUsers = () => {
+  const [users, setUsers] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState("");
+
   const [search, setSearch] = useState("");
 
-  const [statusFilter, setStatusFilter] =
-    useState("All");
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const [planFilter, setPlanFilter] =
-    useState("All");
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  const [currentPage, setCurrentPage] =
-    useState(1);
+  // ==========================================
+  // LOAD USERS
+  // ==========================================
 
-  const [selectedUser, setSelectedUser] =
-    useState(null);
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-  const [openMenu, setOpenMenu] =
-    useState(null);
+      const response = await getAdminUsers();
 
-  const usersPerPage = 7;
+      setUsers(response.data?.users || []);
+    } catch (err) {
+      console.error("Admin users error:", err);
 
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: "Yashvi Radariya",
-      email: "yashvi@example.com",
-      phone: "+91 98765 43210",
-      initials: "YR",
-      role: "Frontend Developer",
-      status: "Active",
-      plan: "Pro",
-      joined: "Aug 10, 2026",
-      coachSessions: 28,
-      resumes: 4,
-      roadmaps: 2,
-      interviews: 5,
-    },
-    {
-      id: 2,
-      name: "Rahul Patel",
-      email: "rahul@example.com",
-      phone: "+91 98254 12345",
-      initials: "RP",
-      role: "Full Stack Developer",
-      status: "Active",
-      plan: "Free",
-      joined: "Aug 09, 2026",
-      coachSessions: 14,
-      resumes: 2,
-      roadmaps: 1,
-      interviews: 2,
-    },
-    {
-      id: 3,
-      name: "Priya Shah",
-      email: "priya@example.com",
-      phone: "+91 98765 67890",
-      initials: "PS",
-      role: "UI/UX Designer",
-      status: "Active",
-      plan: "Pro",
-      joined: "Aug 08, 2026",
-      coachSessions: 35,
-      resumes: 5,
-      roadmaps: 3,
-      interviews: 8,
-    },
-    {
-      id: 4,
-      name: "Aarav Mehta",
-      email: "aarav@example.com",
-      phone: "+91 98980 11122",
-      initials: "AM",
-      role: "Backend Developer",
-      status: "Pending",
-      plan: "Free",
-      joined: "Aug 07, 2026",
-      coachSessions: 5,
-      resumes: 1,
-      roadmaps: 1,
-      interviews: 0,
-    },
-    {
-      id: 5,
-      name: "Neha Patel",
-      email: "neha@example.com",
-      phone: "+91 99090 22233",
-      initials: "NP",
-      role: "Data Analyst",
-      status: "Active",
-      plan: "Pro",
-      joined: "Aug 06, 2026",
-      coachSessions: 21,
-      resumes: 3,
-      roadmaps: 2,
-      interviews: 4,
-    },
-    {
-      id: 6,
-      name: "Dhruv Shah",
-      email: "dhruv@example.com",
-      phone: "+91 98111 33344",
-      initials: "DS",
-      role: "Java Developer",
-      status: "Blocked",
-      plan: "Free",
-      joined: "Aug 05, 2026",
-      coachSessions: 7,
-      resumes: 1,
-      roadmaps: 1,
-      interviews: 1,
-    },
-    {
-      id: 7,
-      name: "Kavya Joshi",
-      email: "kavya@example.com",
-      phone: "+91 98989 44455",
-      initials: "KJ",
-      role: "Software Engineer",
-      status: "Active",
-      plan: "Pro",
-      joined: "Aug 04, 2026",
-      coachSessions: 31,
-      resumes: 4,
-      roadmaps: 2,
-      interviews: 6,
-    },
-    {
-      id: 8,
-      name: "Harsh Trivedi",
-      email: "harsh@example.com",
-      phone: "+91 98787 55566",
-      initials: "HT",
-      role: "React Developer",
-      status: "Active",
-      plan: "Free",
-      joined: "Aug 03, 2026",
-      coachSessions: 12,
-      resumes: 2,
-      roadmaps: 1,
-      interviews: 3,
-    },
-    {
-      id: 9,
-      name: "Riya Desai",
-      email: "riya@example.com",
-      phone: "+91 98666 77788",
-      initials: "RD",
-      role: "Product Designer",
-      status: "Active",
-      plan: "Pro",
-      joined: "Aug 02, 2026",
-      coachSessions: 19,
-      resumes: 3,
-      roadmaps: 2,
-      interviews: 4,
-    },
-    {
-      id: 10,
-      name: "Meet Joshi",
-      email: "meet@example.com",
-      phone: "+91 98555 88899",
-      initials: "MJ",
-      role: "Python Developer",
-      status: "Pending",
-      plan: "Free",
-      joined: "Aug 01, 2026",
-      coachSessions: 3,
-      resumes: 1,
-      roadmaps: 0,
-      interviews: 0,
-    },
-    {
-      id: 11,
-      name: "Anjali Mehta",
-      email: "anjali@example.com",
-      phone: "+91 98444 99900",
-      initials: "AM",
-      role: "Cloud Engineer",
-      status: "Active",
-      plan: "Pro",
-      joined: "Jul 31, 2026",
-      coachSessions: 26,
-      resumes: 3,
-      roadmaps: 2,
-      interviews: 5,
-    },
-    {
-      id: 12,
-      name: "Vivek Patel",
-      email: "vivek@example.com",
-      phone: "+91 98333 10001",
-      initials: "VP",
-      role: "DevOps Engineer",
-      status: "Active",
-      plan: "Free",
-      joined: "Jul 30, 2026",
-      coachSessions: 10,
-      resumes: 2,
-      roadmaps: 1,
-      interviews: 2,
-    },
-  ]);
+      setError(
+        err?.response?.data?.message ||
+          "Failed to load users"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  /* =====================================================
-     FILTER
-  ===================================================== */
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  // ==========================================
+  // SEARCH
+  // ==========================================
 
   const filteredUsers = useMemo(() => {
+    const value = search.toLowerCase().trim();
+
+    if (!value) {
+      return users;
+    }
+
     return users.filter((user) => {
-      const searchMatch =
-        user.name
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        user.email
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        user.role
-          .toLowerCase()
-          .includes(search.toLowerCase());
-
-      const statusMatch =
-        statusFilter === "All" ||
-        user.status === statusFilter;
-
-      const planMatch =
-        planFilter === "All" ||
-        user.plan === planFilter;
-
       return (
-        searchMatch &&
-        statusMatch &&
-        planMatch
+        user.name?.toLowerCase().includes(value) ||
+        user.username?.toLowerCase().includes(value) ||
+        user.email?.toLowerCase().includes(value) ||
+        user.role?.toLowerCase().includes(value)
       );
     });
-  }, [
-    users,
-    search,
-    statusFilter,
-    planFilter,
-  ]);
+  }, [users, search]);
 
-  /* =====================================================
-     PAGINATION
-  ===================================================== */
+  // ==========================================
+  // DELETE
+  // ==========================================
 
-  const totalPages = Math.ceil(
-    filteredUsers.length / usersPerPage
-  );
+  const handleDelete = async () => {
+    if (!selectedUser) return;
 
-  const startIndex =
-    (currentPage - 1) * usersPerPage;
+    try {
+      setDeleteLoading(true);
 
-  const currentUsers = filteredUsers.slice(
-    startIndex,
-    startIndex + usersPerPage
-  );
+      await deleteAdminUser(selectedUser._id);
 
-  /* =====================================================
-     RESET PAGE
-  ===================================================== */
+      setUsers((previousUsers) =>
+        previousUsers.filter(
+          (user) => user._id !== selectedUser._id
+        )
+      );
 
-  const handleSearch = (value) => {
-    setSearch(value);
-    setCurrentPage(1);
+      setSelectedUser(null);
+    } catch (err) {
+      console.error("Delete user error:", err);
+
+      alert(
+        err?.response?.data?.message ||
+          "Failed to delete user"
+      );
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
-  const handleStatusFilter = (value) => {
-    setStatusFilter(value);
-    setCurrentPage(1);
-  };
+  // ==========================================
+  // DATE
+  // ==========================================
 
-  const handlePlanFilter = (value) => {
-    setPlanFilter(value);
-    setCurrentPage(1);
-  };
+  const formatDate = (date) => {
+    if (!date) return "—";
 
-  /* =====================================================
-     BLOCK / UNBLOCK
-  ===================================================== */
-
-  const toggleUserStatus = (id) => {
-    setUsers((previousUsers) =>
-      previousUsers.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status:
-                user.status === "Blocked"
-                  ? "Active"
-                  : "Blocked",
-            }
-          : user
-      )
-    );
-
-    setSelectedUser((previous) => {
-      if (!previous) return null;
-
-      return {
-        ...previous,
-        status:
-          previous.status === "Blocked"
-            ? "Active"
-            : "Blocked",
-      };
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     });
-
-    setOpenMenu(null);
   };
 
-  /* =====================================================
-     DELETE
-  ===================================================== */
+  // ==========================================
+  // LOADING
+  // ==========================================
 
-  const deleteUser = (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this user?"
+  if (loading) {
+    return (
+      <div className="au-page">
+
+        <div className="au-loading">
+
+          <div className="au-spinner"></div>
+
+          <span>
+            Loading users...
+          </span>
+
+        </div>
+
+      </div>
     );
+  }
 
-    if (!confirmDelete) return;
+  // ==========================================
+  // ERROR
+  // ==========================================
 
-    setUsers((previousUsers) =>
-      previousUsers.filter(
-        (user) => user.id !== id
-      )
+  if (error) {
+    return (
+      <div className="au-page">
+
+        <div className="au-error">
+
+          <div className="au-error-icon">
+            <AlertTriangle size={23} />
+          </div>
+
+          <h2>
+            Unable to load users
+          </h2>
+
+          <p>{error}</p>
+
+          <button onClick={loadUsers}>
+            <RefreshCw size={15} />
+            Try Again
+          </button>
+
+        </div>
+
+      </div>
     );
+  }
 
-    setOpenMenu(null);
-  };
-
-  /* =====================================================
-     STATS
-  ===================================================== */
-
-  const totalUsers = users.length;
-
-  const activeUsers = users.filter(
-    (user) => user.status === "Active"
-  ).length;
-
-  const proUsers = users.filter(
-    (user) => user.plan === "Pro"
-  ).length;
-
-  const blockedUsers = users.filter(
-    (user) => user.status === "Blocked"
-  ).length;
+  // ==========================================
+  // PAGE
+  // ==========================================
 
   return (
-    <div className="admin-users-page">
+    <div className="au-page">
 
-      {/* =================================================
+      {/* ======================================
           HEADER
-      ================================================= */}
+      ====================================== */}
 
-      <div className="admin-users-header">
+      <div className="au-header">
 
         <div>
-          <span className="admin-users-eyebrow">
+
+          <span className="au-eyebrow">
             USER MANAGEMENT
           </span>
 
-          <h1>Users</h1>
+          <h1>
+            Users
+          </h1>
 
           <p>
-            Manage CareerPilot users,
-            subscriptions and account access.
+            Manage and monitor registered CareerPilot users.
           </p>
+
         </div>
 
-        <div className="admin-users-header-actions">
+        <button
+          className="au-refresh"
+          onClick={loadUsers}
+        >
+          <RefreshCw size={15} />
+          Refresh
+        </button>
 
-          <button className="admin-users-export">
-            <Download size={16} />
-            Export
-          </button>
+      </div>
 
-          <button className="admin-users-add">
-            <UserPlus size={16} />
-            Add User
-          </button>
+
+      {/* ======================================
+          SUMMARY
+      ====================================== */}
+
+      <div className="au-summary">
+
+        <div className="au-summary-icon">
+          <Users size={20} />
+        </div>
+
+        <div>
+
+          <span>
+            Total registered users
+          </span>
+
+          <strong>
+            {users.length}
+          </strong>
 
         </div>
 
       </div>
 
-      {/* =================================================
-          STATS
-      ================================================= */}
 
-      <div className="admin-users-stats">
+      {/* ======================================
+          TABLE BOX
+      ====================================== */}
 
-        <div className="admin-users-stat">
-          <div className="admin-users-stat-icon blue">
-            <Users size={19} />
-          </div>
+      <div className="au-box">
 
-          <div>
-            <span>Total Users</span>
-            <strong>{totalUsers}</strong>
-          </div>
-        </div>
+        {/* TOOLBAR */}
 
-        <div className="admin-users-stat">
-          <div className="admin-users-stat-icon green">
-            <UserCheck size={19} />
-          </div>
+        <div className="au-toolbar">
 
           <div>
-            <span>Active Users</span>
-            <strong>{activeUsers}</strong>
-          </div>
-        </div>
 
-        <div className="admin-users-stat">
-          <div className="admin-users-stat-icon purple">
-            <Crown size={19} />
-          </div>
+            <h2>
+              All users
+            </h2>
 
-          <div>
-            <span>Pro Users</span>
-            <strong>{proUsers}</strong>
-          </div>
-        </div>
+            <span>
+              {filteredUsers.length} user
+              {filteredUsers.length !== 1 ? "s" : ""}
+            </span>
 
-        <div className="admin-users-stat">
-          <div className="admin-users-stat-icon red">
-            <UserX size={19} />
           </div>
 
-          <div>
-            <span>Blocked</span>
-            <strong>{blockedUsers}</strong>
-          </div>
-        </div>
 
-      </div>
+          <div className="au-search">
 
-      {/* =================================================
-          TABLE CARD
-      ================================================= */}
-
-      <div className="admin-users-table-card">
-
-        {/* Toolbar */}
-
-        <div className="admin-users-toolbar">
-
-          <div className="admin-users-search">
-
-            <Search size={17} />
+            <Search size={16} />
 
             <input
               type="text"
-              placeholder="Search users by name, email or role..."
+              placeholder="Search name, email or username..."
               value={search}
               onChange={(e) =>
-                handleSearch(e.target.value)
+                setSearch(e.target.value)
               }
             />
 
-          </div>
-
-          <div className="admin-users-filters">
-
-            <div className="admin-filter-wrapper">
-              <Filter size={15} />
-
-              <select
-                value={statusFilter}
-                onChange={(e) =>
-                  handleStatusFilter(
-                    e.target.value
-                  )
-                }
+            {search && (
+              <button
+                onClick={() => setSearch("")}
               >
-                <option value="All">
-                  All Status
-                </option>
-
-                <option value="Active">
-                  Active
-                </option>
-
-                <option value="Pending">
-                  Pending
-                </option>
-
-                <option value="Blocked">
-                  Blocked
-                </option>
-              </select>
-            </div>
-
-            <select
-              className="admin-plan-filter"
-              value={planFilter}
-              onChange={(e) =>
-                handlePlanFilter(
-                  e.target.value
-                )
-              }
-            >
-              <option value="All">
-                All Plans
-              </option>
-
-              <option value="Free">
-                Free
-              </option>
-
-              <option value="Pro">
-                Pro
-              </option>
-            </select>
+                <X size={14} />
+              </button>
+            )}
 
           </div>
 
         </div>
 
-        {/* Table */}
 
-        <div className="admin-users-table-wrapper">
+        {/* ====================================
+            TABLE
+        ==================================== */}
 
-          <table className="admin-users-table">
+        <div className="au-table-wrapper">
+
+          <table className="au-table">
 
             <thead>
+
               <tr>
+
                 <th>
-                  <input
-                    type="checkbox"
-                    aria-label="Select all users"
-                  />
+                  USER
                 </th>
 
-                <th>User</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Plan</th>
-                <th>Joined</th>
-                <th>Activity</th>
-                <th></th>
+                <th>
+                  CONTACT
+                </th>
+
+                <th>
+                  ROLE
+                </th>
+
+                <th>
+                  JOINED
+                </th>
+
+                <th>
+                  ACTION
+                </th>
+
               </tr>
+
             </thead>
+
 
             <tbody>
 
-              {currentUsers.length > 0 ? (
-                currentUsers.map((user) => (
-                  <tr key={user.id}>
+              {filteredUsers.length === 0 ? (
 
-                    <td>
-                      <input
-                        type="checkbox"
-                        aria-label={`Select ${user.name}`}
-                      />
-                    </td>
-
-                    {/* User */}
-
-                    <td>
-                      <div className="admin-table-user">
-
-                        <div className="admin-table-avatar">
-                          {user.initials}
-                        </div>
-
-                        <div>
-                          <strong>
-                            {user.name}
-                          </strong>
-
-                          <span>
-                            {user.email}
-                          </span>
-                        </div>
-
-                      </div>
-                    </td>
-
-                    {/* Role */}
-
-                    <td>
-                      <span className="admin-user-role">
-                        {user.role}
-                      </span>
-                    </td>
-
-                    {/* Status */}
-
-                    <td>
-                      <span
-                        className={`admin-table-status ${user.status.toLowerCase()}`}
-                      >
-                        <i></i>
-                        {user.status}
-                      </span>
-                    </td>
-
-                    {/* Plan */}
-
-                    <td>
-                      <span
-                        className={`admin-table-plan ${user.plan.toLowerCase()}`}
-                      >
-                        {user.plan === "Pro" && (
-                          <Crown size={12} />
-                        )}
-
-                        {user.plan}
-                      </span>
-                    </td>
-
-                    {/* Joined */}
-
-                    <td>
-                      <span className="admin-table-date">
-                        {user.joined}
-                      </span>
-                    </td>
-
-                    {/* Activity */}
-
-                    <td>
-                      <div className="admin-table-activity">
-                        <strong>
-                          {user.coachSessions}
-                        </strong>
-
-                        <span>
-                          sessions
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Actions */}
-
-                    <td>
-                      <div className="admin-user-actions">
-
-                        <button
-                          className="admin-more-button"
-                          onClick={() =>
-                            setOpenMenu(
-                              openMenu === user.id
-                                ? null
-                                : user.id
-                            )
-                          }
-                        >
-                          <MoreHorizontal
-                            size={17}
-                          />
-                        </button>
-
-                        {openMenu === user.id && (
-                          <div className="admin-user-menu">
-
-                            <button
-                              onClick={() => {
-                                setSelectedUser(
-                                  user
-                                );
-                                setOpenMenu(null);
-                              }}
-                            >
-                              <Eye size={15} />
-                              View details
-                            </button>
-
-                            <button
-                              onClick={() =>
-                                toggleUserStatus(
-                                  user.id
-                                )
-                              }
-                            >
-                              {user.status ===
-                              "Blocked" ? (
-                                <>
-                                  <UserCheck
-                                    size={15}
-                                  />
-                                  Unblock
-                                </>
-                              ) : (
-                                <>
-                                  <Ban size={15} />
-                                  Block
-                                </>
-                              )}
-                            </button>
-
-                            <div />
-
-                            <button
-                              className="delete"
-                              onClick={() =>
-                                deleteUser(
-                                  user.id
-                                )
-                              }
-                            >
-                              <Trash2
-                                size={15}
-                              />
-                              Delete
-                            </button>
-
-                          </div>
-                        )}
-
-                      </div>
-                    </td>
-
-                  </tr>
-                ))
-              ) : (
                 <tr>
+
                   <td
-                    colSpan="8"
-                    className="admin-empty-users"
+                    colSpan="5"
+                    className="au-empty"
                   >
-                    <Users size={30} />
+
+                    <div className="au-empty-icon">
+                      <Users size={23} />
+                    </div>
 
                     <strong>
                       No users found
                     </strong>
 
                     <span>
-                      Try changing your search
-                      or filters.
+                      Try another search term.
                     </span>
+
                   </td>
+
                 </tr>
+
+              ) : (
+
+                filteredUsers.map((user) => (
+
+                  <tr key={user._id}>
+
+                    {/* USER */}
+
+                    <td>
+
+                      <div className="au-user">
+
+                        <div className="au-avatar">
+
+                          {user.name
+                            ?.charAt(0)
+                            ?.toUpperCase() || "U"}
+
+                        </div>
+
+                        <div>
+
+                          <strong>
+                            {user.name || "Unnamed user"}
+                          </strong>
+
+                          <span>
+                            @{user.username || "username"}
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                    </td>
+
+
+                    {/* CONTACT */}
+
+                    <td>
+
+                      <div className="au-contact">
+
+                        <span>
+                          <Mail size={13} />
+                          {user.email}
+                        </span>
+
+                        {user.phone && (
+                          <span>
+                            <Phone size={13} />
+                            {user.phone}
+                          </span>
+                        )}
+
+                      </div>
+
+                    </td>
+
+
+                    {/* ROLE */}
+
+                    <td>
+
+                      {user.role === "admin" ? (
+
+                        <span className="au-role admin">
+
+                          <ShieldCheck size={13} />
+
+                          Admin
+
+                        </span>
+
+                      ) : (
+
+                        <span className="au-role user">
+
+                          <UserRound size={13} />
+
+                          User
+
+                        </span>
+
+                      )}
+
+                    </td>
+
+
+                    {/* DATE */}
+
+                    <td>
+
+                      <div className="au-date">
+
+                        <CalendarDays size={13} />
+
+                        {formatDate(user.createdAt)}
+
+                      </div>
+
+                    </td>
+
+
+                    {/* ACTION */}
+
+                    <td>
+
+                      {user.role === "admin" ? (
+
+                        <span className="au-protected">
+                          Protected
+                        </span>
+
+                      ) : (
+
+                        <button
+                          className="au-delete"
+                          onClick={() =>
+                            setSelectedUser(user)
+                          }
+                          title="Delete user"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+
+                      )}
+
+                    </td>
+
+                  </tr>
+
+                ))
+
               )}
 
             </tbody>
@@ -764,95 +502,85 @@ const AdminUsers = () => {
 
         </div>
 
-        {/* Pagination */}
+      </div>
 
-        <div className="admin-users-pagination">
 
-          <span>
-            Showing{" "}
-            <strong>
-              {filteredUsers.length === 0
-                ? 0
-                : startIndex + 1}
-            </strong>{" "}
-            to{" "}
-            <strong>
-              {Math.min(
-                startIndex + usersPerPage,
-                filteredUsers.length
-              )}
-            </strong>{" "}
-            of{" "}
-            <strong>
-              {filteredUsers.length}
-            </strong>{" "}
-            users
-          </span>
+      {/* ======================================
+          DELETE MODAL
+      ====================================== */}
 
-          <div className="admin-pagination-buttons">
+      {selectedUser && (
+
+        <div className="au-modal-overlay">
+
+          <div className="au-modal">
 
             <button
-              disabled={currentPage === 1}
+              className="au-modal-close"
               onClick={() =>
-                setCurrentPage(
-                  currentPage - 1
-                )
+                setSelectedUser(null)
               }
             >
-              <ChevronLeft size={15} />
+              <X size={17} />
             </button>
 
-            {Array.from(
-              { length: totalPages },
-              (_, index) => index + 1
-            ).map((page) => (
+
+            <div className="au-modal-icon">
+              <Trash2 size={22} />
+            </div>
+
+
+            <h2>
+              Delete user?
+            </h2>
+
+            <p>
+              Are you sure you want to delete{" "}
+              <strong>
+                {selectedUser.name}
+              </strong>
+              ? This action cannot be undone.
+            </p>
+
+
+            <div className="au-modal-actions">
+
               <button
-                key={page}
-                className={
-                  currentPage === page
-                    ? "active"
-                    : ""
-                }
+                className="au-cancel"
                 onClick={() =>
-                  setCurrentPage(page)
+                  setSelectedUser(null)
                 }
+                disabled={deleteLoading}
               >
-                {page}
+                Cancel
               </button>
-            ))}
 
-            <button
-              disabled={
-                currentPage === totalPages ||
-                totalPages === 0
-              }
-              onClick={() =>
-                setCurrentPage(
-                  currentPage + 1
-                )
-              }
-            >
-              <ChevronRight size={15} />
-            </button>
+              <button
+                className="au-confirm-delete"
+                onClick={handleDelete}
+                disabled={deleteLoading}
+              >
+
+                {deleteLoading ? (
+                  <>
+                    <span className="au-small-spinner"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={15} />
+                    Delete User
+                  </>
+                )}
+
+              </button>
+
+            </div>
 
           </div>
 
         </div>
 
-      </div>
-
-      {/* User Modal */}
-
-      {selectedUser && (
-        <AdminUserModal
-          user={selectedUser}
-          onClose={() =>
-            setSelectedUser(null)
-          }
-          onToggleStatus={
-            toggleUserStatus
-          }
-        />
       )}
 
     </div>

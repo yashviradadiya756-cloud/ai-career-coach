@@ -3,8 +3,14 @@ const User = require("../models/User");
 
 const protect = async (req, res, next) => {
   try {
+    console.log("========== AUTH START ==========");
 
     const authHeader = req.headers.authorization;
+
+    console.log(
+      "Authorization exists:",
+      !!authHeader
+    );
 
     if (
       !authHeader ||
@@ -12,38 +18,65 @@ const protect = async (req, res, next) => {
     ) {
       return res.status(401).json({
         success: false,
-        message: "Not authorized",
+        message: "Authentication required",
       });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token =
+      authHeader.split(" ")[1];
+
+    console.log(
+      "Token exists:",
+      !!token
+    );
 
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET
     );
 
-    req.user = await User.findById(decoded.id)
-      .select("-password");
+    console.log(
+      "JWT DECODED:",
+      decoded
+    );
 
-    if (!req.user) {
+    const user = await User.findById(
+      decoded.id
+    ).select("-password");
+
+    console.log(
+      "DATABASE USER:",
+      user
+    );
+
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: "User not found",
       });
     }
 
+    req.user = user;
+
+    console.log(
+      "REQ.USER ROLE:",
+      req.user.role
+    );
+
+    console.log("========== AUTH END ==========");
+
     next();
 
   } catch (error) {
-
-    console.error("Auth Middleware Error:", error.message);
+    console.error(
+      "AUTH ERROR:",
+      error.message
+    );
 
     return res.status(401).json({
       success: false,
       message: "Invalid or expired token",
     });
-
   }
 };
 

@@ -14,62 +14,37 @@ const {
   getAdminFeedback,
 } = require("../controllers/adminController");
 
-
-// ==========================================
-// ADMIN PROTECTION
-// ==========================================
-
 router.use(protect);
 router.use(adminMiddleware);
 
+router.get(
+  "/dashboard",
+  getAdminDashboard
+);
 
-// ==========================================
-// DASHBOARD
-// ==========================================
-
-router.get("/dashboard", getAdminDashboard);
-
-
-// ==========================================
-// USERS
-// ==========================================
-
-router.get("/users", getAdminUsers);
+router.get(
+  "/users",
+  getAdminUsers
+);
 
 router.delete(
   "/users/:id",
   deleteAdminUser
 );
 
-
-// ==========================================
-// RESUMES
-// ==========================================
-
 router.get(
   "/resumes",
   getAdminResumes
 );
-
-
-// ==========================================
-// PAYMENTS
-// ==========================================
 
 router.get(
   "/payments",
   getAdminPayments
 );
 
-
-// ==========================================
-// FEEDBACK
-// ==========================================
-
 router.get(
   "/feedback",
   getAdminFeedback
 );
-
 
 module.exports = router;

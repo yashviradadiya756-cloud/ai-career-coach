@@ -64,7 +64,10 @@ export const AuthProvider = ({ children }) => {
       // Save user in state + localStorage
       saveUserData(userData);
 
-      return res.data;
+      return {
+      ...res.data,
+      user: userData,
+    };
     } catch (error) {
       console.error("Login error:", error);
       throw error;

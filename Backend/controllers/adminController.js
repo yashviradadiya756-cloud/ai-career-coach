@@ -1,5 +1,5 @@
 const User = require("../models/User");
-
+const Resume = require("../models/Resume");
 
 // ==========================================
 // ADMIN DASHBOARD
@@ -120,18 +120,83 @@ const deleteAdminUser = async (req, res) => {
 
 
 // ==========================================
-// RESUMES
+// ADMIN RESUMES
 // ==========================================
 
 const getAdminResumes = async (req, res) => {
   try {
+    const resumes = await Resume.find()
+      .populate(
+        "user",
+        "name username email"
+      )
+      .sort({
+        createdAt: -1,
+      });
+
+    const formattedResumes = resumes.map(
+      (resume) => ({
+        _id: resume._id,
+
+        fileName:
+          resume.fileName || "Unnamed Resume",
+
+        filePath:
+          resume.filePath || "",
+
+        atsScore:
+          typeof resume.atsScore === "number"
+            ? resume.atsScore
+            : 0,
+
+        strengths:
+          Array.isArray(resume.strengths)
+            ? resume.strengths
+            : [],
+
+        weaknesses:
+          Array.isArray(resume.weaknesses)
+            ? resume.weaknesses
+            : [],
+
+        missingSkills:
+          Array.isArray(resume.missingSkills)
+            ? resume.missingSkills
+            : [],
+
+        suggestions:
+          Array.isArray(resume.suggestions)
+            ? resume.suggestions
+            : [],
+
+        createdAt:
+          resume.createdAt,
+
+        user: resume.user
+          ? {
+              _id: resume.user._id,
+              name:
+                resume.user.name ||
+                resume.user.username ||
+                "Unknown User",
+              username:
+                resume.user.username || "",
+              email:
+                resume.user.email || "",
+            }
+          : null,
+      })
+    );
 
     res.status(200).json({
       success: true,
-      resumes: [],
+      resumes: formattedResumes,
     });
-
   } catch (error) {
+    console.error(
+      "Admin resumes error:",
+      error
+    );
 
     res.status(500).json({
       success: false,

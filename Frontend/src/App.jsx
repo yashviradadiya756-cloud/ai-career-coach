@@ -30,6 +30,9 @@ import Payment from "./dashboard/pages/Payment";
 import Notification from "./dashboard/pages/Notification";
 import Settings from "./dashboard/pages/Settings";
 
+import AdminProtectedRoute from "./admin/components/AdminProtectedRoute";
+import AdminLogin from "./admin/pages/AdminLogin";
+
 import AdminLayout from "./admin/AdminLayout";
 import AdminDashboard from "./admin/pages/AdminDashboard";
 import AdminUsers from "./admin/pages/AdminUsers";
@@ -118,22 +121,22 @@ function App() {
         <Route path="notification" element={<Notification />} />
         <Route path="payment" element={<Payment />} />
         <Route path="settings" element={<Settings />} />
-    </Route>   
+        </Route>   
 
 
       {/* Admin */}
+      <Route path="/admin/login" element={<AdminLogin />}/>
+      <Route path="/admin/*" element={
+      <AdminProtectedRoute>
+        <AdminLayout />
+      </AdminProtectedRoute> }/>
+
       <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-        <Route path="users" element={<AdminUsers />}/>
-        <Route path="ai-coach" element={<AdminAICoach />}/>
-        <Route
-    path="resumes"
-    element={<AdminResumes />}
-  />
-  <Route
-    path="roadmaps"
-    element={<AdminRoadmaps />}
-  />
+      <Route index element={<AdminDashboard />} />
+      <Route path="users" element={<AdminUsers />}/>
+      <Route path="ai-coach" element={<AdminAICoach />}/>
+      <Route path="resumes" element={<AdminResumes />}/>
+      <Route path="roadmaps" element={<AdminRoadmaps />}/>
       </Route>
 
       {/* Admin Login */}
