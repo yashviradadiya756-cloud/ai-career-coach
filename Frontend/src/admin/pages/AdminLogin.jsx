@@ -34,140 +34,110 @@ const AdminLogin = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    setError("");
+  setError("");
+  setLoading(true);
 
-    if (!formData.email.trim()) {
-      setError("Please enter admin email.");
-      return;
-    }
+  try {
+    console.log("========== ADMIN LOGIN ==========");
 
-    if (!formData.password) {
-      setError("Please enter password.");
-      return;
-    }
+    const response = await loginUser({
+      email,
+      password,
+    });
 
-    try {
-      setLoading(true);
+    console.log(
+      "ADMIN LOGIN RESPONSE:",
+      response.data
+    );
 
-      // Clear old sessions
-      localStorage.removeItem("token");
-      localStorage.removeItem("adminToken");
-      localStorage.removeItem("adminUser");
+    // Declare data ONLY ONCE
+    const data = response.data;
 
-      console.log("========== ADMIN LOGIN ==========");
+    const adminUser = data.user;
 
-      const response = await loginUser({
-        email: formData.email.trim(),
-        password: formData.password,
-      });
+    console.log(
+      "ADMIN USER OBJECT:",
+      adminUser
+    );
 
-      console.log(
-        "ADMIN LOGIN RESPONSE:",
-        response.data
-      );
+    console.log(
+      "ADMIN USER ID:",
+      adminUser?._id
+    );
 
-      const data = response.data;
-      console.log("ADMIN USER OBJECT:", data.user);
-      console.log("ADMIN USER ID:", data.user?._id);
-      console.log("ADMIN USER EMAIL:", data.user?.email);
-      console.log("ADMIN USER ROLE:", data.user?.role);
-      console.log("ADMIN ROLE TYPE:", typeof data.user?.role);
+    console.log(
+      "ADMIN USER EMAIL:",
+      adminUser?.email
+    );
 
-      if (!data?.success) {
-        setError(
-          data?.message || "Admin login failed."
-        );
-        return;
-      }
+    console.log(
+      "ADMIN USER ROLE:",
+      adminUser?.role
+    );
 
-      // Check role
-      if (data?.user?.role !== "admin") {
-        setError(
-          "This account does not have administrator access."
-        );
-        return;
-      }
+    // ==========================================
+    // CHECK ADMIN ROLE
+    // ==========================================
 
-      // Check token
-      if (!data?.token) {
-        setError(
-          "Login successful, but token was not received."
-        );
-        return;
-      }
-
-      // ==========================================
-      // SAVE ADMIN SESSION
-      // ==========================================
-
-      localStorage.setItem(
-        "adminToken",
-        data.token
-      );
-
-      localStorage.setItem(
-        "adminUser",
-        JSON.stringify(data.user)
-      );
-
-      console.log(
-        "ADMIN TOKEN SAVED:",
-        !!localStorage.getItem("adminToken")
-      );
-
-      console.log(
-        "ADMIN USER SAVED:",
-        JSON.parse(
-          localStorage.getItem("adminUser")
-        )
-      );
-
-      // ==========================================
-      // VERIFY BEFORE NAVIGATION
-      // ==========================================
-
-      const savedToken =
-        localStorage.getItem("adminToken");
-
-      const savedUser =
-        localStorage.getItem("adminUser");
-
-      if (!savedToken || !savedUser) {
-        setError(
-          "Admin session could not be saved. Please try again."
-        );
-        return;
-      }
-
-      console.log(
-        "ADMIN SESSION READY"
-      );
-
-      console.log(
-        "================================"
-      );
-
-      // Go to admin dashboard
-      navigate("/admin", {
-        replace: true,
-      });
-
-    } catch (err) {
-      console.error(
-        "ADMIN LOGIN ERROR:",
-        err
-      );
-
+    if (adminUser?.role !== "admin") {
       setError(
-        err?.response?.data?.message ||
-        "Unable to login as administrator."
+        "This account does not have administrator access."
       );
-    } finally {
-      setLoading(false);
+
+      return;
     }
-  };
+
+    // ==========================================
+    // SAVE ADMIN AUTH
+    // ==========================================
+
+    localStorage.setItem(
+      "adminToken",
+      data.token
+    );
+
+    localStorage.setItem(
+      "adminUser",
+      JSON.stringify(adminUser)
+    );
+
+    console.log(
+      "ADMIN TOKEN SAVED:",
+      !!localStorage.getItem("adminToken")
+    );
+
+    console.log(
+      "ADMIN USER SAVED:",
+      JSON.parse(
+        localStorage.getItem("adminUser")
+      )
+    );
+
+    // ==========================================
+    // GO TO ADMIN DASHBOARD
+    // ==========================================
+
+    navigate("/admin", {
+      replace: true,
+    });
+
+  } catch (error) {
+    console.error(
+      "ADMIN LOGIN ERROR:",
+      error
+    );
+
+    setError(
+      error?.response?.data?.message ||
+      "Admin login failed"
+    );
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="admin-login-page">

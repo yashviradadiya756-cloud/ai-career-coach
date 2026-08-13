@@ -2,12 +2,12 @@ const Resume = require("../models/Resume");
 const extractResumeText = require("../utils/pdfParser");
 const analyzeResume = require("../utils/geminiResumeAnalyzer");
 
+// ======================================================
+// UPLOAD RESUME
+// ======================================================
 
-// Upload Resume
 const uploadResume = async (req, res) => {
-
   try {
-
     console.log("Step 1: File received");
 
     if (!req.file) {
@@ -19,14 +19,21 @@ const uploadResume = async (req, res) => {
 
     console.log("Step 2: Extracting PDF");
 
-    const resumeText = await extractResumeText(req.file.path);
+    const resumeText = await extractResumeText(
+      req.file.path
+    );
 
     console.log("Step 3: Resume extracted");
-    console.log(resumeText.substring(0, 200));
+
+    console.log(
+      resumeText.substring(0, 200)
+    );
 
     console.log("Step 4: Calling Gemini");
 
-    const analysis = await analyzeResume(resumeText);
+    const analysis = await analyzeResume(
+      resumeText
+    );
 
     console.log("Step 5: Gemini Result");
     console.log(analysis);
@@ -34,28 +41,32 @@ const uploadResume = async (req, res) => {
     console.log("Step 6: Saving MongoDB");
 
     const resume = await Resume.create({
-
       user: req.user._id,
 
       fileName: req.file.originalname,
 
       filePath: req.file.path,
 
-      resumeText,
+      resumeText: resumeText,
 
-      atsScore: analysis.atsScore,
+      atsScore: analysis.atsScore || 0,
 
-      strengths: analysis.strengths,
+      strengths:
+        analysis.strengths || [],
 
-      weaknesses: analysis.weaknesses,
+      weaknesses:
+        analysis.weaknesses || [],
 
-      missingSkills: analysis.missingSkills,
+      missingSkills:
+        analysis.missingSkills || [],
 
-      suggestions: analysis.suggestions,
-
+      suggestions:
+        analysis.suggestions || [],
     });
 
-    console.log("Step 7: Saved");
+    console.log(
+      "Step 7: Resume saved in MongoDB"
+    );
 
     return res.status(201).json({
       success: true,
@@ -63,41 +74,40 @@ const uploadResume = async (req, res) => {
     });
 
   } catch (error) {
-
-    console.error("UPLOAD ERROR:");
-    console.error(error);
+    console.error(
+      "UPLOAD ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
-
 };
 
+// ======================================================
+// GET LATEST USER RESUME
+// ======================================================
 
-// Get Latest Resume
-const getLatestResume = async (req, res) => {
-
+const getLatestResume = async (
+  req,
+  res
+) => {
   try {
-
-    const resume = await Resume.findOne({
-      user: req.user._id,
-    }).sort({
-      createdAt: -1,
-    });
-
+    const resume =
+      await Resume.findOne({
+        user: req.user._id,
+      }).sort({
+        createdAt: -1,
+      });
 
     if (!resume) {
-
       return res.status(404).json({
         success: false,
         message: "No resume found",
       });
-
     }
-
 
     return res.status(200).json({
       success: true,
@@ -105,18 +115,17 @@ const getLatestResume = async (req, res) => {
     });
 
   } catch (error) {
-
-    console.error("Get Latest Resume Error:", error);
+    console.error(
+      "Get Latest Resume Error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
-
 };
-
 
 module.exports = {
   uploadResume,

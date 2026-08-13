@@ -25,11 +25,15 @@ const SkillGap = () => {
 
       const response = await getLatestSkillGap();
 
-      console.log("Skill Gap response:", response);
+      console.log("Skill Gap RAW response:", response);
 
-      if (response?.success && response?.skillGap) {
-        setSkillGap(response.skillGap);
-        setTargetRole(response.skillGap.targetRole || "");
+      const data = response?.data || response;
+
+      console.log("Skill Gap NORMALIZED response:", data);
+
+      if (data?.success && data?.skillGap) {
+        setSkillGap(data.skillGap);
+        setTargetRole(data.skillGap.targetRole || "");
       } else {
         setSkillGap(null);
       }
@@ -66,18 +70,33 @@ const SkillGap = () => {
       setError("");
 
       console.log("Analyzing Skill Gap for:", targetRole);
+      const response = await analyzeSkillGap(
+      targetRole.trim()
+    );
 
-      const response = await analyzeSkillGap(targetRole.trim());
+    console.log(
+      "Skill Gap Analyze RAW Result:",
+      response
+    );
 
-      console.log("Skill Gap Analyze Result:", response);
+    const data = response?.data || response;
 
-      if (response?.success && response?.skillGap) {
-        setSkillGap(response.skillGap);
-      } else {
-        setError(
-          response?.message || "Skill Gap Analysis failed."
-        );
-      }
+    console.log(
+      "Skill Gap Analyze NORMALIZED Result:",
+      data
+    );
+
+    if (data?.success && data?.skillGap) {
+      setSkillGap(data.skillGap);
+      setTargetRole(
+        data.skillGap.targetRole || targetRole
+      );
+    } else {
+      setError(
+        data?.message ||
+          "Skill Gap Analysis failed."
+      );
+    }
     } catch (error) {
       console.error(
         "Skill Gap Analyze Error:",

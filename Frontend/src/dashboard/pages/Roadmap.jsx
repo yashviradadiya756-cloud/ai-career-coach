@@ -109,48 +109,42 @@ export default function Roadmap() {
   // ======================================================
 
   const loadRoadmap = async () => {
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      console.log(
-        "STEP 1: Loading saved roadmap..."
-      );
+    console.log("STEP 1: Loading saved roadmap...");
 
-      const response = await getRoadmap();
+    const response = await getRoadmap();
 
-      console.log(
-        "STEP 2: Saved roadmap response:",
-        response.data
-      );
+    console.log("STEP 2: Saved roadmap raw response:", response);
 
-      if (
-        response.data?.success &&
-        response.data?.roadmap
-      ) {
-        console.log(
-          "STEP 3: Saved roadmap found:",
-          response.data.roadmap
-        );
+    // Support both:
+    // response.data
+    // response
+    const data = response?.data || response;
 
-        setRoadmap(response.data.roadmap);
-      } else {
-        console.log(
-          "STEP 3: No saved roadmap found"
-        );
+    console.log("STEP 3: Normalized roadmap response:", data);
 
-        setRoadmap(null);
-      }
-    } catch (error) {
-      console.error(
-        "GET ROADMAP ERROR:",
-        error.response?.data || error.message
-      );
+    if (data?.success && data?.roadmap) {
+      console.log("STEP 4: Saved roadmap found:", data.roadmap);
+
+      setRoadmap(data.roadmap);
+    } else {
+      console.log("STEP 4: No saved roadmap found");
 
       setRoadmap(null);
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error(
+      "GET ROADMAP ERROR:",
+      error.response?.data || error.message
+    );
+
+    setRoadmap(null);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ======================================================
   // INITIAL LOAD
@@ -165,116 +159,203 @@ export default function Roadmap() {
   // ======================================================
 
   const handleGenerate = async () => {
-    if (generating) return;
+  if (generating) return;
 
-    try {
-      setGenerating(true);
+  try {
+    setGenerating(true);
 
+    console.log("====================================");
+    console.log("ROADMAP GENERATION STARTED");
+    console.log("====================================");
+
+    // ==========================================
+    // STEP 1: GET LATEST SKILL GAP
+    // ==========================================
+
+    console.log("STEP 1: Getting latest skill gap...");
+
+    const skillGapResponse = await getLatestSkillGap();
+
+    console.log(
+      "STEP 1 RAW RESPONSE:",
+      skillGapResponse
+    );
+
+    console.log(
+      "STEP 1 RESPONSE.DATA:",
+      skillGapResponse?.data
+    );
+
+    // IMPORTANT:
+    // Support both axios response formats
+    const skillGapData =
+      skillGapResponse?.data || skillGapResponse;
+
+    console.log(
+      "STEP 1 NORMALIZED DATA:",
+      skillGapData
+    );
+
+    // ==========================================
+    // STEP 2: GET SKILL GAP OBJECT
+    // ==========================================
+
+    const latestSkillGap =
+      skillGapData?.skillGap ||
+      skillGapResponse?.skillGap;
+
+    console.log(
+      "STEP 2: Latest Skill Gap:",
+      latestSkillGap
+    );
+
+    // ==========================================
+    // CHECK SKILL GAP
+    // ==========================================
+
+    if (!latestSkillGap) {
+      alert(
+        "No Skill Gap Analysis found. Please complete Skill Gap Analysis first."
+      );
+      return;
+    }
+
+    // ==========================================
+    // STEP 3: GET TARGET ROLE
+    // ==========================================
+
+    const role =
+      latestSkillGap.targetRole ||
+      latestSkillGap.target_role;
+
+    console.log(
+      "STEP 3: Target Role:",
+      role
+    );
+
+    if (!role || !role.trim()) {
+      alert(
+        "Target role not found in Skill Gap Analysis. Please analyze your Skill Gap again."
+      );
+      return;
+    }
+
+    // ==========================================
+    // STEP 4: CHECK MISSING SKILLS
+    // ==========================================
+
+    const missingSkills =
+      Array.isArray(latestSkillGap.missingSkills)
+        ? latestSkillGap.missingSkills
+        : [];
+
+    const currentSkills =
+      Array.isArray(latestSkillGap.currentSkills)
+        ? latestSkillGap.currentSkills
+        : [];
+
+    console.log(
+      "STEP 4: Current Skills:",
+      currentSkills
+    );
+
+    console.log(
+      "STEP 4: Missing Skills:",
+      missingSkills
+    );
+
+    // ==========================================
+    // STEP 5: GENERATE ROADMAP
+    // ==========================================
+
+    console.log(
+      "STEP 5: Calling generateRoadmap API..."
+    );
+
+    const response = await generateRoadmap(
+      role.trim()
+    );
+
+    console.log(
+      "STEP 6: Roadmap RAW RESPONSE:",
+      response
+    );
+
+    console.log(
+      "STEP 6: Roadmap response.data:",
+      response?.data
+    );
+
+    // ==========================================
+    // STEP 7: NORMALIZE RESPONSE
+    // ==========================================
+
+    const roadmapData =
+      response?.data || response;
+
+    console.log(
+      "STEP 7: Normalized Roadmap Data:",
+      roadmapData
+    );
+
+    if (
+      roadmapData?.success &&
+      roadmapData?.roadmap
+    ) {
       console.log(
-        "STEP 1: Getting latest skill gap..."
+        "STEP 8: ROADMAP GENERATED SUCCESSFULLY:",
+        roadmapData.roadmap
       );
 
-      const skillGapResponse =
-        await getLatestSkillGap();
+      setRoadmap(roadmapData.roadmap);
 
-      console.log(
-        "STEP 1 RESPONSE:",
-        skillGapResponse.data
+      alert(
+        "Roadmap Generated Successfully!"
       );
-
-      const latestSkillGap =
-        skillGapResponse.data?.skillGap;
-
-      if (!latestSkillGap) {
-        alert(
-          "Please complete Skill Gap Analysis first."
-        );
-        return;
-      }
-
-      const role = latestSkillGap.targetRole;
-
-      if (!role) {
-        alert(
-          "Target role not found. Please analyze your Skill Gap again."
-        );
-        return;
-      }
-
-      console.log(
-        "STEP 2: Target Role:",
-        role
-      );
-
-      console.log(
-        "STEP 3: Calling roadmap generate API..."
-      );
-
-      const response = await generateRoadmap(role);
-
-      console.log(
-        "STEP 4: Generate API response:",
-        response.data
-      );
-
-      if (
-        response.data?.success &&
-        response.data?.roadmap
-      ) {
-        console.log(
-          "STEP 5: ROADMAP SUCCESS:",
-          response.data.roadmap
-        );
-
-        setRoadmap(response.data.roadmap);
-
-        alert(
-          "Roadmap Generated Successfully!"
-        );
-      } else {
-        console.error(
-          "Roadmap missing:",
-          response.data
-        );
-
-        alert(
-          response.data?.message ||
-            "Roadmap generated but no roadmap data was returned."
-        );
-      }
-    } catch (error) {
+    } else {
       console.error(
-        "========== ROADMAP ERROR =========="
-      );
-
-      console.error(
-        "Status:",
-        error.response?.status
-      );
-
-      console.error(
-        "Backend:",
-        error.response?.data
-      );
-
-      console.error(
-        "Message:",
-        error.message
-      );
-
-      console.error(
-        "==================================="
+        "ROADMAP DATA MISSING:",
+        roadmapData
       );
 
       alert(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to generate roadmap."
+        roadmapData?.message ||
+          "Roadmap could not be generated."
       );
-    } finally {
-      setGenerating(false);
     }
-  };
+  } catch (error) {
+    console.error(
+      "========== ROADMAP ERROR =========="
+    );
+
+    console.error(
+      "Status:",
+      error.response?.status
+    );
+
+    console.error(
+      "Backend Response:",
+      error.response?.data
+    );
+
+    console.error(
+      "Error Message:",
+      error.message
+    );
+
+    console.error(
+      "==================================="
+    );
+
+    alert(
+      error.response?.data?.message ||
+        error.message ||
+        "Failed to generate roadmap."
+    );
+  } finally {
+    setGenerating(false);
+  }
+};
 
   // ======================================================
   // PAGE LOADING

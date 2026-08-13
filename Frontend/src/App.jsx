@@ -38,6 +38,7 @@ import AdminDashboard from "./admin/pages/AdminDashboard";
 import AdminUsers from "./admin/pages/AdminUsers";
 import AdminAICoach from "./admin/pages/AdminAICoach";
 import AdminResumes from "./admin/pages/AdminResumes";
+import AdminResumeManagement from "./admin/pages/AdminResumeManagement";
 import AdminRoadmaps from "./admin/pages/AdminRoadmaps";
 
 // Layout and Dashboard
@@ -136,6 +137,11 @@ function App() {
       <Route path="users" element={<AdminUsers />}/>
       <Route path="ai-coach" element={<AdminAICoach />}/>
       <Route path="resumes" element={<AdminResumes />}/>
+      <Route
+      path="/admin/resumes"
+      element={
+        <AdminResumeManagement />
+      }/>
       <Route path="roadmaps" element={<AdminRoadmaps />}/>
       </Route>
 

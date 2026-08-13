@@ -120,11 +120,15 @@ const deleteAdminUser = async (req, res) => {
 
 
 // ==========================================
-// ADMIN RESUMES
+// GET ALL RESUMES FOR ADMIN
 // ==========================================
 
 const getAdminResumes = async (req, res) => {
   try {
+    console.log(
+      "========== ADMIN RESUMES =========="
+    );
+
     const resumes = await Resume.find()
       .populate(
         "user",
@@ -134,77 +138,107 @@ const getAdminResumes = async (req, res) => {
         createdAt: -1,
       });
 
-    const formattedResumes = resumes.map(
-      (resume) => ({
-        _id: resume._id,
-
-        fileName:
-          resume.fileName || "Unnamed Resume",
-
-        filePath:
-          resume.filePath || "",
-
-        atsScore:
-          typeof resume.atsScore === "number"
-            ? resume.atsScore
-            : 0,
-
-        strengths:
-          Array.isArray(resume.strengths)
-            ? resume.strengths
-            : [],
-
-        weaknesses:
-          Array.isArray(resume.weaknesses)
-            ? resume.weaknesses
-            : [],
-
-        missingSkills:
-          Array.isArray(resume.missingSkills)
-            ? resume.missingSkills
-            : [],
-
-        suggestions:
-          Array.isArray(resume.suggestions)
-            ? resume.suggestions
-            : [],
-
-        createdAt:
-          resume.createdAt,
-
-        user: resume.user
-          ? {
-              _id: resume.user._id,
-              name:
-                resume.user.name ||
-                resume.user.username ||
-                "Unknown User",
-              username:
-                resume.user.username || "",
-              email:
-                resume.user.email || "",
-            }
-          : null,
-      })
+    console.log(
+      "TOTAL RESUMES:",
+      resumes.length
     );
 
-    res.status(200).json({
+    const formattedResumes =
+      resumes.map((resume) => {
+        const userName =
+          resume.user?.name ||
+          resume.user?.username ||
+          "Unknown User";
+
+        const initials = userName
+          .split(" ")
+          .map((word) =>
+            word.charAt(0)
+          )
+          .join("")
+          .substring(0, 2)
+          .toUpperCase();
+
+        return {
+          _id: resume._id,
+
+          fileName:
+            resume.fileName,
+
+          filePath:
+            resume.filePath,
+
+          user: userName,
+
+          email:
+            resume.user?.email ||
+            "No email",
+
+          initials,
+
+          date: resume.createdAt
+            ? new Date(
+                resume.createdAt
+              ).toLocaleDateString()
+            : "Unknown date",
+
+          atsScore:
+            resume.atsScore || 0,
+
+          strengths:
+            Array.isArray(
+              resume.strengths
+            )
+              ? resume.strengths
+              : [],
+
+          weaknesses:
+            Array.isArray(
+              resume.weaknesses
+            )
+              ? resume.weaknesses
+              : [],
+
+          missingSkills:
+            Array.isArray(
+              resume.missingSkills
+            )
+              ? resume.missingSkills
+              : [],
+
+          suggestions:
+            Array.isArray(
+              resume.suggestions
+            )
+              ? resume.suggestions
+              : [],
+
+          resumeText:
+            resume.resumeText || "",
+        };
+      });
+
+    return res.status(200).json({
       success: true,
+
+      total: formattedResumes.length,
+
       resumes: formattedResumes,
     });
+
   } catch (error) {
     console.error(
-      "Admin resumes error:",
+      "ADMIN RESUMES ERROR:",
       error
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to load resumes",
+      message:
+        "Failed to load resumes",
     });
   }
 };
-
 
 // ==========================================
 // PAYMENTS

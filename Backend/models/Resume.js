@@ -18,6 +18,12 @@ const resumeSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Store extracted resume text
+    resumeText: {
+      type: String,
+      default: "",
+    },
+
     atsScore: {
       type: Number,
       default: 0,
