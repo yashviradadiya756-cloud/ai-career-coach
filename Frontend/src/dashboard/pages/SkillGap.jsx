@@ -60,57 +60,80 @@ const SkillGap = () => {
   // ANALYZE SKILL GAP
   // ==========================================
   const handleAnalyze = async () => {
-    try {
-      if (!targetRole.trim()) {
-        setError("Please enter a target career role.");
-        return;
-      }
+  try {
+    setAnalyzing(true);
+    setError("");
 
-      setAnalyzing(true);
-      setError("");
+    const cleanRole = targetRole.trim();
 
-      console.log("Analyzing Skill Gap for:", targetRole);
-      const response = await analyzeSkillGap(
-      targetRole.trim()
-    );
-
-    console.log(
-      "Skill Gap Analyze RAW Result:",
-      response
-    );
-
-    const data = response?.data || response;
-
-    console.log(
-      "Skill Gap Analyze NORMALIZED Result:",
-      data
-    );
-
-    if (data?.success && data?.skillGap) {
-      setSkillGap(data.skillGap);
-      setTargetRole(
-        data.skillGap.targetRole || targetRole
+    if (!cleanRole) {
+      setError(
+        "Please enter your target career role."
       );
+
+      setAnalyzing(false);
+
+      return;
+    }
+
+    console.log(
+      "================================"
+    );
+
+    console.log(
+      "Sending targetRole:",
+      cleanRole
+    );
+
+    console.log(
+      "================================"
+    );
+
+    const response =
+      await analyzeSkillGap(
+        cleanRole
+      );
+
+    console.log(
+      "Skill Gap Response:",
+      response.data
+    );
+
+    if (
+      response.data?.success &&
+      response.data?.skillGap
+    ) {
+      setSkillGap(
+        response.data.skillGap
+      );
+
+      setTargetRole(
+        response.data.skillGap.targetRole ||
+          cleanRole
+      );
+
+      setError("");
     } else {
       setError(
-        data?.message ||
-          "Skill Gap Analysis failed."
+        response.data?.message ||
+          "Skill Gap Analysis Failed."
       );
     }
-    } catch (error) {
-      console.error(
-        "Skill Gap Analyze Error:",
-        error.response?.data || error.message
-      );
+  } catch (error) {
+    console.error(
+      "Skill Gap Analyze Error:",
+      error.response?.data ||
+        error.message
+    );
 
-      setError(
-        error.response?.data?.message ||
-          "Failed to analyze Skill Gap."
-      );
-    } finally {
-      setAnalyzing(false);
-    }
-  };
+    setError(
+      error.response?.data?.message ||
+        "Skill Gap Analysis Failed."
+    );
+  } finally {
+    setAnalyzing(false);
+  }
+};
 
   // ==========================================
   // SMALL CLEAN LOADING SCREEN
@@ -395,35 +418,121 @@ const SkillGap = () => {
             {/* ==================================
                 ROADMAP
             ================================== */}
-            {roadmap.length > 0 && (
-              <div style={styles.card}>
-                <div style={styles.sectionHeader}>
-                  <h2 style={styles.sectionTitle}>
-                    🗺️ Recommended Roadmap
-                  </h2>
-                </div>
+           {/* ==================================
+    ROADMAP
+================================== */}
 
-                <div style={styles.listContainer}>
-                  {roadmap.map((step, index) => (
-                    <div
-                      className="roadmap-item"
-                      key={index}
-                      style={styles.roadmapRow}
-                    >
-                      <div style={styles.roadmapBadge}>
-                        {index + 1}
-                      </div>
+{roadmap.length > 0 && (
+  <div style={styles.card}>
+    <div style={styles.sectionHeader}>
+      <h2 style={styles.sectionTitle}>
+        🗺️ Recommended Roadmap
+      </h2>
 
-                      <div style={styles.roadmapContent}>
-                        <p style={styles.roadmapText}>
-                          {step}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+      <span style={styles.badgeSuccess}>
+        {roadmap.length} Phases
+      </span>
+    </div>
+
+    <div style={styles.roadmapContainer}>
+      {roadmap.map((step, index) => (
+        <div
+          className="roadmap-item"
+          key={index}
+          style={styles.roadmapCard}
+        >
+          {/* NUMBER */}
+
+          <div style={styles.roadmapBadge}>
+            {index + 1}
+          </div>
+
+          {/* CONTENT */}
+
+          <div style={styles.roadmapContent}>
+            <div style={styles.roadmapHeader}>
+              <div>
+                <h3
+                  style={styles.roadmapPhase}
+                >
+                  {step?.phase ||
+                    `Phase ${index + 1}`}
+                </h3>
+
+                {step?.duration && (
+                  <span
+                    style={styles.durationBadge}
+                  >
+                    ⏱ {step.duration}
+                  </span>
+                )}
               </div>
+            </div>
+
+            {/* ACTION ITEMS */}
+
+            {Array.isArray(
+              step?.actionItems
+            ) &&
+            step.actionItems.length > 0 ? (
+              <div
+                style={
+                  styles.actionItemsContainer
+                }
+              >
+                <p
+                  style={
+                    styles.actionItemsTitle
+                  }
+                >
+                  Action Items
+                </p>
+
+                <ul
+                  style={
+                    styles.actionItemsList
+                  }
+                >
+                  {step.actionItems.map(
+                    (
+                      action,
+                      actionIndex
+                    ) => (
+                      <li
+                        key={actionIndex}
+                        style={
+                          styles.actionItem
+                        }
+                      >
+                        <span
+                          style={
+                            styles.actionCheck
+                          }
+                        >
+                          ✓
+                        </span>
+
+                        <span>
+                          {action}
+                        </span>
+                      </li>
+                    )
+                  )}
+                </ul>
+              </div>
+            ) : (
+              <p
+                style={styles.emptyText}
+              >
+                No action items available.
+              </p>
             )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
           </>
         )
       )}
@@ -1173,6 +1282,125 @@ const styles = {
     color: "#334155",
     lineHeight: "1.5",
     overflowWrap: "break-word",
+  },
+    // ==========================================
+  // ROADMAP
+  // ==========================================
+
+  roadmapContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    width: "100%",
+  },
+
+  roadmapCard: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "16px",
+    padding: "20px",
+    backgroundColor: "#f8fafc",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    width: "100%",
+    boxSizing: "border-box",
+  },
+
+  roadmapBadge: {
+    width: "38px",
+    height: "38px",
+    minWidth: "38px",
+    borderRadius: "10px",
+    backgroundColor: "#2563eb",
+    color: "#ffffff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "14px",
+    fontWeight: "700",
+  },
+
+  roadmapContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  roadmapHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "10px",
+    marginBottom: "12px",
+  },
+
+  roadmapPhase: {
+    margin: 0,
+    fontSize: "17px",
+    lineHeight: "1.4",
+    fontWeight: "700",
+    color: "#0f172a",
+    overflowWrap: "break-word",
+  },
+
+  durationBadge: {
+    display: "inline-block",
+    marginTop: "7px",
+    padding: "5px 10px",
+    borderRadius: "20px",
+    backgroundColor: "#dbeafe",
+    color: "#1d4ed8",
+    fontSize: "12px",
+    fontWeight: "600",
+  },
+
+  actionItemsContainer: {
+    marginTop: "10px",
+    padding: "14px",
+    backgroundColor: "#ffffff",
+    borderRadius: "10px",
+    border: "1px solid #e2e8f0",
+  },
+
+  actionItemsTitle: {
+    margin: "0 0 10px",
+    fontSize: "13px",
+    fontWeight: "700",
+    color: "#475569",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+  },
+
+  actionItemsList: {
+    margin: 0,
+    padding: 0,
+    listStyle: "none",
+    display: "flex",
+    flexDirection: "column",
+    gap: "9px",
+  },
+
+  actionItem: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "9px",
+    fontSize: "14px",
+    lineHeight: "1.5",
+    color: "#475569",
+  },
+
+  actionCheck: {
+    width: "20px",
+    height: "20px",
+    minWidth: "20px",
+    borderRadius: "50%",
+    backgroundColor: "#dcfce7",
+    color: "#15803d",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "11px",
+    fontWeight: "700",
+    marginTop: "1px",
   },
 };
 

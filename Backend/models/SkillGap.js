@@ -1,12 +1,50 @@
 const mongoose = require("mongoose");
 
+// =====================================================
+// ROADMAP ITEM SCHEMA
+// =====================================================
+
+const roadmapItemSchema = new mongoose.Schema(
+  {
+    phase: {
+      type: String,
+      default: "",
+    },
+
+    duration: {
+      type: String,
+      default: "",
+    },
+
+    actionItems: {
+      type: [String],
+      default: [],
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
+// =====================================================
+// SKILL GAP SCHEMA
+// =====================================================
+
 const skillGapSchema = new mongoose.Schema(
   {
+    // ==========================================
+    // USER
+    // ==========================================
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+
+    // ==========================================
+    // RESUME
+    // ==========================================
 
     resume: {
       type: mongoose.Schema.Types.ObjectId,
@@ -14,43 +52,70 @@ const skillGapSchema = new mongoose.Schema(
       required: true,
     },
 
+    // ==========================================
+    // TARGET ROLE
+    // ==========================================
+
     targetRole: {
       type: String,
       required: true,
+      trim: true,
     },
 
-    currentSkills: [
-      {
-        type: String,
-      },
-    ],
+    // ==========================================
+    // CURRENT SKILLS
+    // ==========================================
 
-    missingSkills: [
-      {
-        type: String,
-      },
-    ],
+    currentSkills: {
+      type: [String],
+      default: [],
+    },
+
+    // ==========================================
+    // MISSING SKILLS
+    // ==========================================
+
+    missingSkills: {
+      type: [String],
+      default: [],
+    },
+
+    // ==========================================
+    // READINESS SCORE
+    // ==========================================
 
     readinessScore: {
       type: Number,
       default: 0,
+      min: 0,
+      max: 100,
     },
 
-    recommendedCourses: [
-      {
-        type: String,
-      },
-    ],
+    // ==========================================
+    // RECOMMENDED COURSES
+    // ==========================================
 
-    roadmap: [
-      {
-        type: String,
-      },
-    ],
+    recommendedCourses: {
+      type: [String],
+      default: [],
+    },
+
+    // ==========================================
+    // ROADMAP
+    // ==========================================
+
+    roadmap: {
+      type: [roadmapItemSchema],
+      default: [],
+    },
   },
+
   {
     timestamps: true,
   }
 );
 
-module.exports = mongoose.model("SkillGap", skillGapSchema);
+module.exports = mongoose.model(
+  "SkillGap",
+  skillGapSchema
+);

@@ -9,22 +9,9 @@ const {
   getLatestSkillGap,
 } = require("../controllers/skillGapController");
 
-console.log("================================");
-console.log("SKILL GAP ROUTES LOADED");
-console.log("protect:", typeof protect);
-console.log(
-  "analyzeSkillGapController:",
-  typeof analyzeSkillGapController
-);
-console.log(
-  "getLatestSkillGap:",
-  typeof getLatestSkillGap
-);
-console.log("================================");
-
-// ======================================================
+// ==========================================
 // TEST
-// ======================================================
+// ==========================================
 
 router.get("/test", (req, res) => {
   res.status(200).json({
@@ -33,9 +20,9 @@ router.get("/test", (req, res) => {
   });
 });
 
-// ======================================================
+// ==========================================
 // ANALYZE
-// ======================================================
+// ==========================================
 
 router.post(
   "/analyze",
@@ -43,9 +30,9 @@ router.post(
   analyzeSkillGapController
 );
 
-// ======================================================
-// GET LATEST
-// ======================================================
+// ==========================================
+// LATEST
+// ==========================================
 
 router.get(
   "/latest",
