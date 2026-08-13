@@ -1,14 +1,31 @@
 import api from "./axios";
 
-export const generateRoadmap = (targetRole) => {
-  return api.post("/api/roadmap/generate", {
-    targetRole,
-  });
-};
+/* =====================================================
+   GET ROADMAP
+===================================================== */
 
 export const getRoadmap = () => {
-  return api.get("/api/roadmap");
+  return api.get(
+    "/api/roadmap"
+  );
 };
+
+/* =====================================================
+   GENERATE ROADMAP
+===================================================== */
+
+export const generateRoadmap = (
+  data
+) => {
+  return api.post(
+    "/api/roadmap/generate",
+    data
+  );
+};
+
+/* =====================================================
+   UPDATE PHASE COMPLETION
+===================================================== */
 
 export const updatePhaseCompletion = (
   phaseId,
@@ -17,6 +34,7 @@ export const updatePhaseCompletion = (
   return api.put(
     `/api/roadmap/phase/${phaseId}`,
     {
+      phaseId,
       completed,
     }
   );

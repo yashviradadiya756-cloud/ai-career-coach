@@ -114,9 +114,35 @@ export default function Roadmap() {
 
     console.log("STEP 1: Loading saved roadmap...");
 
-    const response = await getRoadmap();
+    try {
+  const response = await getRoadmap();
 
-    console.log("STEP 2: Saved roadmap raw response:", response);
+  if (
+    response.data?.success &&
+    response.data?.roadmap
+  ) {
+    setRoadmap(
+      response.data.roadmap
+    );
+  } else {
+    setRoadmap(null);
+  }
+} catch (error) {
+  if (
+    error.response?.status === 404
+  ) {
+    console.log(
+      "No roadmap exists yet."
+    );
+
+    setRoadmap(null);
+  } else {
+    console.error(
+      "GET ROADMAP ERROR:",
+      error
+    );
+  }
+}
 
     // Support both:
     // response.data
