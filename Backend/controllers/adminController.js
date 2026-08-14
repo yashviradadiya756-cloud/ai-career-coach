@@ -334,6 +334,95 @@ const getAdminRoadmaps = async (req, res) => {
 };
 
 // ==========================================
+// GET ALL SKILL GAP ANALYSES FOR ADMIN
+// ==========================================
+
+const getAdminSkillGaps = async (req, res) => {
+  try {
+    console.log("========== ADMIN SKILL GAP ==========");
+
+    const SkillGap = require("../models/SkillGap");
+
+    const skillGaps = await SkillGap.find()
+      .populate(
+        "user",
+        "name username email"
+      )
+      .sort({
+        createdAt: -1,
+      });
+
+    console.log(
+      "TOTAL SKILL GAP ANALYSES:",
+      skillGaps.length
+    );
+
+    const formattedSkillGaps = skillGaps.map(
+      (skillGap) => {
+
+        const userName =
+          skillGap.user?.name ||
+          skillGap.user?.username ||
+          "Unknown User";
+
+        const initials = userName
+          .split(" ")
+          .map((word) => word.charAt(0))
+          .join("")
+          .substring(0, 2)
+          .toUpperCase();
+
+        return {
+          _id: skillGap._id,
+
+          user: userName,
+
+          email:
+            skillGap.user?.email ||
+            "No email",
+
+          initials,
+
+          date: skillGap.createdAt
+            ? new Date(
+                skillGap.createdAt
+              ).toLocaleDateString()
+            : "Unknown date",
+
+          ...skillGap.toObject(),
+        };
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+
+      total: formattedSkillGaps.length,
+
+      skillGaps: formattedSkillGaps,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "ADMIN SKILL GAP ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+
+      message:
+        "Failed to load skill gap analyses",
+
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : undefined,
+    });
+  }
+};
+// ==========================================
 // PAYMENTS
 // ==========================================
 
@@ -387,6 +476,7 @@ module.exports = {
   deleteAdminUser,
   getAdminResumes,
   getAdminRoadmaps,
+  getAdminSkillGaps,
   getAdminPayments,
   getAdminFeedback,
 };

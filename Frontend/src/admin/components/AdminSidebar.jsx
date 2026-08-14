@@ -50,7 +50,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
     },
     {
       name: "Skill Gap",
-      path: "/admin/skills",
+      path: "/admin/skillgap",
       icon: Brain,
     },
     {
