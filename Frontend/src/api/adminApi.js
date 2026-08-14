@@ -17,7 +17,6 @@ export const getAdminUsers = () => {
   return api.get("/api/admin/users");
 };
 
-
 export const deleteAdminUser = (id) => {
   return api.delete(`/api/admin/users/${id}`);
 };
@@ -47,6 +46,15 @@ export const getAdminRoadmaps = () => {
 
 export const getAdminSkillGaps = () => {
   return api.get("/api/admin/skillgap");
+};
+
+
+// ==========================================
+// ADMIN INTERVIEWS
+// ==========================================
+
+export const getAdminInterviews = () => {
+  return api.get("/api/admin/interviews");
 };
 
 

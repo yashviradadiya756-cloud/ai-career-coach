@@ -67,6 +67,7 @@ import AdminAICoach from "./admin/pages/AdminAICoach";
 import AdminResumes from "./admin/pages/AdminResumes";
 import AdminSkillGap from "./admin/pages/AdminSkillGap";
 import AdminRoadmaps from "./admin/pages/AdminRoadmaps";
+import AdminInterviews from "./admin/pages/AdminInterviews";
 
 
 // ==========================================
@@ -318,6 +319,10 @@ function App() {
           }
         />
 
+          <Route
+          path="interviews"
+          element={<AdminInterviews />}
+        />
       </Route>
 
 

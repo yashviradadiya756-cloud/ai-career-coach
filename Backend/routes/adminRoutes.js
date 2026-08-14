@@ -12,21 +12,21 @@ const {
   getAdminResumes,
   getAdminRoadmaps,
   getAdminSkillGaps,
+  getAdminInterviewsController,
   getAdminPayments,
   getAdminFeedback,
 } = require("../controllers/adminController");
 
-
 // ==========================================
-// ADMIN AUTH MIDDLEWARE
+// ADMIN AUTH
 // ==========================================
 
 router.use(protect);
 router.use(adminMiddleware);
 
-
 // ==========================================
-// TEST ROUTE
+// TEST
+// GET /api/admin/test
 // ==========================================
 
 router.get("/test", (req, res) => {
@@ -38,16 +38,15 @@ router.get("/test", (req, res) => {
   });
 });
 
-
 // ==========================================
 // DASHBOARD
+// GET /api/admin/dashboard
 // ==========================================
 
 router.get(
   "/dashboard",
   getAdminDashboard
 );
-
 
 // ==========================================
 // USERS
@@ -63,7 +62,6 @@ router.delete(
   deleteAdminUser
 );
 
-
 // ==========================================
 // RESUMES
 // ==========================================
@@ -72,7 +70,6 @@ router.get(
   "/resumes",
   getAdminResumes
 );
-
 
 // ==========================================
 // ROADMAPS
@@ -83,37 +80,23 @@ router.get(
   getAdminRoadmaps
 );
 
-
 // ==========================================
 // SKILL GAP
 // ==========================================
 
 router.get(
   "/skillgap",
-  (req, res, next) => {
-
-    console.log(
-      "================================"
-    );
-
-    console.log(
-      "ADMIN SKILL GAP ROUTE HIT"
-    );
-
-    console.log(
-      "USER:",
-      req.user?._id
-    );
-
-    console.log(
-      "================================"
-    );
-
-    next();
-  },
   getAdminSkillGaps
 );
 
+// ==========================================
+// INTERVIEWS
+// ==========================================
+
+router.get(
+  "/interviews",
+  getAdminInterviewsController
+);
 
 // ==========================================
 // PAYMENTS
@@ -124,7 +107,6 @@ router.get(
   getAdminPayments
 );
 
-
 // ==========================================
 // FEEDBACK
 // ==========================================
@@ -133,6 +115,5 @@ router.get(
   "/feedback",
   getAdminFeedback
 );
-
 
 module.exports = router;

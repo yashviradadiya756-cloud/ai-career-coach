@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Resume = require("../models/Resume");
 const Roadmap = require("../models/Roadmap");
+const Interview = require("../models/Interview");
 
 // ==========================================
 // ADMIN DASHBOARD
@@ -440,6 +441,50 @@ const getAdminSkillGaps = async (req, res) => {
     });
   }
 };
+
+
+// ==========================================
+// GET ALL INTERVIEWS FOR ADMIN
+// ==========================================
+
+const getAdminInterviewsController = async (req, res) => {
+  try {
+    console.log("=================================");
+    console.log("ADMIN INTERVIEW API");
+    console.log("Admin:", req.user?._id);
+    console.log("=================================");
+
+    const interviews = await Interview.find({})
+      .populate(
+        "user",
+        "name username email"
+      )
+      .sort({
+        createdAt: -1,
+      })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      count: interviews.length,
+      interviews,
+    });
+
+  } catch (error) {
+    console.error(
+      "ADMIN INTERVIEW ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to load interviews",
+    });
+  }
+};
+
 // ==========================================
 // PAYMENTS
 // ==========================================
@@ -495,6 +540,7 @@ module.exports = {
   getAdminResumes,
   getAdminRoadmaps,
   getAdminSkillGaps,
+  getAdminInterviewsController,
   getAdminPayments,
   getAdminFeedback,
 };
