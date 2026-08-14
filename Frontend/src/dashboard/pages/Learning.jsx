@@ -660,54 +660,33 @@ export default function Learning() {
     try {
       setLoading(true);
       setError("");
+      setMessage("");
+
+      // =====================================================
+      // IMPORTANT: Axios returns the backend payload inside
+      // response.data. The previous code checked response.success
+      // directly, which made an existing Skill Gap look missing.
+      // =====================================================
+
+      let latestSkillGap = null;
+      let existingLearning = null;
 
       // -------------------------------
-      // LEARNING API
+      // SKILL GAP API FIRST
       // -------------------------------
-
       try {
-        const response = await getLearning();
-
-        console.log(
-          "LEARNING API:",
-          JSON.stringify(response, null, 2)
-        );
-
-        if (
-          response?.success &&
-          response?.learning
-        ) {
-          setLearning(response.learning);
-        } else {
-          setLearning(null);
-        }
-      } catch (err) {
-        console.error(
-          "Learning API Error:",
-          err.response?.data || err.message
-        );
-
-        setLearning(null);
-      }
-
-      // -------------------------------
-      // SKILL GAP API
-      // -------------------------------
-
-      try {
-        const response =
-          await getLatestSkillGap();
+        const response = await getLatestSkillGap();
 
         console.log(
           "SKILL GAP API:",
           JSON.stringify(response, null, 2)
         );
 
-        if (
-          response?.success &&
-          response?.skillGap
-        ) {
-          setSkillGap(response.skillGap);
+        const payload = response?.data ?? response;
+
+        if (payload?.success && payload?.skillGap) {
+          latestSkillGap = payload.skillGap;
+          setSkillGap(latestSkillGap);
         } else {
           setSkillGap(null);
         }
@@ -718,6 +697,96 @@ export default function Learning() {
         );
 
         setSkillGap(null);
+      }
+
+      // -------------------------------
+      // LEARNING API
+      // -------------------------------
+      try {
+        const response = await getLearning();
+
+        console.log(
+          "LEARNING API:",
+          JSON.stringify(response, null, 2)
+        );
+
+        const payload = response?.data ?? response;
+
+        if (payload?.success && payload?.learning) {
+          existingLearning = payload.learning;
+          setLearning(existingLearning);
+        } else {
+          existingLearning = null;
+          setLearning(null);
+        }
+      } catch (err) {
+        console.error(
+          "Learning API Error:",
+          err.response?.data || err.message
+        );
+
+        existingLearning = null;
+        setLearning(null);
+      }
+
+      // =====================================================
+      // AUTO GENERATE LEARNING PLAN
+      // =====================================================
+      // If Skill Gap exists but Learning does not exist yet,
+      // generate it automatically. No UI changes are required.
+      // =====================================================
+      if (latestSkillGap && !existingLearning) {
+        const role = latestSkillGap?.targetRole;
+        const missing = Array.isArray(latestSkillGap?.missingSkills)
+          ? latestSkillGap.missingSkills
+          : [];
+
+        if (role && missing.length > 0) {
+          try {
+            setGenerating(true);
+
+            console.log(
+              "Learning plan not found. Generating automatically..."
+            );
+
+            const generatedResponse = await generateLearning(role);
+
+            console.log(
+              "AUTO GENERATED LEARNING API:",
+              JSON.stringify(generatedResponse, null, 2)
+            );
+
+            const generatedPayload =
+              generatedResponse?.data ?? generatedResponse;
+
+            if (
+              generatedPayload?.success &&
+              generatedPayload?.learning
+            ) {
+              setLearning(generatedPayload.learning);
+              setMessage(
+                "AI Learning Plan generated successfully!"
+              );
+            } else {
+              setError(
+                generatedPayload?.message ||
+                  "Failed to generate learning plan."
+              );
+            }
+          } catch (err) {
+            console.error(
+              "Auto Generate Learning Error:",
+              err.response?.data || err.message
+            );
+
+            setError(
+              err.response?.data?.message ||
+                "Failed to generate learning plan."
+            );
+          } finally {
+            setGenerating(false);
+          }
+        }
       }
     } catch (err) {
       console.error("Learning Error:", err);
@@ -814,12 +883,17 @@ export default function Learning() {
           )
         );
 
+        // Axios response payload is inside response.data.
+        // Keep fallback support in case the API helper returns
+        // the payload directly.
+        const payload = response?.data ?? response;
+
         if (
-          response?.success &&
-          response?.learning
+          payload?.success &&
+          payload?.learning
         ) {
           setLearning(
-            response.learning
+            payload.learning
           );
 
           setMessage(
@@ -827,7 +901,7 @@ export default function Learning() {
           );
         } else {
           setError(
-            response?.message ||
+            payload?.message ||
               "Failed to generate learning plan."
           );
         }

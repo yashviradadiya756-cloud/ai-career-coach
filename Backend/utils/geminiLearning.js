@@ -1,43 +1,84 @@
-const { generateContent } = require("../config/gemini");
+const {
+  generateContent,
+} = require("../config/gemini");
 
-async function generateLearningRecommendations(
+// =====================================================
+// GENERATE LEARNING RECOMMENDATIONS
+// =====================================================
+
+const generateLearningRecommendations = async (
   missingSkills,
   targetRole
-) {
+) => {
   try {
-    // Make sure missingSkills is always an array
-    const skills = Array.isArray(missingSkills)
+    console.log("=================================");
+    console.log("LEARNING AI STARTED");
+    console.log("=================================");
+
+    const skills = Array.isArray(
+      missingSkills
+    )
       ? missingSkills
+          .map((skill) =>
+            String(skill).trim()
+          )
+          .filter(Boolean)
       : [];
 
-    if (skills.length === 0) {
-      throw new Error("No missing skills available.");
+    const role = String(
+      targetRole || ""
+    ).trim();
+
+    console.log("TARGET ROLE:", role);
+    console.log("MISSING SKILLS:", skills);
+
+    // =================================================
+    // VALIDATION
+    // =================================================
+
+    if (!role) {
+      throw new Error(
+        "Target role is required."
+      );
     }
 
+    if (skills.length === 0) {
+      throw new Error(
+        "No missing skills available in Skill Gap Analysis."
+      );
+    }
+
+    // =================================================
+    // PROMPT
+    // =================================================
+
     const prompt = `
-You are an AI Career Coach.
+You are an expert AI Career Coach.
+
+Create a personalized learning plan for the candidate.
 
 Target Role:
-${targetRole}
+${role}
 
 Missing Skills:
 ${skills.join(", ")}
 
-For EACH missing skill, recommend exactly ONE useful learning resource.
+For EVERY missing skill, create exactly ONE learning recommendation.
 
 Return ONLY valid JSON.
-Do not use markdown.
-Do not use \`\`\`.
-Do not add explanations.
 
-Required JSON format:
+Do NOT use markdown.
+Do NOT use code fences.
+Do NOT add explanations.
+
+Required format:
 
 {
   "recommendations": [
     {
-      "skill": "Express.js",
-      "course": "Express.js Course",
-      "platform": "YouTube",
+      "skill": "SEO",
+      "course": "SEO Fundamentals",
+      "platform": "Google",
       "duration": "10 hours",
       "level": "Beginner",
       "url": "https://example.com"
@@ -45,45 +86,78 @@ Required JSON format:
   ]
 }
 
-Rules:
+STRICT RULES:
 
-1. Create exactly one recommendation for every missing skill.
-2. The "skill" must match the missing skill.
-3. Use real and useful learning platforms.
-4. Keep course names relevant to the skill.
-5. Return ONLY JSON.
+1. recommendations MUST be an array.
+2. Create exactly ONE recommendation for every missing skill.
+3. skill MUST match the missing skill.
+4. course MUST be relevant to the skill.
+5. platform MUST be a real learning platform.
+6. duration MUST be a simple text value.
+7. level MUST be Beginner, Intermediate, or Advanced.
+8. url MUST be a valid learning resource URL.
+9. Return ONLY JSON.
 `;
 
-    console.log("================================");
-    console.log("LEARNING AI REQUEST");
-    console.log("Target Role:", targetRole);
-    console.log("Missing Skills:", skills);
-    console.log("================================");
+    console.log(
+      "Calling Gemini for learning..."
+    );
 
-    const response = await generateContent(prompt);
+    const response =
+      await generateContent(prompt);
 
-    if (!response || !response.text) {
-      throw new Error("Gemini returned an empty response.");
+    if (
+      !response ||
+      !response.text
+    ) {
+      throw new Error(
+        "Gemini returned an empty learning response."
+      );
     }
 
-    let text = response.text.trim();
+    let text =
+      response.text.trim();
 
-    console.log("Gemini Learning Raw Response:");
+    console.log(
+      "RAW LEARNING RESPONSE:"
+    );
+
     console.log(text);
 
-    // Remove markdown code fences safely
+    // =================================================
+    // CLEAN RESPONSE
+    // =================================================
+
     text = text
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/\s*```$/i, "")
+      .replace(/^```json/i, "")
+      .replace(/^```/i, "")
+      .replace(/```$/i, "")
       .trim();
+
+    // =================================================
+    // EXTRACT JSON
+    // =================================================
+
+    const jsonMatch =
+      text.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      throw new Error(
+        "Gemini returned invalid JSON."
+      );
+    }
 
     let data;
 
     try {
-      data = JSON.parse(text);
-    } catch (parseError) {
-      console.error("Gemini JSON Parse Error:");
+      data = JSON.parse(
+        jsonMatch[0]
+      );
+    } catch (error) {
+      console.error(
+        "LEARNING JSON PARSE ERROR"
+      );
+
       console.error(text);
 
       throw new Error(
@@ -91,39 +165,108 @@ Rules:
       );
     }
 
+    // =================================================
+    // VALIDATE
+    // =================================================
+
     if (
       !data ||
-      !Array.isArray(data.recommendations)
+      !Array.isArray(
+        data.recommendations
+      )
     ) {
       throw new Error(
-        "Gemini returned invalid learning recommendation format."
+        "Invalid learning recommendation format."
       );
     }
 
-    // Keep only valid recommendation objects
-    const recommendations = data.recommendations
-      .filter((item) => item && typeof item === "object")
-      .map((item) => ({
-        skill: item.skill || "",
-        course: item.course || "",
-        platform: item.platform || "",
-        duration: item.duration || "",
-        level: item.level || "",
-        url: item.url || "",
-      }));
+    // =================================================
+    // NORMALIZE
+    // =================================================
+
+    const recommendations =
+      data.recommendations
+        .filter(
+          (item) =>
+            item &&
+            typeof item ===
+              "object" &&
+            !Array.isArray(item)
+        )
+        .map((item) => ({
+          skill: String(
+            item.skill || ""
+          ).trim(),
+
+          course: String(
+            item.course || ""
+          ).trim(),
+
+          platform: String(
+            item.platform || ""
+          ).trim(),
+
+          duration: String(
+            item.duration || ""
+          ).trim(),
+
+          level: String(
+            item.level || ""
+          ).trim(),
+
+          url: String(
+            item.url || ""
+          ).trim(),
+        }))
+        .filter(
+          (item) =>
+            item.skill &&
+            item.course
+        );
 
     console.log(
-      "Learning Recommendations:",
-      recommendations.length
+      "NORMALIZED LEARNING:"
     );
+
+    console.log(
+      JSON.stringify(
+        recommendations,
+        null,
+        2
+      )
+    );
+
+    if (
+      recommendations.length === 0
+    ) {
+      throw new Error(
+        "Gemini did not return any valid learning recommendations."
+      );
+    }
 
     return {
       recommendations,
     };
   } catch (error) {
-    console.error("Learning AI Error:", error);
+    console.error(
+      "================================="
+    );
+
+    console.error(
+      "LEARNING AI ERROR"
+    );
+
+    console.error(
+      error?.message || error
+    );
+
+    console.error(
+      "================================="
+    );
+
     throw error;
   }
-}
+};
 
-module.exports = generateLearningRecommendations;
+module.exports =
+  generateLearningRecommendations;

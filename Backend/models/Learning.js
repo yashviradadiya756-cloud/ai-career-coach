@@ -1,64 +1,73 @@
 const mongoose = require("mongoose");
 
-const learningSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
-    skillGap: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "SkillGap",
-      required: true,
-    },
-
-    targetRole: {
-      type: String,
-      required: true,
-    },
-
-    recommendations: [
-      {
-        skill: {
-          type: String,
-          default: "",
-        },
-
-        course: {
-          type: String,
-          default: "",
-        },
-
-        platform: {
-          type: String,
-          default: "",
-        },
-
-        duration: {
-          type: String,
-          default: "",
-        },
-
-        level: {
-          type: String,
-          default: "",
-        },
-
-        url: {
-          type: String,
-          default: "",
-        },
+const learningSchema =
+  new mongoose.Schema(
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
       },
-    ],
-  },
-  {
-    timestamps: true,
-  }
-);
 
-module.exports = mongoose.model(
-  "Learning",
-  learningSchema
-);
+      skillGap: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "SkillGap",
+        required: true,
+      },
+
+      targetRole: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+
+      recommendations: [
+        {
+          skill: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+
+          course: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+
+          platform: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+
+          duration: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+
+          level: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+
+          url: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+        },
+      ],
+    },
+    {
+      timestamps: true,
+    }
+  );
+
+module.exports =
+  mongoose.model(
+    "Learning",
+    learningSchema
+  );

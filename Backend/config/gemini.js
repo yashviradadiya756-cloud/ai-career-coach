@@ -1,9 +1,9 @@
 const { GoogleGenAI } = require("@google/genai");
 require("dotenv").config();
 
-// ==========================================
+// =====================================================
 // ENVIRONMENT
-// ==========================================
+// =====================================================
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -23,78 +23,40 @@ console.log(
     : 0
 );
 
-// ==========================================
+// =====================================================
 // VALIDATE API KEY
-// ==========================================
+// =====================================================
 
 if (!GEMINI_API_KEY) {
-  console.error(
-    "❌ GEMINI_API_KEY is missing"
-  );
-
   throw new Error(
     "GEMINI_API_KEY is not configured"
   );
 }
 
-// ==========================================
-// GEMINI CLIENT
-// ==========================================
+// =====================================================
+// CLIENT
+// =====================================================
 
 const ai = new GoogleGenAI({
   apiKey: GEMINI_API_KEY,
 });
 
-console.log(
-  "AI CLIENT CREATED:",
-  !!ai
-);
+// =====================================================
+// MODEL
+// =====================================================
 
-console.log(
-  "AI MODELS AVAILABLE:",
-  !!ai.models
-);
+const PRIMARY_MODEL = "gemini-3.6-flash";
 
-console.log("=================================");
-
-// ==========================================
-// MODELS
-// ==========================================
-
-const PRIMARY_MODEL =
-  "gemini-3.5-flash-lite";
-
-const FALLBACK_MODEL =
-  "gemini-3.6-flash";
-
-// ==========================================
+// =====================================================
 // GENERATE CONTENT
-// ==========================================
+// =====================================================
 
-const generateContent = async (
-  prompt
-) => {
-  if (!ai) {
-    throw new Error(
-      "Gemini AI client is not initialized"
-    );
-  }
-
-  if (!ai.models) {
-    throw new Error(
-      "Gemini AI models API is not available. Check @google/genai configuration."
-    );
-  }
-
-  // ========================================
-  // PRIMARY MODEL
-  // ========================================
-
+const generateContent = async (prompt) => {
   try {
-    console.log(
-      "Trying primary model:",
-      PRIMARY_MODEL
-    );
+    console.log("=================================");
+    console.log("GEMINI REQUEST");
+    console.log("MODEL:", PRIMARY_MODEL);
+    console.log("=================================");
 
     const response =
       await ai.models.generateContent({
@@ -103,57 +65,28 @@ const generateContent = async (
       });
 
     console.log(
-      "Primary Gemini model succeeded:",
-      PRIMARY_MODEL
+      "Gemini request successful"
     );
 
     return response;
-  } catch (primaryError) {
+  } catch (error) {
     console.error(
-      "Primary Gemini error:"
+      "================================="
     );
 
     console.error(
-      primaryError.message
+      "GEMINI GENERATION ERROR"
     );
 
-    // ======================================
-    // FALLBACK MODEL
-    // ======================================
+    console.error(
+      error?.message || error
+    );
 
-    try {
-      console.log(
-        "Trying fallback model:",
-        FALLBACK_MODEL
-      );
+    console.error(
+      "================================="
+    );
 
-      const response =
-        await ai.models.generateContent({
-          model: FALLBACK_MODEL,
-          contents: prompt,
-        });
-
-      console.log(
-        "Fallback Gemini model succeeded:",
-        FALLBACK_MODEL
-      );
-
-      return response;
-    } catch (fallbackError) {
-      console.error(
-        "Fallback Gemini error:"
-      );
-
-      console.error(
-        fallbackError.message
-      );
-
-      throw new Error(
-        `Gemini generation failed: ${
-          fallbackError.message
-        }`
-      );
-    }
+    throw error;
   }
 };
 
@@ -161,5 +94,4 @@ module.exports = {
   ai,
   generateContent,
   PRIMARY_MODEL,
-  FALLBACK_MODEL,
 };
