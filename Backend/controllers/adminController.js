@@ -372,7 +372,16 @@ const getAdminSkillGaps = async (req, res) => {
           .substring(0, 2)
           .toUpperCase();
 
+        // Convert mongoose document to plain object
+        const skillGapData =
+          skillGap.toObject();
+
         return {
+          // First spread the original data
+          ...skillGapData,
+
+          // Then OVERRIDE these fields
+          // so React gets strings instead of objects
           _id: skillGap._id,
 
           user: userName,
@@ -386,20 +395,29 @@ const getAdminSkillGaps = async (req, res) => {
           date: skillGap.createdAt
             ? new Date(
                 skillGap.createdAt
-              ).toLocaleDateString()
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
             : "Unknown date",
-
-          ...skillGap.toObject(),
         };
       }
+    );
+
+    console.log(
+      "FORMATTED SKILL GAPS:",
+      formattedSkillGaps.length
     );
 
     return res.status(200).json({
       success: true,
 
-      total: formattedSkillGaps.length,
+      total:
+        formattedSkillGaps.length,
 
-      skillGaps: formattedSkillGaps,
+      skillGaps:
+        formattedSkillGaps,
     });
 
   } catch (error) {

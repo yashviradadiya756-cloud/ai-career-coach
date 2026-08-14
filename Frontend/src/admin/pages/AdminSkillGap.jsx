@@ -8,7 +8,6 @@ import {
   BrainCircuit,
   Search,
   RefreshCw,
-  UserRound,
   Mail,
   CalendarDays,
   AlertTriangle,
@@ -17,15 +16,309 @@ import {
   TrendingUp,
   BookOpen,
   ChevronDown,
-  ChevronUp,
+  BriefcaseBusiness,
 } from "lucide-react";
 
-import {
-  getAdminSkillGaps,
-} from "../../api/adminApi";
+import { getAdminSkillGaps } from "../../api/adminApi";
 
 import "../styles/adminSkillGap.css";
 
+
+/* =========================================================
+   SAFE VALUE HELPERS
+========================================================= */
+
+const safeText = (value, fallback = "") => {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  if (typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (typeof value === "object") {
+    return (
+      value.name ||
+      value.title ||
+      value.role ||
+      value.goal ||
+      value.username ||
+      value.email ||
+      value.skill ||
+      value.description ||
+      fallback
+    );
+  }
+
+  return fallback;
+};
+
+
+/* =========================================================
+   USER NAME
+========================================================= */
+
+const getUserName = (item) => {
+  if (!item) {
+    return "Unknown User";
+  }
+
+  if (
+    typeof item.user === "object" &&
+    item.user !== null
+  ) {
+    return (
+      item.user.name ||
+      item.user.username ||
+      item.user.email ||
+      "Unknown User"
+    );
+  }
+
+  if (typeof item.user === "string") {
+    return item.user;
+  }
+
+  return (
+    item.name ||
+    item.username ||
+    item.email ||
+    "Unknown User"
+  );
+};
+
+
+/* =========================================================
+   USER EMAIL
+========================================================= */
+
+const getUserEmail = (item) => {
+  if (!item) {
+    return "No email";
+  }
+
+  if (
+    typeof item.user === "object" &&
+    item.user !== null
+  ) {
+    return item.user.email || "No email";
+  }
+
+  return item.email || "No email";
+};
+
+
+/* =========================================================
+   USER ID
+========================================================= */
+
+const getUserId = (item) => {
+  if (!item) {
+    return "";
+  }
+
+  if (
+    typeof item.user === "object" &&
+    item.user !== null
+  ) {
+    return (
+      item.user._id ||
+      item.user.email ||
+      item.user.username ||
+      ""
+    );
+  }
+
+  return (
+    item.user ||
+    item.email ||
+    item.username ||
+    ""
+  );
+};
+
+
+/* =========================================================
+   USER INITIAL
+========================================================= */
+
+const getUserInitial = (item) => {
+  const name = getUserName(item);
+
+  if (!name) {
+    return "U";
+  }
+
+  return name.charAt(0).toUpperCase();
+};
+
+
+/* =========================================================
+   CAREER GOAL
+========================================================= */
+
+const getCareerGoal = (item) => {
+  if (!item) {
+    return "Not available";
+  }
+
+  /*
+    Supports:
+
+    careerGoal: "Full Stack Developer"
+
+    careerGoal: {
+      name: "Full Stack Developer"
+    }
+
+    careerGoal: {
+      title: "Full Stack Developer"
+    }
+
+    careerGoal: {
+      role: "Full Stack Developer"
+    }
+
+    careerGoal: {
+      goal: "Full Stack Developer"
+    }
+
+    Also checks common alternative field names.
+  */
+
+  const possibleValues = [
+    item.careerGoal,
+    item.career_goal,
+    item.goal,
+    item.careerObjective,
+    item.targetRole,
+    item.targetCareer,
+    item.desiredRole,
+  ];
+
+  for (const value of possibleValues) {
+    const text = safeText(value, "");
+
+    if (text && text.trim()) {
+      return text;
+    }
+  }
+
+  return "Not available";
+};
+
+
+/* =========================================================
+   ARRAY NORMALIZER
+========================================================= */
+
+const getArray = (value) => {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (
+    typeof value === "string" &&
+    value.trim()
+  ) {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (
+    typeof value === "object" &&
+    value !== null
+  ) {
+    return [value];
+  }
+
+  return [];
+};
+
+
+/* =========================================================
+   SKILL DISPLAY
+========================================================= */
+
+const getSkillText = (skill) => {
+  if (
+    skill === null ||
+    skill === undefined
+  ) {
+    return "";
+  }
+
+  if (typeof skill === "string") {
+    return skill;
+  }
+
+  if (typeof skill === "number") {
+    return String(skill);
+  }
+
+  if (typeof skill === "object") {
+    return (
+      skill.name ||
+      skill.skill ||
+      skill.title ||
+      skill.description ||
+      ""
+    );
+  }
+
+  return String(skill);
+};
+
+
+/* =========================================================
+   RECOMMENDATION DISPLAY
+========================================================= */
+
+const getRecommendationText = (recommendation) => {
+  if (
+    recommendation === null ||
+    recommendation === undefined
+  ) {
+    return "";
+  }
+
+  if (typeof recommendation === "string") {
+    return recommendation;
+  }
+
+  if (typeof recommendation === "number") {
+    return String(recommendation);
+  }
+
+  if (typeof recommendation === "object") {
+    return (
+      recommendation.title ||
+      recommendation.name ||
+      recommendation.description ||
+      recommendation.resource ||
+      recommendation.url ||
+      ""
+    );
+  }
+
+  return String(recommendation);
+};
+
+
+/* =========================================================
+   COMPONENT
+========================================================= */
 
 const AdminSkillGap = () => {
 
@@ -41,16 +334,14 @@ const AdminSkillGap = () => {
     useState(null);
 
 
-  // ==========================================
-  // LOAD SKILL GAP DATA
-  // ==========================================
+  /* =======================================================
+     LOAD DATA
+  ======================================================= */
 
   const loadSkillGaps = async () => {
-
     try {
 
       setLoading(true);
-
       setError("");
 
       const response =
@@ -61,8 +352,13 @@ const AdminSkillGap = () => {
         response.data
       );
 
+      const data =
+        response.data?.skillGaps;
+
       setSkillGaps(
-        response.data?.skillGaps || []
+        Array.isArray(data)
+          ? data
+          : []
       );
 
     } catch (err) {
@@ -82,20 +378,21 @@ const AdminSkillGap = () => {
       setLoading(false);
 
     }
-
   };
 
 
+  /* =======================================================
+     INITIAL LOAD
+  ======================================================= */
+
   useEffect(() => {
-
     loadSkillGaps();
-
   }, []);
 
 
-  // ==========================================
-  // SEARCH
-  // ==========================================
+  /* =======================================================
+     SEARCH
+  ======================================================= */
 
   const filteredSkillGaps = useMemo(() => {
 
@@ -108,19 +405,28 @@ const AdminSkillGap = () => {
 
     return skillGaps.filter((item) => {
 
-      const user =
-        item.user?.toLowerCase() || "";
+      const userName =
+        getUserName(item)
+          .toLowerCase();
+
+      const userEmail =
+        getUserEmail(item)
+          .toLowerCase();
 
       const username =
-        item.username?.toLowerCase() || "";
+        typeof item.username === "string"
+          ? item.username.toLowerCase()
+          : "";
 
-      const email =
-        item.email?.toLowerCase() || "";
+      const careerGoal =
+        getCareerGoal(item)
+          .toLowerCase();
 
       return (
-        user.includes(value) ||
+        userName.includes(value) ||
+        userEmail.includes(value) ||
         username.includes(value) ||
-        email.includes(value)
+        careerGoal.includes(value)
       );
 
     });
@@ -128,9 +434,9 @@ const AdminSkillGap = () => {
   }, [skillGaps, search]);
 
 
-  // ==========================================
-  // DATE
-  // ==========================================
+  /* =======================================================
+     DATE
+  ======================================================= */
 
   const formatDate = (date) => {
 
@@ -138,7 +444,17 @@ const AdminSkillGap = () => {
       return "—";
     }
 
-    return new Date(date).toLocaleDateString(
+    const parsedDate = new Date(date);
+
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
+      return "—";
+    }
+
+    return parsedDate.toLocaleDateString(
       "en-IN",
       {
         day: "2-digit",
@@ -146,42 +462,18 @@ const AdminSkillGap = () => {
         year: "numeric",
       }
     );
-
   };
 
 
-  // ==========================================
-  // GET ARRAY SAFELY
-  // ==========================================
-
-  const getArray = (value) => {
-
-    if (Array.isArray(value)) {
-      return value;
-    }
-
-    if (
-      typeof value === "string" &&
-      value.trim()
-    ) {
-
-      return value
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
-
-    }
-
-    return [];
-
-  };
-
-
-  // ==========================================
-  // GET SKILLS
-  // ==========================================
+  /* =======================================================
+     SKILLS
+  ======================================================= */
 
   const getSkills = (item) => {
+
+    if (!item) {
+      return [];
+    }
 
     return getArray(
       item.missingSkills ||
@@ -191,15 +483,18 @@ const AdminSkillGap = () => {
       item.missing ||
       []
     );
-
   };
 
 
-  // ==========================================
-  // GET STRENGTHS
-  // ==========================================
+  /* =======================================================
+     STRENGTHS
+  ======================================================= */
 
   const getStrengths = (item) => {
+
+    if (!item) {
+      return [];
+    }
 
     return getArray(
       item.strengths ||
@@ -207,15 +502,18 @@ const AdminSkillGap = () => {
       item.existingSkills ||
       []
     );
-
   };
 
 
-  // ==========================================
-  // GET RECOMMENDATIONS
-  // ==========================================
+  /* =======================================================
+     RECOMMENDATIONS
+  ======================================================= */
 
   const getRecommendations = (item) => {
+
+    if (!item) {
+      return [];
+    }
 
     return getArray(
       item.recommendations ||
@@ -224,15 +522,18 @@ const AdminSkillGap = () => {
       item.resources ||
       []
     );
-
   };
 
 
-  // ==========================================
-  // GET SCORE
-  // ==========================================
+  /* =======================================================
+     SCORE
+  ======================================================= */
 
   const getScore = (item) => {
+
+    if (!item) {
+      return null;
+    }
 
     const possibleScores = [
       item.skillGapScore,
@@ -257,19 +558,17 @@ const AdminSkillGap = () => {
       return null;
     }
 
-    const numberScore =
-      Number(score);
+    const numberScore = Number(score);
 
     return Number.isNaN(numberScore)
       ? null
       : numberScore;
-
   };
 
 
-  // ==========================================
-  // SCORE CLASS
-  // ==========================================
+  /* =======================================================
+     SCORE CLASS
+  ======================================================= */
 
   const getScoreClass = (score) => {
 
@@ -286,18 +585,18 @@ const AdminSkillGap = () => {
     }
 
     return "low";
-
   };
 
 
-  // ==========================================
-  // SUMMARY
-  // ==========================================
+  /* =======================================================
+     SUMMARY
+  ======================================================= */
 
   const totalMissingSkills =
     skillGaps.reduce(
       (total, item) =>
-        total + getSkills(item).length,
+        total +
+        getSkills(item).length,
       0
     );
 
@@ -311,14 +610,21 @@ const AdminSkillGap = () => {
     );
 
 
-  // ==========================================
-  // LOADING
-  // ==========================================
+  const totalUsers =
+    new Set(
+      skillGaps
+        .map((item) => getUserId(item))
+        .filter(Boolean)
+    ).size;
+
+
+  /* =======================================================
+     LOADING
+  ======================================================= */
 
   if (loading) {
 
     return (
-
       <div className="asg-page">
 
         <div className="asg-loading">
@@ -332,28 +638,23 @@ const AdminSkillGap = () => {
         </div>
 
       </div>
-
     );
-
   }
 
 
-  // ==========================================
-  // ERROR
-  // ==========================================
+  /* =======================================================
+     ERROR
+  ======================================================= */
 
   if (error) {
 
     return (
-
       <div className="asg-page">
 
         <div className="asg-error">
 
           <div className="asg-error-icon">
-
             <AlertTriangle size={23} />
-
           </div>
 
           <h2>
@@ -367,33 +668,28 @@ const AdminSkillGap = () => {
           <button
             onClick={loadSkillGaps}
           >
-
             <RefreshCw size={15} />
-
             Try Again
-
           </button>
 
         </div>
 
       </div>
-
     );
-
   }
 
 
-  // ==========================================
-  // PAGE
-  // ==========================================
+  /* =======================================================
+     PAGE
+  ======================================================= */
 
   return (
 
     <div className="asg-page">
 
-      {/* =====================================
+      {/* ===================================================
           HEADER
-      ===================================== */}
+      =================================================== */}
 
       <div className="asg-header">
 
@@ -414,7 +710,6 @@ const AdminSkillGap = () => {
 
         </div>
 
-
         <button
           className="asg-refresh"
           onClick={loadSkillGaps}
@@ -429,21 +724,18 @@ const AdminSkillGap = () => {
       </div>
 
 
-      {/* =====================================
-          SUMMARY CARDS
-      ===================================== */}
+      {/* ===================================================
+          SUMMARY
+      =================================================== */}
 
       <div className="asg-summary-grid">
 
-
-        {/* TOTAL ANALYSES */}
+        {/* TOTAL */}
 
         <div className="asg-summary-card">
 
           <div className="asg-summary-icon">
-
             <BrainCircuit size={21} />
-
           </div>
 
           <div>
@@ -461,14 +753,12 @@ const AdminSkillGap = () => {
         </div>
 
 
-        {/* MISSING SKILLS */}
+        {/* SKILLS */}
 
         <div className="asg-summary-card">
 
           <div className="asg-summary-icon">
-
             <Target size={21} />
-
           </div>
 
           <div>
@@ -491,9 +781,7 @@ const AdminSkillGap = () => {
         <div className="asg-summary-card">
 
           <div className="asg-summary-icon">
-
             <BookOpen size={21} />
-
           </div>
 
           <div>
@@ -516,9 +804,7 @@ const AdminSkillGap = () => {
         <div className="asg-summary-card">
 
           <div className="asg-summary-icon">
-
             <TrendingUp size={21} />
-
           </div>
 
           <div>
@@ -528,13 +814,7 @@ const AdminSkillGap = () => {
             </span>
 
             <strong>
-              {new Set(
-                skillGaps.map(
-                  (item) =>
-                    item.email ||
-                    item.user
-                )
-              ).size}
+              {totalUsers}
             </strong>
 
           </div>
@@ -544,12 +824,11 @@ const AdminSkillGap = () => {
       </div>
 
 
-      {/* =====================================
+      {/* ===================================================
           MAIN BOX
-      ===================================== */}
+      =================================================== */}
 
       <div className="asg-box">
-
 
         {/* TOOLBAR */}
 
@@ -566,6 +845,7 @@ const AdminSkillGap = () => {
               {filteredSkillGaps.length}{" "}
 
               analysis
+
               {filteredSkillGaps.length !== 1
                 ? "es"
                 : ""}
@@ -581,7 +861,7 @@ const AdminSkillGap = () => {
 
             <input
               type="text"
-              placeholder="Search name or email..."
+              placeholder="Search name, email or career goal..."
               value={search}
               onChange={(e) =>
                 setSearch(e.target.value)
@@ -607,9 +887,9 @@ const AdminSkillGap = () => {
         </div>
 
 
-        {/* =====================================
+        {/* =================================================
             TABLE
-        ===================================== */}
+        ================================================= */}
 
         <div className="asg-table-wrapper">
 
@@ -621,6 +901,10 @@ const AdminSkillGap = () => {
 
                 <th>
                   USER
+                </th>
+
+                <th>
+                  CAREER GOAL
                 </th>
 
                 <th>
@@ -655,16 +939,12 @@ const AdminSkillGap = () => {
                 <tr>
 
                   <td
-                    colSpan="6"
+                    colSpan="7"
                     className="asg-empty"
                   >
 
                     <div className="asg-empty-icon">
-
-                      <BrainCircuit
-                        size={23}
-                      />
-
+                      <BrainCircuit size={23} />
                     </div>
 
                     <strong>
@@ -682,7 +962,7 @@ const AdminSkillGap = () => {
               ) : (
 
                 filteredSkillGaps.map(
-                  (item) => {
+                  (item, index) => {
 
                     const missingSkills =
                       getSkills(item);
@@ -693,10 +973,22 @@ const AdminSkillGap = () => {
                     const score =
                       getScore(item);
 
+                    const userName =
+                      getUserName(item);
+
+                    const userEmail =
+                      getUserEmail(item);
+
+                    const careerGoal =
+                      getCareerGoal(item);
+
                     return (
 
                       <tr
-                        key={item._id}
+                        key={
+                          item._id ||
+                          `${getUserId(item)}-${index}`
+                        }
                       >
 
                         {/* USER */}
@@ -707,33 +999,47 @@ const AdminSkillGap = () => {
 
                             <div className="asg-avatar">
 
-                              {item.initials ||
-                                item.user
-                                  ?.charAt(0)
-                                  ?.toUpperCase() ||
-                                "U"}
+                              {getUserInitial(item)}
 
                             </div>
 
                             <div>
 
                               <strong>
-                                {item.user ||
-                                  "Unknown User"}
+                                {userName}
                               </strong>
 
                               <span>
 
-                                <Mail
-                                  size={12}
-                                />
+                                <Mail size={12} />
 
-                                {item.email ||
-                                  "No email"}
+                                {userEmail}
 
                               </span>
 
                             </div>
+
+                          </div>
+
+                        </td>
+
+
+                        {/* CAREER GOAL */}
+
+                        <td>
+
+                          <div
+                            className="asg-career-goal"
+                            title={careerGoal}
+                          >
+
+                            <BriefcaseBusiness
+                              size={14}
+                            />
+
+                            <span>
+                              {careerGoal}
+                            </span>
 
                           </div>
 
@@ -749,40 +1055,39 @@ const AdminSkillGap = () => {
                             {missingSkills
                               .slice(0, 3)
                               .map(
-                                (skill, index) => (
+                                (skill, skillIndex) => {
 
-                                  <span
-                                    className="asg-tag missing"
-                                    key={index}
-                                  >
-                                    {typeof skill ===
-                                    "object"
-                                      ? skill.name ||
-                                        skill.skill ||
-                                        JSON.stringify(
-                                          skill
-                                        )
-                                      : skill}
-                                  </span>
+                                  const text =
+                                    getSkillText(skill);
 
-                                )
+                                  return (
+
+                                    <span
+                                      className="asg-tag missing"
+                                      key={skillIndex}
+                                    >
+
+                                      {text ||
+                                        "Unknown skill"}
+
+                                    </span>
+
+                                  );
+                                }
                               )}
 
-                            {missingSkills.length >
-                              3 && (
+                            {missingSkills.length > 3 && (
 
                               <span className="asg-more">
 
                                 +
-                                {missingSkills.length -
-                                  3}
+                                {missingSkills.length - 3}
 
                               </span>
 
                             )}
 
-                            {missingSkills.length ===
-                              0 && (
+                            {missingSkills.length === 0 && (
 
                               <span className="asg-none">
                                 No skills listed
@@ -804,40 +1109,39 @@ const AdminSkillGap = () => {
                             {strengths
                               .slice(0, 3)
                               .map(
-                                (skill, index) => (
+                                (skill, skillIndex) => {
 
-                                  <span
-                                    className="asg-tag current"
-                                    key={index}
-                                  >
-                                    {typeof skill ===
-                                    "object"
-                                      ? skill.name ||
-                                        skill.skill ||
-                                        JSON.stringify(
-                                          skill
-                                        )
-                                      : skill}
-                                  </span>
+                                  const text =
+                                    getSkillText(skill);
 
-                                )
+                                  return (
+
+                                    <span
+                                      className="asg-tag current"
+                                      key={skillIndex}
+                                    >
+
+                                      {text ||
+                                        "Unknown skill"}
+
+                                    </span>
+
+                                  );
+                                }
                               )}
 
-                            {strengths.length >
-                              3 && (
+                            {strengths.length > 3 && (
 
                               <span className="asg-more">
 
                                 +
-                                {strengths.length -
-                                  3}
+                                {strengths.length - 3}
 
                               </span>
 
                             )}
 
-                            {strengths.length ===
-                              0 && (
+                            {strengths.length === 0 && (
 
                               <span className="asg-none">
                                 Not available
@@ -883,13 +1187,12 @@ const AdminSkillGap = () => {
 
                           <div className="asg-date">
 
-                            <CalendarDays
-                              size={13}
-                            />
+                            <CalendarDays size={13} />
 
                             {formatDate(
                               item.createdAt ||
-                                item.date
+                              item.date ||
+                              item.updatedAt
                             )}
 
                           </div>
@@ -904,17 +1207,13 @@ const AdminSkillGap = () => {
                           <button
                             className="asg-details-btn"
                             onClick={() =>
-                              setSelectedSkillGap(
-                                item
-                              )
+                              setSelectedSkillGap(item)
                             }
                           >
 
                             View
 
-                            <ChevronDown
-                              size={14}
-                            />
+                            <ChevronDown size={14} />
 
                           </button>
 
@@ -923,7 +1222,6 @@ const AdminSkillGap = () => {
                       </tr>
 
                     );
-
                   }
                 )
 
@@ -938,16 +1236,15 @@ const AdminSkillGap = () => {
       </div>
 
 
-      {/* =====================================
-          DETAILS MODAL
-      ===================================== */}
+      {/* ===================================================
+          MODAL
+      =================================================== */}
 
       {selectedSkillGap && (
 
         <div className="asg-modal-overlay">
 
           <div className="asg-modal">
-
 
             {/* CLOSE */}
 
@@ -963,19 +1260,18 @@ const AdminSkillGap = () => {
             </button>
 
 
-            {/* MODAL HEADER */}
+            {/* HEADER */}
 
             <div className="asg-modal-header">
 
               <div className="asg-modal-avatar">
 
-                {selectedSkillGap.initials ||
-                  selectedSkillGap.user
-                    ?.charAt(0)
-                    ?.toUpperCase() ||
-                  "U"}
+                {getUserInitial(
+                  selectedSkillGap
+                )}
 
               </div>
+
 
               <div>
 
@@ -984,16 +1280,18 @@ const AdminSkillGap = () => {
                 </span>
 
                 <h2>
-                  {selectedSkillGap.user ||
-                    "Unknown User"}
+                  {getUserName(
+                    selectedSkillGap
+                  )}
                 </h2>
 
                 <p>
 
                   <Mail size={13} />
 
-                  {selectedSkillGap.email ||
-                    "No email"}
+                  {getUserEmail(
+                    selectedSkillGap
+                  )}
 
                 </p>
 
@@ -1012,18 +1310,52 @@ const AdminSkillGap = () => {
 
               {formatDate(
                 selectedSkillGap.createdAt ||
-                  selectedSkillGap.date
+                selectedSkillGap.date ||
+                selectedSkillGap.updatedAt
               )}
 
             </div>
 
 
-            {/* DETAILS */}
+            {/* CONTENT */}
 
             <div className="asg-modal-content">
 
 
-              {/* SKILLS TO IMPROVE */}
+              {/* =================================================
+                  CAREER GOAL
+              ================================================= */}
+
+              <div className="asg-detail-section">
+
+                <div className="asg-detail-title">
+
+                  <BriefcaseBusiness size={17} />
+
+                  <h3>
+                    Career Goal
+                  </h3>
+
+                </div>
+
+                <div className="asg-career-goal-modal">
+
+                  <span>
+
+                    {getCareerGoal(
+                      selectedSkillGap
+                    )}
+
+                  </span>
+
+                </div>
+
+              </div>
+
+
+              {/* =================================================
+                  SKILLS TO IMPROVE
+              ================================================= */}
 
               <div className="asg-detail-section">
 
@@ -1037,6 +1369,7 @@ const AdminSkillGap = () => {
 
                 </div>
 
+
                 <div className="asg-detail-list">
 
                   {getSkills(
@@ -1046,31 +1379,33 @@ const AdminSkillGap = () => {
                     getSkills(
                       selectedSkillGap
                     ).map(
-                      (skill, index) => (
+                      (skill, index) => {
 
-                        <span
-                          key={index}
-                          className="asg-detail-tag missing"
-                        >
+                        const text =
+                          getSkillText(skill);
 
-                          {typeof skill ===
-                          "object"
-                            ? skill.name ||
-                              skill.skill ||
-                              JSON.stringify(
-                                skill
-                              )
-                            : skill}
+                        return (
 
-                        </span>
+                          <span
+                            key={index}
+                            className="asg-detail-tag missing"
+                          >
 
-                      )
+                            {text ||
+                              "Unknown skill"}
+
+                          </span>
+
+                        );
+                      }
                     )
 
                   ) : (
 
                     <span className="asg-none">
+
                       No skill gap data available.
+
                     </span>
 
                   )}
@@ -1080,7 +1415,9 @@ const AdminSkillGap = () => {
               </div>
 
 
-              {/* CURRENT SKILLS */}
+              {/* =================================================
+                  CURRENT SKILLS
+              ================================================= */}
 
               <div className="asg-detail-section">
 
@@ -1094,6 +1431,7 @@ const AdminSkillGap = () => {
 
                 </div>
 
+
                 <div className="asg-detail-list">
 
                   {getStrengths(
@@ -1103,31 +1441,33 @@ const AdminSkillGap = () => {
                     getStrengths(
                       selectedSkillGap
                     ).map(
-                      (skill, index) => (
+                      (skill, index) => {
 
-                        <span
-                          key={index}
-                          className="asg-detail-tag current"
-                        >
+                        const text =
+                          getSkillText(skill);
 
-                          {typeof skill ===
-                          "object"
-                            ? skill.name ||
-                              skill.skill ||
-                              JSON.stringify(
-                                skill
-                              )
-                            : skill}
+                        return (
 
-                        </span>
+                          <span
+                            key={index}
+                            className="asg-detail-tag current"
+                          >
 
-                      )
+                            {text ||
+                              "Unknown skill"}
+
+                          </span>
+
+                        );
+                      }
                     )
 
                   ) : (
 
                     <span className="asg-none">
+
                       No current skill data available.
+
                     </span>
 
                   )}
@@ -1137,7 +1477,9 @@ const AdminSkillGap = () => {
               </div>
 
 
-              {/* RECOMMENDATIONS */}
+              {/* =================================================
+                  RECOMMENDATIONS
+              ================================================= */}
 
               <div className="asg-detail-section">
 
@@ -1151,6 +1493,7 @@ const AdminSkillGap = () => {
 
                 </div>
 
+
                 {getRecommendations(
                   selectedSkillGap
                 ).length > 0 ? (
@@ -1160,31 +1503,32 @@ const AdminSkillGap = () => {
                     {getRecommendations(
                       selectedSkillGap
                     ).map(
-                      (recommendation, index) => (
+                      (recommendation, index) => {
 
-                        <li key={index}>
+                        const text =
+                          getRecommendationText(
+                            recommendation
+                          );
 
-                          <span>
-                            {index + 1}
-                          </span>
+                        return (
 
-                          <p>
+                          <li key={index}>
 
-                            {typeof recommendation ===
-                            "object"
-                              ? recommendation.title ||
-                                recommendation.name ||
-                                recommendation.description ||
-                                JSON.stringify(
-                                  recommendation
-                                )
-                              : recommendation}
+                            <span>
+                              {index + 1}
+                            </span>
 
-                          </p>
+                            <p>
 
-                        </li>
+                              {text ||
+                                "Recommendation unavailable"}
 
-                      )
+                            </p>
+
+                          </li>
+
+                        );
+                      }
                     )}
 
                   </ul>
@@ -1192,7 +1536,9 @@ const AdminSkillGap = () => {
                 ) : (
 
                   <span className="asg-none">
+
                     No recommendations available.
+
                   </span>
 
                 )}
@@ -1200,7 +1546,9 @@ const AdminSkillGap = () => {
               </div>
 
 
-              {/* RAW ADDITIONAL DATA */}
+              {/* =================================================
+                  TARGET ROLE
+              ================================================= */}
 
               {selectedSkillGap.targetRole && (
 
@@ -1211,7 +1559,12 @@ const AdminSkillGap = () => {
                   </strong>
 
                   <span>
-                    {selectedSkillGap.targetRole}
+
+                    {safeText(
+                      selectedSkillGap.targetRole,
+                      "Not available"
+                    )}
+
                   </span>
 
                 </div>
@@ -1244,9 +1597,7 @@ const AdminSkillGap = () => {
       )}
 
     </div>
-
   );
-
 };
 
 
