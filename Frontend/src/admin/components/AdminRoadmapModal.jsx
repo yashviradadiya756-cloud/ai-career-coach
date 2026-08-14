@@ -2,214 +2,485 @@ import React from "react";
 
 import {
   X,
-  Map,
-  User,
+  FileText,
   Calendar,
-  CheckCircle2,
-  Circle,
-  Clock,
+  Download,
+  CheckCircle,
+  AlertTriangle,
+  Lightbulb,
+  Mail,
 } from "lucide-react";
 
-const AdminRoadmapModal = ({
-  roadmap,
+const AdminResumeModal = ({
+  resume,
   onClose,
 }) => {
-  if (!roadmap) return null;
+  if (!resume) return null;
+
+  /* =====================================================
+     SAFE DATA
+  ===================================================== */
+
+  const strengths =
+    Array.isArray(resume.strengths)
+      ? resume.strengths
+      : [];
+
+  const weaknesses =
+    Array.isArray(resume.weaknesses)
+      ? resume.weaknesses
+      : [];
+
+  const suggestions =
+    Array.isArray(resume.suggestions)
+      ? resume.suggestions
+      : [];
+
+  const missingSkills =
+    Array.isArray(resume.missingSkills)
+      ? resume.missingSkills
+      : [];
+
+  const atsScore =
+    Number(resume.atsScore) || 0;
+
+  /* =====================================================
+     USER DATA
+  ===================================================== */
+
+  const user =
+    resume.user &&
+    typeof resume.user === "object"
+      ? resume.user
+      : null;
+
+  const userName =
+    user?.username ||
+    user?.name ||
+    (typeof resume.user === "string"
+      ? resume.user
+      : "Unknown User");
+
+  const userEmail =
+    user?.email ||
+    resume.email ||
+    "No email";
+
+  const initials =
+    resume.initials ||
+    userName
+      .split(" ")
+      .filter(Boolean)
+      .map(
+        (part) =>
+          part.charAt(0)
+      )
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() ||
+    "U";
+
+  /* =====================================================
+     FILE URL
+  ===================================================== */
+
+  const getFileUrl = () => {
+    if (resume.fileUrl) {
+      return resume.fileUrl;
+    }
+
+    if (!resume.filePath) {
+      return "";
+    }
+
+    const backendBaseUrl =
+      import.meta.env
+        .VITE_API_URL ||
+      "http://localhost:5000";
+
+    let cleanPath =
+      String(resume.filePath)
+        .replace(/\\/g, "/")
+        .replace(/^\/+/, "");
+
+    if (
+      cleanPath.startsWith(
+        "uploads/"
+      )
+    ) {
+      return `${backendBaseUrl}/${cleanPath}`;
+    }
+
+    return `${backendBaseUrl}/uploads/${cleanPath}`;
+  };
+
+  /* =====================================================
+     DOWNLOAD / OPEN RESUME
+  ===================================================== */
+
+  const handleDownload = () => {
+    const fileUrl =
+      getFileUrl();
+
+    if (!fileUrl) {
+      alert(
+        "Resume file is not available."
+      );
+      return;
+    }
+
+    window.open(
+      fileUrl,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  /* =====================================================
+     DATE
+  ===================================================== */
+
+  const getDate = () => {
+    if (resume.date) {
+      return resume.date;
+    }
+
+    const sourceDate =
+      resume.createdAt ||
+      resume.updatedAt ||
+      resume.uploadedAt;
+
+    if (!sourceDate) {
+      return "Unknown date";
+    }
+
+    const date =
+      new Date(sourceDate);
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "Unknown date";
+    }
+
+    return date.toLocaleDateString(
+      "en-US",
+      {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      }
+    );
+  };
+
+  const fileUrl =
+    getFileUrl();
+
+  /* =====================================================
+     MODAL
+  ===================================================== */
 
   return (
     <div
-      className="admin-roadmap-modal-overlay"
+      className="admin-resume-modal-overlay"
       onClick={onClose}
     >
       <div
-        className="admin-roadmap-modal"
+        className="admin-resume-modal"
         onClick={(e) =>
           e.stopPropagation()
         }
       >
 
-        {/* HEADER */}
+        {/* ==========================================
+            HEADER
+        ========================================== */}
 
-        <div className="admin-roadmap-modal-header">
+        <div className="admin-resume-modal-header">
 
           <div>
-            <span>
-              CAREER ROADMAP
+
+            <span className="admin-resume-eyebrow">
+              RESUME ANALYSIS
             </span>
 
             <h2>
-              {roadmap.career}
+              {resume.fileName ||
+                "Resume"}
             </h2>
+
           </div>
 
           <button
+            type="button"
+            className="admin-resume-close"
             onClick={onClose}
-            className="admin-roadmap-close"
+            aria-label="Close"
           >
-            <X size={17} />
+            <X size={18} />
           </button>
 
         </div>
 
-        {/* USER */}
+        {/* ==========================================
+            USER INFORMATION
+        ========================================== */}
 
-        <div className="admin-roadmap-user-info">
+        <div className="admin-resume-user-info">
 
-          <div className="admin-roadmap-avatar">
-            {roadmap.initials}
+          <div className="admin-resume-user-avatar">
+            {initials}
           </div>
 
-          <div>
+          <div className="admin-resume-user-details">
+
             <strong>
-              {roadmap.user}
+              {userName}
             </strong>
 
             <span>
-              {roadmap.email}
+              <Mail size={13} />
+
+              {userEmail}
             </span>
+
           </div>
 
-          <div className="admin-roadmap-meta">
+          <div className="admin-resume-user-meta">
 
             <span>
               <Calendar size={13} />
 
-              {roadmap.createdAt}
+              {getDate()}
             </span>
 
             <span>
-              <Clock size={13} />
+              <FileText size={13} />
 
-              {roadmap.duration}
+              {resume.fileName ||
+                "Resume"}
             </span>
 
           </div>
 
         </div>
 
-        {/* PROGRESS */}
+        {/* ==========================================
+            ATS SCORE
+        ========================================== */}
 
-        <div className="admin-roadmap-progress-section">
+        <div className="admin-resume-score-section">
 
-          <div className="admin-roadmap-progress-header">
+          <div className="admin-resume-score-circle">
 
-            <div>
-              <span>
-                OVERALL PROGRESS
-              </span>
+            <strong>
+              {atsScore}
+            </strong>
 
-              <strong>
-                {roadmap.progress}%
-              </strong>
-            </div>
-
-            <small>
-              {roadmap.completedSteps}/
-              {roadmap.totalSteps} steps completed
-            </small>
+            <span>
+              /100
+            </span>
 
           </div>
 
-          <div className="admin-roadmap-progress-bar">
-            <i
-              style={{
-                width: `${roadmap.progress}%`,
-              }}
-            ></i>
+          <div className="admin-resume-score-content">
+
+            <span className="admin-resume-score-label">
+              ATS SCORE
+            </span>
+
+            <h3>
+              {atsScore >= 70
+                ? "Strong Resume"
+                : atsScore >= 50
+                ? "Needs Improvement"
+                : "Needs Major Improvement"}
+            </h3>
+
+            <p>
+              This score represents the
+              resume's compatibility with
+              ATS systems.
+            </p>
+
           </div>
 
         </div>
 
-        {/* ROADMAP */}
+        {/* ==========================================
+            ANALYSIS
+        ========================================== */}
 
-        <div className="admin-roadmap-timeline">
+        <div className="admin-resume-analysis-grid">
 
-          <div className="admin-roadmap-timeline-title">
+          {/* STRENGTHS */}
 
-            <Map size={15} />
+          <div className="admin-analysis-box">
 
-            <h3>
-              Roadmap Stages
-            </h3>
+            <div className="admin-analysis-title success">
+
+              <CheckCircle size={15} />
+
+              <span>
+                Strengths
+              </span>
+
+            </div>
+
+            {strengths.length > 0 ? (
+              <ul>
+                {strengths.map(
+                  (item, index) => (
+                    <li
+                      key={index}
+                    >
+                      {item}
+                    </li>
+                  )
+                )}
+              </ul>
+            ) : (
+              <p className="admin-empty-analysis">
+                No strengths available.
+              </p>
+            )}
 
           </div>
 
-          <div className="admin-roadmap-steps">
+          {/* WEAKNESSES */}
 
-            {roadmap.steps.map(
-              (step, index) => (
-                <div
-                  className={`admin-roadmap-step ${
-                    step.completed
-                      ? "completed"
-                      : index ===
-                        roadmap.currentStep
-                      ? "current"
-                      : ""
-                  }`}
-                  key={index}
-                >
+          <div className="admin-analysis-box">
 
-                  <div className="admin-roadmap-step-icon">
+            <div className="admin-analysis-title warning">
 
-                    {step.completed ? (
-                      <CheckCircle2
-                        size={17}
-                      />
-                    ) : (
-                      <Circle
-                        size={17}
-                      />
-                    )}
+              <AlertTriangle size={15} />
 
-                  </div>
+              <span>
+                Weaknesses
+              </span>
 
-                  <div className="admin-roadmap-step-content">
+            </div>
 
-                    <div>
-
-                      <strong>
-                        {step.title}
-                      </strong>
-
-                      <span>
-                        {step.duration}
-                      </span>
-
-                    </div>
-
-                    <p>
-                      {step.description}
-                    </p>
-
-                    {index ===
-                      roadmap.currentStep &&
-                      !step.completed && (
-                        <small>
-                          Current stage
-                        </small>
-                      )}
-
-                  </div>
-
-                </div>
-              )
+            {weaknesses.length > 0 ? (
+              <ul>
+                {weaknesses.map(
+                  (item, index) => (
+                    <li
+                      key={index}
+                    >
+                      {item}
+                    </li>
+                  )
+                )}
+              </ul>
+            ) : (
+              <p className="admin-empty-analysis">
+                No weaknesses available.
+              </p>
             )}
 
           </div>
 
         </div>
 
-        {/* FOOTER */}
+        {/* ==========================================
+            MISSING SKILLS
+        ========================================== */}
 
-        <div className="admin-roadmap-modal-footer">
+        {missingSkills.length > 0 && (
+          <div className="admin-resume-missing-skills">
 
-          <span>
-            Last updated:{" "}
-            {roadmap.updatedAt}
-          </span>
+            <div className="admin-analysis-title warning">
 
-          <button onClick={onClose}>
+              <AlertTriangle size={15} />
+
+              <span>
+                Missing Skills
+              </span>
+
+            </div>
+
+            <div className="admin-resume-skill-list">
+
+              {missingSkills.map(
+                (skill, index) => (
+                  <span
+                    key={index}
+                  >
+                    {skill}
+                  </span>
+                )
+              )}
+
+            </div>
+
+          </div>
+        )}
+
+        {/* ==========================================
+            AI SUGGESTIONS
+        ========================================== */}
+
+        <div className="admin-resume-suggestions">
+
+          <div className="admin-analysis-title suggestion">
+
+            <Lightbulb size={15} />
+
+            <span>
+              AI Suggestions
+            </span>
+
+          </div>
+
+          {suggestions.length > 0 ? (
+            <ul>
+              {suggestions.map(
+                (item, index) => (
+                  <li
+                    key={index}
+                  >
+                    {item}
+                  </li>
+                )
+              )}
+            </ul>
+          ) : (
+            <p className="admin-empty-analysis">
+              No AI suggestions available.
+            </p>
+          )}
+
+        </div>
+
+        {/* ==========================================
+            FOOTER
+        ========================================== */}
+
+        <div className="admin-resume-modal-footer">
+
+          <button
+            type="button"
+            className="admin-resume-download"
+            onClick={handleDownload}
+            disabled={!fileUrl}
+          >
+
+            <Download size={15} />
+
+            {fileUrl
+              ? "Download Resume"
+              : "File Unavailable"}
+
+          </button>
+
+          <button
+            type="button"
+            className="admin-resume-close-button"
+            onClick={onClose}
+          >
             Close
           </button>
 
@@ -220,4 +491,4 @@ const AdminRoadmapModal = ({
   );
 };
 
-export default AdminRoadmapModal;
+export default AdminResumeModal;
