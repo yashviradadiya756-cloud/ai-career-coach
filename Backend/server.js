@@ -48,8 +48,6 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 
-const adminRoutes = require("./routes/adminRoutes");
-
 const app = express();
 
 console.log("ASSESSMENT API VERSION: 2026-08-06");
@@ -136,12 +134,21 @@ app.use("/api/settings", settingsRoutes);
 // ADMIN ROUTES
 // ===============================
 
-app.use("/api/admin", require("./routes/adminRoutes"));
+// ===============================
+// ADMIN ROUTES
+// ===============================
+
+const adminRoutes = require("./routes/adminRoutes");
+
+console.log("🔥 ADMIN ROUTES LOADED:", typeof adminRoutes);
+
+app.use("/api/admin", adminRoutes);
 
 app.get("/api/admin-route-test", (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: "ADMIN ROUTE FILE DEPLOYED",
+    version: "2026-08-14",
   });
 });
 
