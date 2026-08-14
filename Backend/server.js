@@ -138,6 +138,13 @@ app.use("/api/settings", settingsRoutes);
 
 app.use("/api/admin", require("./routes/adminRoutes"));
 
+app.get("/api/admin-route-test", (req, res) => {
+  res.json({
+    success: true,
+    message: "ADMIN ROUTE FILE DEPLOYED",
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
