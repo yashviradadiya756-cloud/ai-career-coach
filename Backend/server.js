@@ -136,7 +136,7 @@ app.use("/api/settings", settingsRoutes);
 // ADMIN ROUTES
 // ===============================
 
-app.use("/api/admin", adminRoutes);
+app.use("/api/admin", require("./routes/adminRoutes"));
 
 const PORT = process.env.PORT || 5000;
 

@@ -42,9 +42,14 @@ const AdminLogin = () => {
   try {
     console.log("========== ADMIN LOGIN ==========");
 
+    console.log(
+      "ADMIN EMAIL:",
+      formData.email
+    );
+
     const response = await loginUser({
-      email,
-      password,
+      email: formData.email,
+      password: formData.password,
     });
 
     console.log(
@@ -52,7 +57,6 @@ const AdminLogin = () => {
       response.data
     );
 
-    // Declare data ONLY ONCE
     const data = response.data;
 
     const adminUser = data.user;
@@ -78,12 +82,40 @@ const AdminLogin = () => {
     );
 
     // ==========================================
+    // CHECK ADMIN USER
+    // ==========================================
+
+    if (!adminUser) {
+      setError(
+        "Login successful, but user information was not returned."
+      );
+
+      return;
+    }
+
+    // ==========================================
     // CHECK ADMIN ROLE
     // ==========================================
 
-    if (adminUser?.role !== "admin") {
+    if (
+      String(adminUser.role)
+        .trim()
+        .toLowerCase() !== "admin"
+    ) {
       setError(
         "This account does not have administrator access."
+      );
+
+      return;
+    }
+
+    // ==========================================
+    // CHECK TOKEN
+    // ==========================================
+
+    if (!data.token) {
+      setError(
+        "Login successful, but authentication token was not returned."
       );
 
       return;
@@ -101,6 +133,13 @@ const AdminLogin = () => {
     localStorage.setItem(
       "adminUser",
       JSON.stringify(adminUser)
+    );
+
+    // Also save normal token if your
+    // existing protected API uses it.
+    localStorage.setItem(
+      "token",
+      data.token
     );
 
     console.log(
@@ -127,6 +166,11 @@ const AdminLogin = () => {
     console.error(
       "ADMIN LOGIN ERROR:",
       error
+    );
+
+    console.error(
+      "ADMIN LOGIN RESPONSE ERROR:",
+      error?.response?.data
     );
 
     setError(

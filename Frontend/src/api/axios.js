@@ -9,14 +9,15 @@ const api = axios.create({
   },
 });
 
-// =====================================================
-// JWT
-// =====================================================
+/* =====================================================
+   ATTACH JWT TOKEN
+===================================================== */
 
 api.interceptors.request.use(
   (config) => {
     const token =
-      localStorage.getItem("token");
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken");
 
     if (token) {
       config.headers.Authorization =

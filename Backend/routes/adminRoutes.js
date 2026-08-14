@@ -10,6 +10,7 @@ const {
   getAdminUsers,
   deleteAdminUser,
   getAdminResumes,
+  getAdminRoadmaps,
   getAdminPayments,
   getAdminFeedback,
 } = require("../controllers/adminController");
@@ -35,6 +36,11 @@ router.delete(
 router.get(
   "/resumes",
   getAdminResumes
+);
+
+router.get(
+  "/roadmap",
+  getAdminRoadmaps
 );
 
 router.get(

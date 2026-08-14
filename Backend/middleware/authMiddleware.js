@@ -3,13 +3,16 @@ const User = require("../models/User");
 
 const protect = async (req, res, next) => {
   try {
-    console.log("========== AUTH START ==========");
+    console.log("\n========== AUTH MIDDLEWARE ==========");
 
-    const authHeader = req.headers.authorization;
+    const authHeader =
+      req.headers.authorization;
 
     console.log(
-      "Authorization exists:",
-      !!authHeader
+      "AUTHORIZATION HEADER:",
+      authHeader
+        ? "TOKEN RECEIVED"
+        : "NO TOKEN"
     );
 
     if (
@@ -18,7 +21,7 @@ const protect = async (req, res, next) => {
     ) {
       return res.status(401).json({
         success: false,
-        message: "Authentication required",
+        message: "Not authorized, token missing",
       });
     }
 
@@ -26,56 +29,63 @@ const protect = async (req, res, next) => {
       authHeader.split(" ")[1];
 
     console.log(
-      "Token exists:",
-      !!token
+      "TOKEN RECEIVED:",
+      token ? "YES" : "NO"
     );
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
+    const decoded =
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET
+      );
 
     console.log(
-      "JWT DECODED:",
+      "DECODED TOKEN:",
       decoded
     );
 
-    const user = await User.findById(
-      decoded.id
-    ).select("-password");
-
-    console.log(
-      "DATABASE USER:",
-      user
-    );
+    const user =
+      await User.findById(
+        decoded.id
+      ).select("-password");
 
     if (!user) {
+      console.log(
+        "USER NOT FOUND:",
+        decoded.id
+      );
+
       return res.status(401).json({
         success: false,
         message: "User not found",
       });
     }
 
-    req.user = user;
-
     console.log(
-      "REQ.USER ROLE:",
-      req.user.role
+      "USER FOUND:",
+      {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      }
     );
 
-    console.log("========== AUTH END ==========");
+    req.user = user;
 
     next();
 
   } catch (error) {
+
     console.error(
-      "AUTH ERROR:",
-      error.message
+      "AUTH MIDDLEWARE ERROR:",
+      error
     );
 
     return res.status(401).json({
       success: false,
-      message: "Invalid or expired token",
+      message:
+        "Invalid or expired token",
     });
   }
 };

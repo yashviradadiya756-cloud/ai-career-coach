@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Resume = require("../models/Resume");
+const Roadmap = require("../models/Roadmap");
 
 // ==========================================
 // ADMIN DASHBOARD
@@ -241,6 +242,98 @@ const getAdminResumes = async (req, res) => {
 };
 
 // ==========================================
+// ROADMAPS
+// ==========================================
+
+const getAdminRoadmaps = async (req, res) => {
+  try {
+    console.log("========== ADMIN ROADMAPS ==========");
+
+    /*
+     * IMPORTANT:
+     * Change this import/model name only if your actual
+     * roadmap model has a different filename.
+     */
+    
+    const Roadmap = require("../models/Roadmap");
+
+    const roadmaps = await Roadmap.find()
+      .populate(
+        "user",
+        "name username email"
+      )
+      .sort({
+        createdAt: -1,
+      });
+
+    console.log(
+      "TOTAL ROADMAPS:",
+      roadmaps.length
+    );
+
+    const formattedRoadmaps = roadmaps.map((roadmap) => {
+      const userName =
+        roadmap.user?.name ||
+        roadmap.user?.username ||
+        "Unknown User";
+
+      const initials = userName
+        .split(" ")
+        .map((word) => word.charAt(0))
+        .join("")
+        .substring(0, 2)
+        .toUpperCase();
+
+      return {
+        _id: roadmap._id,
+
+        user: userName,
+
+        email:
+          roadmap.user?.email ||
+          "No email",
+
+        initials,
+
+        date: roadmap.createdAt
+          ? new Date(
+              roadmap.createdAt
+            ).toLocaleDateString()
+          : "Unknown date",
+
+        ...roadmap.toObject(),
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+
+      total: formattedRoadmaps.length,
+
+      roadmaps: formattedRoadmaps,
+    });
+
+  } catch (error) {
+    console.error(
+      "ADMIN ROADMAPS ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+
+      message:
+        "Failed to load roadmaps",
+
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : undefined,
+    });
+  }
+};
+
+// ==========================================
 // PAYMENTS
 // ==========================================
 
@@ -293,6 +386,7 @@ module.exports = {
   getAdminUsers,
   deleteAdminUser,
   getAdminResumes,
+  getAdminRoadmaps,
   getAdminPayments,
   getAdminFeedback,
 };

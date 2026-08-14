@@ -1,4 +1,5 @@
 import React, {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -19,478 +20,364 @@ import {
 
 import AdminRoadmapModal from "../components/AdminRoadmapModal";
 
+import api from "../../api/axios";
+
 import "../styles/adminRoadmaps.css";
 
 const AdminRoadmaps = () => {
-
-  const [search, setSearch] =
-    useState("");
-
-  const [statusFilter, setStatusFilter] =
-    useState("All");
-
-  const [careerFilter, setCareerFilter] =
-    useState("All");
-
-  const [currentPage, setCurrentPage] =
-    useState(1);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [careerFilter, setCareerFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedRoadmap, setSelectedRoadmap] =
     useState(null);
 
+  const [roadmaps, setRoadmaps] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const roadmapsPerPage = 6;
 
   /* =====================================================
-     DEMO DATA
+     GET ADMIN ROADMAPS
+     GET /api/admin/roadmap
   ===================================================== */
 
-  const [roadmaps] = useState([
-    {
-      id: 1,
-      user: "Yashvi Radariya",
-      email: "yashvi@example.com",
-      initials: "YR",
-      career: "Frontend Developer",
-      progress: 68,
-      status: "Active",
-      createdAt: "Aug 12, 2026",
-      updatedAt: "Today",
-      duration: "6 months",
-      completedSteps: 4,
-      totalSteps: 6,
-      currentStep: 4,
+  useEffect(() => {
+    const fetchRoadmaps = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-      steps: [
-        {
-          title: "HTML & CSS",
-          duration: "3 weeks",
-          description:
-            "Learn semantic HTML, responsive CSS and modern layouts.",
-          completed: true,
-        },
-        {
-          title: "JavaScript",
-          duration: "5 weeks",
-          description:
-            "Master modern JavaScript, ES6+ and browser fundamentals.",
-          completed: true,
-        },
-        {
-          title: "React",
-          duration: "6 weeks",
-          description:
-            "Learn components, hooks, routing and state management.",
-          completed: true,
-        },
-        {
-          title: "Advanced React",
-          duration: "4 weeks",
-          description:
-            "Learn performance, architecture and advanced patterns.",
-          completed: false,
-        },
-        {
-          title: "Testing",
-          duration: "2 weeks",
-          description:
-            "Learn frontend testing and quality practices.",
-          completed: false,
-        },
-        {
-          title: "Portfolio Project",
-          duration: "4 weeks",
-          description:
-            "Build and deploy a production-level project.",
-          completed: false,
-        },
-      ],
-    },
+        const response = await api.get(
+          "/api/admin/roadmap"
+        );
 
-    {
-      id: 2,
-      user: "Priya Shah",
-      email: "priya@example.com",
-      initials: "PS",
-      career: "UI/UX Designer",
-      progress: 42,
-      status: "Active",
-      createdAt: "Aug 11, 2026",
-      updatedAt: "Yesterday",
-      duration: "5 months",
-      completedSteps: 2,
-      totalSteps: 5,
-      currentStep: 2,
+        console.log(
+          "ADMIN ROADMAP API:",
+          response.data
+        );
 
-      steps: [
-        {
-          title: "Design Fundamentals",
-          duration: "3 weeks",
-          description:
-            "Learn color, typography, spacing and visual hierarchy.",
-          completed: true,
-        },
-        {
-          title: "Figma",
-          duration: "4 weeks",
-          description:
-            "Learn professional interface design using Figma.",
-          completed: true,
-        },
-        {
-          title: "UX Research",
-          duration: "4 weeks",
-          description:
-            "Learn user research and usability testing.",
-          completed: false,
-        },
-        {
-          title: "Case Studies",
-          duration: "3 weeks",
-          description:
-            "Create detailed UX case studies.",
-          completed: false,
-        },
-        {
-          title: "Portfolio",
-          duration: "3 weeks",
-          description:
-            "Build a professional design portfolio.",
-          completed: false,
-        },
-      ],
-    },
+        const backendRoadmaps =
+          Array.isArray(response.data?.roadmaps)
+            ? response.data.roadmaps
+            : [];
 
-    {
-      id: 3,
-      user: "Rahul Patel",
-      email: "rahul@example.com",
-      initials: "RP",
-      career: "Full Stack Developer",
-      progress: 31,
-      status: "Active",
-      createdAt: "Aug 10, 2026",
-      updatedAt: "2 days ago",
-      duration: "8 months",
-      completedSteps: 2,
-      totalSteps: 7,
-      currentStep: 2,
+        /* ================================================
+           MAP BACKEND DATA TO EXISTING UI STRUCTURE
+        ================================================ */
 
-      steps: [
-        {
-          title: "JavaScript",
-          duration: "5 weeks",
-          description:
-            "Learn modern JavaScript fundamentals.",
-          completed: true,
-        },
-        {
-          title: "React",
-          duration: "6 weeks",
-          description:
-            "Learn frontend application development.",
-          completed: true,
-        },
-        {
-          title: "Node.js",
-          duration: "5 weeks",
-          description:
-            "Build backend applications using Node.js.",
-          completed: false,
-        },
-        {
-          title: "Express APIs",
-          duration: "3 weeks",
-          description:
-            "Build REST APIs and authentication.",
-          completed: false,
-        },
-        {
-          title: "MongoDB",
-          duration: "4 weeks",
-          description:
-            "Learn database design and MongoDB.",
-          completed: false,
-        },
-        {
-          title: "Deployment",
-          duration: "2 weeks",
-          description:
-            "Deploy full-stack applications.",
-          completed: false,
-        },
-        {
-          title: "Final Project",
-          duration: "5 weeks",
-          description:
-            "Build a production-ready full-stack project.",
-          completed: false,
-        },
-      ],
-    },
+        const formattedRoadmaps =
+          backendRoadmaps.map(
+            (roadmap, index) => {
+              const user =
+                roadmap.user &&
+                typeof roadmap.user === "object"
+                  ? roadmap.user
+                  : null;
 
-    {
-      id: 4,
-      user: "Neha Patel",
-      email: "neha@example.com",
-      initials: "NP",
-      career: "Data Analyst",
-      progress: 84,
-      status: "Active",
-      createdAt: "Aug 09, 2026",
-      updatedAt: "Yesterday",
-      duration: "4 months",
-      completedSteps: 5,
-      totalSteps: 6,
-      currentStep: 5,
+              const userName =
+                user?.username ||
+                user?.name ||
+                "Unknown User";
 
-      steps: [
-        {
-          title: "Excel",
-          duration: "3 weeks",
-          description:
-            "Learn advanced Excel and data cleaning.",
-          completed: true,
-        },
-        {
-          title: "SQL",
-          duration: "5 weeks",
-          description:
-            "Learn queries and relational databases.",
-          completed: true,
-        },
-        {
-          title: "Statistics",
-          duration: "4 weeks",
-          description:
-            "Learn statistics for data analysis.",
-          completed: true,
-        },
-        {
-          title: "Power BI",
-          duration: "4 weeks",
-          description:
-            "Build interactive dashboards.",
-          completed: true,
-        },
-        {
-          title: "Projects",
-          duration: "3 weeks",
-          description:
-            "Complete practical data projects.",
-          completed: true,
-        },
-        {
-          title: "Job Preparation",
-          duration: "2 weeks",
-          description:
-            "Prepare resume and interviews.",
-          completed: false,
-        },
-      ],
-    },
+              const userEmail =
+                user?.email ||
+                roadmap.email ||
+                "No email";
 
-    {
-      id: 5,
-      user: "Aarav Mehta",
-      email: "aarav@example.com",
-      initials: "AM",
-      career: "Backend Developer",
-      progress: 100,
-      status: "Completed",
-      createdAt: "Aug 05, 2026",
-      updatedAt: "Aug 10, 2026",
-      duration: "5 months",
-      completedSteps: 5,
-      totalSteps: 5,
-      currentStep: 5,
+              const initials =
+                userName
+                  .split(" ")
+                  .filter(Boolean)
+                  .map(
+                    (part) =>
+                      part.charAt(0)
+                  )
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase() || "U";
 
-      steps: [
-        {
-          title: "Node.js",
-          duration: "5 weeks",
-          description:
-            "Learn Node.js fundamentals.",
-          completed: true,
-        },
-        {
-          title: "Express",
-          duration: "3 weeks",
-          description:
-            "Build REST APIs using Express.",
-          completed: true,
-        },
-        {
-          title: "MongoDB",
-          duration: "4 weeks",
-          description:
-            "Learn database design.",
-          completed: true,
-        },
-        {
-          title: "Authentication",
-          duration: "3 weeks",
-          description:
-            "Build secure authentication systems.",
-          completed: true,
-        },
-        {
-          title: "Deployment",
-          duration: "3 weeks",
-          description:
-            "Deploy backend applications.",
-          completed: true,
-        },
-      ],
-    },
+              /* ==========================================
+                 PHASES -> EXISTING UI STEPS
+              ========================================== */
 
-    {
-      id: 6,
-      user: "Kavya Joshi",
-      email: "kavya@example.com",
-      initials: "KJ",
-      career: "Python Developer",
-      progress: 52,
-      status: "Active",
-      createdAt: "Aug 04, 2026",
-      updatedAt: "Aug 11, 2026",
-      duration: "6 months",
-      completedSteps: 3,
-      totalSteps: 6,
-      currentStep: 3,
+              const phases =
+                Array.isArray(
+                  roadmap.phases
+                )
+                  ? roadmap.phases
+                  : [];
 
-      steps: [
-        {
-          title: "Python",
-          duration: "5 weeks",
-          description:
-            "Learn Python fundamentals.",
-          completed: true,
-        },
-        {
-          title: "OOP",
-          duration: "3 weeks",
-          description:
-            "Learn object-oriented programming.",
-          completed: true,
-        },
-        {
-          title: "Django",
-          duration: "5 weeks",
-          description:
-            "Build web applications with Django.",
-          completed: true,
-        },
-        {
-          title: "REST APIs",
-          duration: "3 weeks",
-          description:
-            "Build REST APIs.",
-          completed: false,
-        },
-        {
-          title: "Database",
-          duration: "4 weeks",
-          description:
-            "Learn SQL and database design.",
-          completed: false,
-        },
-        {
-          title: "Deployment",
-          duration: "2 weeks",
-          description:
-            "Deploy Python applications.",
-          completed: false,
-        },
-      ],
-    },
+              const steps = phases.map(
+                (phase) => {
+                  let description = "";
 
-    {
-      id: 7,
-      user: "Harsh Trivedi",
-      email: "harsh@example.com",
-      initials: "HT",
-      career: "Frontend Developer",
-      progress: 100,
-      status: "Completed",
-      createdAt: "Aug 01, 2026",
-      updatedAt: "Aug 08, 2026",
-      duration: "5 months",
-      completedSteps: 5,
-      totalSteps: 5,
-      currentStep: 5,
+                  if (
+                    typeof phase.description ===
+                    "string"
+                  ) {
+                    description =
+                      phase.description;
+                  } else if (
+                    Array.isArray(
+                      phase.topics
+                    )
+                  ) {
+                    description =
+                      phase.topics.join(", ");
+                  } else if (
+                    Array.isArray(
+                      phase.projects
+                    )
+                  ) {
+                    description =
+                      phase.projects.join(", ");
+                  }
 
-      steps: [
-        {
-          title: "HTML & CSS",
-          duration: "3 weeks",
-          description:
-            "Learn frontend fundamentals.",
-          completed: true,
-        },
-        {
-          title: "JavaScript",
-          duration: "5 weeks",
-          description:
-            "Master modern JavaScript.",
-          completed: true,
-        },
-        {
-          title: "React",
-          duration: "6 weeks",
-          description:
-            "Build React applications.",
-          completed: true,
-        },
-        {
-          title: "Projects",
-          duration: "5 weeks",
-          description:
-            "Build practical projects.",
-          completed: true,
-        },
-        {
-          title: "Job Preparation",
-          duration: "3 weeks",
-          description:
-            "Prepare for frontend jobs.",
-          completed: true,
-        },
-      ],
-    },
-  ]);
+                  return {
+                    title:
+                      phase.title ||
+                      phase.name ||
+                      "Learning Phase",
+
+                    duration:
+                      phase.duration ||
+                      "Not specified",
+
+                    description:
+                      description ||
+                      "No description available.",
+
+                    completed:
+                      Boolean(
+                        phase.completed
+                      ),
+                  };
+                }
+              );
+
+              const totalSteps =
+                steps.length;
+
+              const completedSteps =
+                steps.filter(
+                  (step) =>
+                    step.completed
+                ).length;
+
+              /* ==========================================
+                 CALCULATE PROGRESS
+              ========================================== */
+
+              let progress = 0;
+
+              if (
+                typeof roadmap.progress ===
+                "number"
+              ) {
+                progress =
+                  Math.max(
+                    0,
+                    Math.min(
+                      100,
+                      roadmap.progress
+                    )
+                  );
+              } else if (
+                totalSteps > 0
+              ) {
+                progress = Math.round(
+                  (completedSteps /
+                    totalSteps) *
+                    100
+                );
+              }
+
+              /* ==========================================
+                 STATUS
+              ========================================== */
+
+              const status =
+                progress >= 100
+                  ? "Completed"
+                  : "Active";
+
+              /* ==========================================
+                 CURRENT STEP
+              ========================================== */
+
+              const currentStep =
+                steps.findIndex(
+                  (step) =>
+                    !step.completed
+                );
+
+              const currentStepNumber =
+                currentStep === -1
+                  ? totalSteps
+                  : currentStep + 1;
+
+              /* ==========================================
+                 DATE
+              ========================================== */
+
+              const formatDate = (
+                dateValue
+              ) => {
+                if (!dateValue) {
+                  return "Unknown date";
+                }
+
+                const date =
+                  new Date(dateValue);
+
+                if (
+                  Number.isNaN(
+                    date.getTime()
+                  )
+                ) {
+                  return "Unknown date";
+                }
+
+                return date.toLocaleDateString(
+                  "en-US",
+                  {
+                    month: "short",
+                    day: "2-digit",
+                    year: "numeric",
+                  }
+                );
+              };
+
+              const updatedDate =
+                roadmap.updatedAt ||
+                roadmap.createdAt;
+
+              /* ==========================================
+                 RETURN UI-FRIENDLY OBJECT
+              ========================================== */
+
+              return {
+                id:
+                  roadmap._id ||
+                  roadmap.id ||
+                  index,
+
+                user: userName,
+
+                email: userEmail,
+
+                initials,
+
+                career:
+                  roadmap.targetRole ||
+                  roadmap.career ||
+                  "Career Goal",
+
+                roadmapTitle:
+                  roadmap.roadmapTitle ||
+                  "",
+
+                progress,
+
+                status,
+
+                createdAt:
+                  formatDate(
+                    roadmap.createdAt
+                  ),
+
+                updatedAt:
+                  formatDate(
+                    updatedDate
+                  ),
+
+                duration:
+                  roadmap.duration ||
+                  "Personalized",
+
+                completedSteps,
+
+                totalSteps,
+
+                currentStep:
+                  currentStepNumber,
+
+                steps,
+
+                /* Keep original backend data
+                   available for modal if needed */
+                originalRoadmap:
+                  roadmap,
+              };
+            }
+          );
+
+        setRoadmaps(
+          formattedRoadmaps
+        );
+      } catch (err) {
+        console.error(
+          "ADMIN ROADMAP FETCH ERROR:",
+          err
+        );
+
+        const message =
+          err?.response?.data?.message ||
+          "Failed to load roadmaps.";
+
+        setError(message);
+
+        setRoadmaps([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoadmaps();
+  }, []);
 
   /* =====================================================
      FILTER
   ===================================================== */
 
   const filteredRoadmaps = useMemo(() => {
-    return roadmaps.filter((roadmap) => {
+    return roadmaps.filter(
+      (roadmap) => {
+        const searchText =
+          search.toLowerCase().trim();
 
-      const searchMatch =
-        roadmap.user
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        roadmap.email
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        roadmap.career
-          .toLowerCase()
-          .includes(search.toLowerCase());
+        const searchMatch =
+          roadmap.user
+            .toLowerCase()
+            .includes(searchText) ||
+          roadmap.email
+            .toLowerCase()
+            .includes(searchText) ||
+          roadmap.career
+            .toLowerCase()
+            .includes(searchText);
 
-      const statusMatch =
-        statusFilter === "All" ||
-        roadmap.status === statusFilter;
+        const statusMatch =
+          statusFilter === "All" ||
+          roadmap.status ===
+            statusFilter;
 
-      const careerMatch =
-        careerFilter === "All" ||
-        roadmap.career === careerFilter;
+        const careerMatch =
+          careerFilter === "All" ||
+          roadmap.career ===
+            careerFilter;
 
-      return (
-        searchMatch &&
-        statusMatch &&
-        careerMatch
-      );
-    });
+        return (
+          searchMatch &&
+          statusMatch &&
+          careerMatch
+        );
+      }
+    );
   }, [
     roadmaps,
     search,
@@ -521,7 +408,8 @@ const AdminRoadmaps = () => {
      STATS
   ===================================================== */
 
-  const totalRoadmaps = roadmaps.length;
+  const totalRoadmaps =
+    roadmaps.length;
 
   const activeRoadmaps =
     roadmaps.filter(
@@ -535,19 +423,118 @@ const AdminRoadmaps = () => {
         item.status === "Completed"
     ).length;
 
-  const averageProgress = Math.round(
-    roadmaps.reduce(
-      (sum, item) =>
-        sum + item.progress,
-      0
-    ) / roadmaps.length
-  );
+  const averageProgress =
+    roadmaps.length > 0
+      ? Math.round(
+          roadmaps.reduce(
+            (sum, item) =>
+              sum + item.progress,
+            0
+          ) / roadmaps.length
+        )
+      : 0;
+
+  /* =====================================================
+     CAREER DEMAND
+  ===================================================== */
+
+  const careerDemand = useMemo(() => {
+    if (roadmaps.length === 0) {
+      return [
+        {
+          name: "Frontend Developer",
+          percentage: 0,
+        },
+        {
+          name: "Full Stack Developer",
+          percentage: 0,
+        },
+        {
+          name: "Data Analyst",
+          percentage: 0,
+        },
+        {
+          name: "UI/UX Designer",
+          percentage: 0,
+        },
+        {
+          name: "Other",
+          percentage: 0,
+        },
+      ];
+    }
+
+    const careerCounts = {};
+
+    roadmaps.forEach(
+      (roadmap) => {
+        const career =
+          roadmap.career ||
+          "Other";
+
+        careerCounts[career] =
+          (careerCounts[career] ||
+            0) + 1;
+      }
+    );
+
+    const total =
+      roadmaps.length;
+
+    const knownCareers = [
+      "Frontend Developer",
+      "Full Stack Developer",
+      "Data Analyst",
+      "UI/UX Designer",
+    ];
+
+    const known = knownCareers.map(
+      (career) => ({
+        name: career,
+        percentage: Math.round(
+          ((careerCounts[
+            career
+          ] || 0) /
+            total) *
+            100
+        ),
+      })
+    );
+
+    const knownCount =
+      knownCareers.reduce(
+        (sum, career) =>
+          sum +
+          (careerCounts[
+            career
+          ] || 0),
+        0
+      );
+
+    const otherPercentage =
+      Math.round(
+        ((total - knownCount) /
+          total) *
+          100
+      );
+
+    return [
+      ...known,
+      {
+        name: "Other",
+        percentage:
+          otherPercentage,
+      },
+    ];
+  }, [roadmaps]);
 
   /* =====================================================
      HANDLERS
   ===================================================== */
 
-  const getProgressClass = (progress) => {
+  const getProgressClass = (
+    progress
+  ) => {
     if (progress >= 80)
       return "high";
 
@@ -556,6 +543,10 @@ const AdminRoadmaps = () => {
 
     return "low";
   };
+
+  /* =====================================================
+     RETURN
+  ===================================================== */
 
   return (
     <div className="admin-roadmaps-page">
@@ -582,11 +573,13 @@ const AdminRoadmaps = () => {
         </div>
 
         <div className="admin-roadmap-live">
+
           <Map size={14} />
 
           Roadmap Engine
 
           <strong>Active</strong>
+
         </div>
 
       </div>
@@ -701,95 +694,35 @@ const AdminRoadmaps = () => {
 
           <div className="admin-career-bars">
 
-            <div>
-              <span>
-                Frontend Developer
-              </span>
+            {careerDemand.map(
+              (career) => (
+                <div
+                  key={
+                    career.name
+                  }
+                >
 
-              <strong>
-                31%
-              </strong>
+                  <span>
+                    {career.name}
+                  </span>
 
-              <div>
-                <i
-                  style={{
-                    width: "31%",
-                  }}
-                />
-              </div>
-            </div>
+                  <strong>
+                    {career.percentage}%
+                  </strong>
 
-            <div>
-              <span>
-                Full Stack Developer
-              </span>
+                  <div>
 
-              <strong>
-                24%
-              </strong>
+                    <i
+                      style={{
+                        width: `${career.percentage}%`,
+                      }}
+                    />
 
-              <div>
-                <i
-                  style={{
-                    width: "24%",
-                  }}
-                />
-              </div>
-            </div>
+                  </div>
 
-            <div>
-              <span>
-                Data Analyst
-              </span>
-
-              <strong>
-                18%
-              </strong>
-
-              <div>
-                <i
-                  style={{
-                    width: "18%",
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <span>
-                UI/UX Designer
-              </span>
-
-              <strong>
-                15%
-              </strong>
-
-              <div>
-                <i
-                  style={{
-                    width: "15%",
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <span>
-                Other
-              </span>
-
-              <strong>
-                12%
-              </strong>
-
-              <div>
-                <i
-                  style={{
-                    width: "12%",
-                  }}
-                />
-              </div>
-            </div>
+                </div>
+              )
+            )}
 
           </div>
 
@@ -812,11 +745,13 @@ const AdminRoadmaps = () => {
             </strong>
 
             <div>
+
               <i
                 style={{
                   width: `${averageProgress}%`,
                 }}
               />
+
             </div>
 
           </div>
@@ -837,6 +772,7 @@ const AdminRoadmaps = () => {
         <div className="admin-roadmap-table-header">
 
           <div>
+
             <span>
               ROADMAP DATABASE
             </span>
@@ -844,10 +780,13 @@ const AdminRoadmaps = () => {
             <h2>
               Learner Roadmaps
             </h2>
+
           </div>
 
           <div className="admin-roadmap-count">
+
             {filteredRoadmaps.length} roadmaps
+
           </div>
 
         </div>
@@ -890,6 +829,7 @@ const AdminRoadmaps = () => {
                   setCurrentPage(1);
                 }}
               >
+
                 <option value="All">
                   All Status
                 </option>
@@ -974,11 +914,61 @@ const AdminRoadmaps = () => {
 
             <tbody>
 
-              {currentRoadmaps.length > 0 ? (
+              {loading ? (
+
+                <tr>
+
+                  <td
+                    colSpan="7"
+                    className="admin-roadmap-empty"
+                  >
+
+                    <Map size={30} />
+
+                    <strong>
+                      Loading roadmaps...
+                    </strong>
+
+                    <span>
+                      Fetching roadmap data from backend.
+                    </span>
+
+                  </td>
+
+                </tr>
+
+              ) : error ? (
+
+                <tr>
+
+                  <td
+                    colSpan="7"
+                    className="admin-roadmap-empty"
+                  >
+
+                    <Map size={30} />
+
+                    <strong>
+                      Failed to load roadmaps
+                    </strong>
+
+                    <span>
+                      {error}
+                    </span>
+
+                  </td>
+
+                </tr>
+
+              ) : currentRoadmaps.length >
+                0 ? (
+
                 currentRoadmaps.map(
                   (roadmap) => (
 
-                    <tr key={roadmap.id}>
+                    <tr
+                      key={roadmap.id}
+                    >
 
                       <td>
 
@@ -989,6 +979,7 @@ const AdminRoadmaps = () => {
                           </div>
 
                           <div>
+
                             <strong>
                               {roadmap.user}
                             </strong>
@@ -996,6 +987,7 @@ const AdminRoadmaps = () => {
                             <span>
                               {roadmap.email}
                             </span>
+
                           </div>
 
                         </div>
@@ -1025,8 +1017,13 @@ const AdminRoadmaps = () => {
                             </strong>
 
                             <span>
-                              {roadmap.completedSteps}/
-                              {roadmap.totalSteps}
+                              {
+                                roadmap.completedSteps
+                              }
+                              /
+                              {
+                                roadmap.totalSteps
+                              }
                             </span>
 
                           </div>
@@ -1034,11 +1031,9 @@ const AdminRoadmaps = () => {
                           <div className="admin-roadmap-mini-bar">
 
                             <i
-                              className={
-                                getProgressClass(
-                                  roadmap.progress
-                                )
-                              }
+                              className={getProgressClass(
+                                roadmap.progress
+                              )}
                               style={{
                                 width: `${roadmap.progress}%`,
                               }}
@@ -1072,8 +1067,13 @@ const AdminRoadmaps = () => {
                             size={13}
                           />
 
-                          {roadmap.completedSteps}/
-                          {roadmap.totalSteps}
+                          {
+                            roadmap.completedSteps
+                          }
+                          /
+                          {
+                            roadmap.totalSteps
+                          }
 
                         </div>
 
@@ -1116,6 +1116,7 @@ const AdminRoadmaps = () => {
 
                   )
                 )
+
               ) : (
 
                 <tr>
@@ -1153,13 +1154,18 @@ const AdminRoadmaps = () => {
         <div className="admin-roadmap-pagination">
 
           <span>
+
             Showing{" "}
+
             <strong>
-              {filteredRoadmaps.length === 0
+              {filteredRoadmaps.length ===
+              0
                 ? 0
                 : startIndex + 1}
             </strong>{" "}
+
             to{" "}
+
             <strong>
               {Math.min(
                 startIndex +
@@ -1167,11 +1173,15 @@ const AdminRoadmaps = () => {
                 filteredRoadmaps.length
               )}
             </strong>{" "}
+
             of{" "}
+
             <strong>
               {filteredRoadmaps.length}
             </strong>{" "}
+
             roadmaps
+
           </span>
 
           <div>
@@ -1186,7 +1196,9 @@ const AdminRoadmaps = () => {
                 )
               }
             >
+
               <ChevronLeft size={14} />
+
             </button>
 
             {Array.from(
@@ -1200,22 +1212,28 @@ const AdminRoadmaps = () => {
               <button
                 key={page}
                 className={
-                  currentPage === page
+                  currentPage ===
+                  page
                     ? "active"
                     : ""
                 }
                 onClick={() =>
-                  setCurrentPage(page)
+                  setCurrentPage(
+                    page
+                  )
                 }
               >
+
                 {page}
+
               </button>
 
             ))}
 
             <button
               disabled={
-                currentPage === totalPages ||
+                currentPage ===
+                  totalPages ||
                 totalPages === 0
               }
               onClick={() =>
@@ -1224,7 +1242,9 @@ const AdminRoadmaps = () => {
                 )
               }
             >
+
               <ChevronRight size={14} />
+
             </button>
 
           </div>
@@ -1237,7 +1257,9 @@ const AdminRoadmaps = () => {
 
       {selectedRoadmap && (
         <AdminRoadmapModal
-          roadmap={selectedRoadmap}
+          roadmap={
+            selectedRoadmap
+          }
           onClose={() =>
             setSelectedRoadmap(null)
           }
