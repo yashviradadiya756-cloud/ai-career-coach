@@ -447,7 +447,7 @@ const getAdminSkillGaps = async (req, res) => {
 // GET ALL INTERVIEWS FOR ADMIN
 // ==========================================
 
-const getAdminInterviewsController = async (req, res) => {
+const getAdminInterviews = async (req, res) => {
   try {
     console.log("=================================");
     console.log("ADMIN INTERVIEW API");
@@ -540,7 +540,7 @@ module.exports = {
   getAdminResumes,
   getAdminRoadmaps,
   getAdminSkillGaps,
-  getAdminInterviewsController,
+  getAdminInterviews,
   getAdminPayments,
   getAdminFeedback,
 };

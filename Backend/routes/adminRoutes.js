@@ -12,7 +12,7 @@ const {
   getAdminResumes,
   getAdminRoadmaps,
   getAdminSkillGaps,
-  getAdminInterviewsController,
+  getAdminInterviews,
   getAdminPayments,
   getAdminFeedback,
 } = require("../controllers/adminController");
@@ -95,7 +95,7 @@ router.get(
 
 router.get(
   "/interviews",
-  getAdminInterviewsController
+  getAdminInterviews
 );
 
 // ==========================================
