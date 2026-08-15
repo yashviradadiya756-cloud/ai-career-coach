@@ -23,11 +23,14 @@ import {
   Filter,
   CheckCircle2,
   AlertCircle,
+  Users,
+  Target,
+  Sparkles,
+  Compass,
   FileText,
   Video,
   Code,
   GraduationCap,
-  Sparkles,
 } from "lucide-react";
 
 import {
@@ -35,6 +38,7 @@ import {
   createAdminCourse,
   updateAdminCourse,
   deleteAdminCourse,
+  getAdminUserLearnings,
 } from "../../api/adminApi";
 
 import "../styles/adminLearning.css";
@@ -48,7 +52,7 @@ const initialForm = {
   duration: "",
   level: "Beginner",
   skills: [],
-  category: "Web Development",
+  category: "Development",
 };
 
 const courseTypes = [
@@ -66,26 +70,35 @@ const levels = ["All", "Beginner", "Intermediate", "Advanced"];
 
 const defaultCategories = [
   "All",
-  "Web Development",
-  "Frontend",
-  "Backend",
-  "Full Stack",
-  "AI / Machine Learning",
-  "Data Science",
-  "DevOps & Cloud",
-  "Mobile App Development",
-  "System Design",
-  "Interview Prep",
+  "Development",
+  "Programming",
+  "Data & AI",
+  "Database",
+  "Cloud",
+  "DevOps",
+  "Cybersecurity",
+  "Mobile",
+  "Design",
+  "Testing",
+  "Career",
 ];
 
 export default function AdminLearning() {
+  const [activeTab, setActiveTab] = useState("courses"); // 'courses' | 'user-learnings'
+
+  // Courses State
   const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingCourses, setLoadingCourses] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
+  // User Learning Insights State
+  const [userLearnings, setUserLearnings] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [userSearch, setUserSearch] = useState("");
+
   // View & Filter States
-  const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'list'
+  const [viewMode, setViewMode] = useState("grid");
   const [search, setSearch] = useState("");
   const [selectedType, setSelectedType] = useState("All");
   const [selectedLevel, setSelectedLevel] = useState("All");
@@ -111,27 +124,44 @@ export default function AdminLearning() {
 
   const loadCourses = async () => {
     try {
-      setLoading(true);
+      setLoadingCourses(true);
       const response = await getAdminCourses();
-
       const data =
         response?.courses ||
         response?.data?.courses ||
         response?.data ||
         [];
-
       setCourses(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Admin courses error:", error);
       showNotification("Failed to load courses from server", "error");
       setCourses([]);
     } finally {
-      setLoading(false);
+      setLoadingCourses(false);
+    }
+  };
+
+  const loadUserLearnings = async () => {
+    try {
+      setLoadingUsers(true);
+      const response = await getAdminUserLearnings();
+      const data =
+        response?.learnings ||
+        response?.data?.learnings ||
+        response?.data ||
+        [];
+      setUserLearnings(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("User learnings error:", error);
+      setUserLearnings([]);
+    } finally {
+      setLoadingUsers(false);
     }
   };
 
   useEffect(() => {
     loadCourses();
+    loadUserLearnings();
   }, []);
 
   // Form Handlers
@@ -165,7 +195,6 @@ export default function AdminLearning() {
     }
   };
 
-  // Modals
   const openCreateModal = () => {
     setEditingCourse(null);
     setForm(initialForm);
@@ -188,7 +217,7 @@ export default function AdminLearning() {
         : typeof course.skills === "string"
         ? course.skills.split(",").map((s) => s.trim()).filter(Boolean)
         : [],
-      category: course.category || "Web Development",
+      category: course.category || "Development",
     });
     setSkillInput("");
     setShowModal(true);
@@ -205,7 +234,7 @@ export default function AdminLearning() {
       duration: course.duration || "",
       level: course.level || "Beginner",
       skills: Array.isArray(course.skills) ? [...course.skills] : [],
-      category: course.category || "Web Development",
+      category: course.category || "Development",
     });
     setSkillInput("");
     setShowModal(true);
@@ -223,18 +252,13 @@ export default function AdminLearning() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.title.trim()) {
-      showNotification("Course title is required", "error");
-      return;
-    }
-    if (!form.url.trim()) {
-      showNotification("Valid course URL is required", "error");
+    if (!form.title.trim() || !form.url.trim()) {
+      showNotification("Course title and URL are required", "error");
       return;
     }
 
     try {
       setSaving(true);
-
       const payload = {
         title: form.title.trim(),
         type: form.type,
@@ -243,8 +267,9 @@ export default function AdminLearning() {
         provider: form.provider.trim() || "Online Resource",
         duration: form.duration.trim() || "Self-Paced",
         level: form.level,
-        category: form.category.trim() || "General",
+        category: form.category.trim() || "Development",
         skills: form.skills,
+        isPublished: true,
       };
 
       if (editingCourse?._id) {
@@ -252,17 +277,14 @@ export default function AdminLearning() {
         showNotification("Course updated successfully!");
       } else {
         await createAdminCourse(payload);
-        showNotification("New course published successfully! Users can now see it.");
+        showNotification("New course published! Immediately visible in user dashboard.");
       }
 
       closeModal();
       await loadCourses();
     } catch (error) {
       console.error("Save course error:", error);
-      showNotification(
-        error?.response?.data?.message || "Failed to save course",
-        "error"
-      );
+      showNotification("Failed to save course", "error");
     } finally {
       setSaving(false);
     }
@@ -270,24 +292,15 @@ export default function AdminLearning() {
 
   const handleDelete = async (course) => {
     if (!course?._id) return;
-
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${course.title}"? This will remove it from all user dashboards.`
-    );
-
-    if (!confirmed) return;
+    if (!window.confirm(`Delete "${course.title}"? This will remove it from user dashboards.`)) return;
 
     try {
       setDeletingId(course._id);
       await deleteAdminCourse(course._id);
       setCourses((prev) => prev.filter((item) => item._id !== course._id));
-      showNotification("Course removed successfully.");
+      showNotification("Course deleted successfully.");
     } catch (error) {
-      console.error("Delete course error:", error);
-      showNotification(
-        error?.response?.data?.message || "Failed to delete course",
-        "error"
-      );
+      showNotification("Failed to delete course", "error");
     } finally {
       setDeletingId(null);
     }
@@ -297,7 +310,7 @@ export default function AdminLearning() {
     if (!course?.url) return;
     navigator.clipboard.writeText(course.url);
     setCopiedId(course._id);
-    showNotification("Course link copied to clipboard!");
+    showNotification("Course link copied!");
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -333,7 +346,7 @@ export default function AdminLearning() {
     showNotification("Courses exported to CSV!");
   };
 
-  // Filtered List
+  // Filtered Courses
   const filteredCourses = useMemo(() => {
     const q = search.toLowerCase().trim();
 
@@ -343,38 +356,29 @@ export default function AdminLearning() {
         course.title?.toLowerCase().includes(q) ||
         course.provider?.toLowerCase().includes(q) ||
         course.category?.toLowerCase().includes(q) ||
-        course.description?.toLowerCase().includes(q) ||
-        (Array.isArray(course.skills) &&
-          course.skills.some((s) => s.toLowerCase().includes(q)));
+        course.description?.toLowerCase().includes(q);
 
-      const matchesType =
-        selectedType === "All" || course.type === selectedType;
-
-      const matchesLevel =
-        selectedLevel === "All" || course.level === selectedLevel;
-
+      const matchesType = selectedType === "All" || course.type === selectedType;
+      const matchesLevel = selectedLevel === "All" || course.level === selectedLevel;
       const matchesCategory =
         selectedCategory === "All" ||
         course.category?.toLowerCase() === selectedCategory.toLowerCase();
 
-      const matchesSkill =
-        !activeSkillFilter ||
-        (Array.isArray(course.skills) &&
-          course.skills.some(
-            (s) => s.toLowerCase() === activeSkillFilter.toLowerCase()
-          ));
-
-      return matchesSearch && matchesType && matchesLevel && matchesCategory && matchesSkill;
+      return matchesSearch && matchesType && matchesLevel && matchesCategory;
     });
-  }, [courses, search, selectedType, selectedLevel, selectedCategory, activeSkillFilter]);
+  }, [courses, search, selectedType, selectedLevel, selectedCategory]);
 
-  const uniqueCategories = useMemo(() => {
-    const set = new Set(courses.map((c) => c.category).filter(Boolean));
-    defaultCategories.forEach((cat) => {
-      if (cat !== "All") set.add(cat);
-    });
-    return ["All", ...Array.from(set)];
-  }, [courses]);
+  // Filtered Users Learning
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.toLowerCase().trim();
+    if (!q) return userLearnings;
+    return userLearnings.filter(
+      (u) =>
+        u.user?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.targetRole?.toLowerCase().includes(q)
+    );
+  }, [userLearnings, userSearch]);
 
   const getTypeIcon = (type) => {
     switch (type) {
@@ -395,17 +399,13 @@ export default function AdminLearning() {
       {/* Toast Notification */}
       {toast.show && (
         <div className={`admin-toast-box ${toast.type}`}>
-          {toast.type === "error" ? (
-            <AlertCircle size={18} />
-          ) : (
-            <CheckCircle2 size={18} />
-          )}
+          {toast.type === "error" ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
           <span>{toast.message}</span>
         </div>
       )}
 
       <div className="admin-learning-container">
-        {/* Top Header */}
+        {/* Header */}
         <div className="admin-learning-header">
           <div className="admin-learning-title-section">
             <div className="admin-learning-icon">
@@ -413,418 +413,442 @@ export default function AdminLearning() {
             </div>
             <div>
               <div className="title-row">
-                <h1 className="admin-learning-title">Course Management</h1>
-                <span className="badge-live-sync">Live User Sync</span>
+                <h1 className="admin-learning-title">Course & Learning Management</h1>
+                <span className="badge-live-sync">Live Platform Sync</span>
               </div>
               <p className="admin-learning-subtitle">
-                Publish, edit, and organize courses. Updates reflect instantaneously across the user portal.
+                Manage curated courses and track what roles and skills users are learning.
               </p>
             </div>
           </div>
 
           <div className="header-actions-group">
-            <button
-              onClick={handleExportCSV}
-              className="action-btn-secondary"
-              title="Download CSV report"
-            >
-              <Download size={16} />
-              <span>Export</span>
-            </button>
+            {activeTab === "courses" && (
+              <>
+                <button onClick={handleExportCSV} className="action-btn-secondary" title="Export CSV">
+                  <Download size={16} />
+                  <span>Export</span>
+                </button>
+                <button onClick={openCreateModal} className="add-course-btn">
+                  <Plus size={18} />
+                  <span>Add New Course</span>
+                </button>
+              </>
+            )}
 
             <button
-              onClick={loadCourses}
+              onClick={() => {
+                loadCourses();
+                loadUserLearnings();
+              }}
               className="action-btn-secondary"
-              title="Reload courses"
+              title="Refresh Data"
             >
-              <RefreshCw size={16} className={loading ? "spin" : ""} />
-            </button>
-
-            <button onClick={openCreateModal} className="add-course-btn">
-              <Plus size={18} />
-              <span>Add New Course</span>
+              <RefreshCw size={16} className={loadingCourses || loadingUsers ? "spin" : ""} />
             </button>
           </div>
         </div>
 
         {/* Dynamic Metric Cards */}
-        <div className="learning-stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon-wrapper blue">
-              <BookOpen size={20} />
-            </div>
-            <div>
-              <span className="stat-label">Total Catalog</span>
-              <strong className="stat-number">{courses.length}</strong>
-            </div>
-          </div>
+<div className="learning-stats-grid">
+  {/* Card 1 */}
+  <div className="stat-card">
+    <div className="stat-icon-wrapper">
+      <BookOpen size={20} />
+    </div>
+    <div className="stat-info">
+      <span className="stat-label">Total Courses</span>
+      <strong className="stat-number">{courses.length}</strong>
+    </div>
+  </div>
 
-          <div className="stat-card">
-            <div className="stat-icon-wrapper purple">
-              <Layers size={20} />
-            </div>
-            <div>
-              <span className="stat-label">Categories</span>
-              <strong className="stat-number">{uniqueCategories.length - 1}</strong>
-            </div>
-          </div>
+  {/* Card 2 */}
+  <div className="stat-card">
+    <div className="stat-icon-wrapper">
+      <Users size={20} />
+    </div>
+    <div className="stat-info">
+      <span className="stat-label">User Learnings</span>
+      <strong className="stat-number">{userLearnings.length}</strong>
+    </div>
+  </div>
 
-          <div className="stat-card">
-            <div className="stat-icon-wrapper amber">
-              <Filter size={20} />
-            </div>
-            <div>
-              <span className="stat-label">Showing Filtered</span>
-              <strong className="stat-number">{filteredCourses.length}</strong>
-            </div>
-          </div>
+  {/* Card 3 */}
+  <div className="stat-card">
+    <div className="stat-icon-wrapper">
+      <GraduationCap size={20} />
+    </div>
+    <div className="stat-info">
+      <span className="stat-label">Recommendations</span>
+      <strong className="stat-number">
+        {userLearnings.reduce((acc, curr) => acc + (curr.totalRecommendations || 0), 0)}
+      </strong>
+    </div>
+  </div>
+
+  {/* Card 4 */}
+  <div className="stat-card">
+    <div className="stat-icon-wrapper">
+      <Layers size={20} />
+    </div>
+    <div className="stat-info">
+      <span className="stat-label">Categories</span>
+      <strong className="stat-number">{defaultCategories.length - 1}</strong>
+    </div>
+  </div>
+</div>
+
+        {/* Tab Navigation */}
+        <div className="learning-tab-nav">
+          <button
+            className={`tab-item-btn ${activeTab === "courses" ? "active" : ""}`}
+            onClick={() => setActiveTab("courses")}
+          >
+            <BookOpen size={17} />
+            <span>Course Catalog ({courses.length})</span>
+          </button>
+          <button
+            className={`tab-item-btn ${activeTab === "user-learnings" ? "active" : ""}`}
+            onClick={() => setActiveTab("user-learnings")}
+          >
+            <Users size={17} />
+            <span>User Learning Insights ({userLearnings.length})</span>
+          </button>
         </div>
 
-        {/* Search, Tabs, & Filters */}
-        <div className="learning-filter-card">
-          <div className="filter-top-bar">
-            <div className="learning-search-box">
-              <Search className="search-icon" size={18} />
-              <input
-                type="text"
-                placeholder="Search courses by title, topic, skill, or provider..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              {search && (
-                <button className="clear-btn" onClick={() => setSearch("")}>
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-
-            <div className="view-mode-toggles">
-              <button
-                className={`toggle-btn ${viewMode === "grid" ? "active" : ""}`}
-                onClick={() => setViewMode("grid")}
-                title="Grid Cards"
-              >
-                <LayoutGrid size={17} />
-              </button>
-              <button
-                className={`toggle-btn ${viewMode === "list" ? "active" : ""}`}
-                onClick={() => setViewMode("list")}
-                title="Table List"
-              >
-                <List size={17} />
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Filter Pill Rows */}
-          <div className="filter-options-row">
-            {/* Category Dropdown */}
-            <div className="select-wrapper">
-              <label>Category:</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                {uniqueCategories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Level Filter */}
-            <div className="select-wrapper">
-              <label>Level:</label>
-              <select
-                value={selectedLevel}
-                onChange={(e) => setSelectedLevel(e.target.value)}
-              >
-                {levels.map((lvl) => (
-                  <option key={lvl} value={lvl}>
-                    {lvl}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Course Types Scroll */}
-            <div className="types-pill-scroll">
-              {courseTypes.map((type) => (
-                <button
-                  key={type}
-                  className={`type-pill ${selectedType === type ? "active" : ""}`}
-                  onClick={() => setSelectedType(type)}
-                >
-                  {type !== "All" && getTypeIcon(type)}
-                  {type}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Active Skill Filter Indicator */}
-          {activeSkillFilter && (
-            <div className="active-skill-bar">
-              <span>Filtering by skill: <strong>{activeSkillFilter}</strong></span>
-              <button onClick={() => setActiveSkillFilter("")}>
-                <X size={13} /> Clear skill filter
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Content Section */}
-        {loading ? (
-          <div className="learning-empty-state">
-            <Loader2 size={36} className="spin text-indigo" />
-            <p>Fetching learning catalogue...</p>
-          </div>
-        ) : filteredCourses.length === 0 ? (
-          <div className="learning-empty-state">
-            <div className="empty-icon-circle">
-              <BookOpen size={36} />
-            </div>
-            <h3>No matching courses found</h3>
-            <p>
-              {search || selectedType !== "All" || selectedCategory !== "All" || activeSkillFilter
-                ? "Try clearing your filters or search keywords."
-                : "No learning materials published yet. Start creating one!"}
-            </p>
-            <button onClick={openCreateModal} className="add-course-btn mt-4">
-              <Plus size={16} /> Add First Course
-            </button>
-          </div>
-        ) : viewMode === "grid" ? (
-          /* GRID VIEW */
-          <div className="courses-grid-layout">
-            {filteredCourses.map((course) => (
-              <div key={course._id} className="course-card-grid">
-                <div className="card-header-bar">
-                  <span className="badge-category">{course.category || "General"}</span>
-                  <span className={`badge-level ${course.level?.toLowerCase()}`}>
-                    {course.level || "Beginner"}
-                  </span>
-                </div>
-
-                <div className="card-body">
-                  <div className="type-indicator">
-                    {getTypeIcon(course.type)}
-                    <span>{course.type || "Course"}</span>
-                  </div>
-
-                  <h3 className="course-title-text" title={course.title}>
-                    {course.title}
-                  </h3>
-
-                  <p className="course-desc-text">
-                    {course.description || "No description provided for this resource."}
-                  </p>
-
-                  <div className="course-meta-tags">
-                    {course.provider && (
-                      <span className="meta-pill">
-                        <Globe size={13} /> {course.provider}
-                      </span>
-                    )}
-                    {course.duration && (
-                      <span className="meta-pill">
-                        <Clock size={13} /> {course.duration}
-                      </span>
-                    )}
-                  </div>
-
-                  {Array.isArray(course.skills) && course.skills.length > 0 && (
-                    <div className="skill-chips-row">
-                      {course.skills.map((skill, idx) => (
-                        <button
-                          key={`${skill}-${idx}`}
-                          className={`skill-tag ${activeSkillFilter === skill ? "highlighted" : ""}`}
-                          onClick={() => setActiveSkillFilter(skill === activeSkillFilter ? "" : skill)}
-                          title={`Filter by ${skill}`}
-                        >
-                          <Tag size={10} />
-                          {skill}
-                        </button>
-                      ))}
-                    </div>
+        {/* =========================================================
+            TAB 1: COURSE CATALOG MANAGEMENT
+        ========================================================= */}
+        {activeTab === "courses" && (
+          <>
+            {/* Search & Filters */}
+            <div className="learning-filter-card">
+              <div className="filter-top-bar">
+                <div className="learning-search-box">
+                  <Search className="search-icon" size={18} />
+                  <input
+                    type="text"
+                    placeholder="Search courses by title, category, or provider..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                  {search && (
+                    <button className="clear-btn" onClick={() => setSearch("")}>
+                      <X size={14} />
+                    </button>
                   )}
                 </div>
 
-                <div className="card-actions-bar">
-                  <div className="left-link">
-                    {course.url ? (
-                      <a
-                        href={course.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="visit-link-btn"
-                      >
-                        <ExternalLink size={14} /> Open
-                      </a>
-                    ) : (
-                      <span className="no-link">No link</span>
-                    )}
-                  </div>
-
-                  <div className="action-buttons-group">
-                    <button
-                      className="icon-action-btn"
-                      onClick={() => handleCopyLink(course)}
-                      title="Copy URL"
-                    >
-                      {copiedId === course._id ? (
-                        <Check size={15} className="text-green" />
-                      ) : (
-                        <Copy size={15} />
-                      )}
-                    </button>
-
-                    <button
-                      className="icon-action-btn"
-                      onClick={() => handleDuplicate(course)}
-                      title="Duplicate / Clone"
-                    >
-                      <CopyPlus size={15} />
-                    </button>
-
-                    <button
-                      className="icon-action-btn"
-                      onClick={() => openEditModal(course)}
-                      title="Edit Course"
-                    >
-                      <Edit3 size={15} />
-                    </button>
-
-                    <button
-                      className="icon-action-btn danger"
-                      onClick={() => handleDelete(course)}
-                      disabled={deletingId === course._id}
-                      title="Delete Course"
-                    >
-                      {deletingId === course._id ? (
-                        <Loader2 size={15} className="spin" />
-                      ) : (
-                        <Trash2 size={15} />
-                      )}
-                    </button>
-                  </div>
+                <div className="view-mode-toggles">
+                  <button
+                    className={`toggle-btn ${viewMode === "grid" ? "active" : ""}`}
+                    onClick={() => setViewMode("grid")}
+                  >
+                    <LayoutGrid size={17} />
+                  </button>
+                  <button
+                    className={`toggle-btn ${viewMode === "list" ? "active" : ""}`}
+                    onClick={() => setViewMode("list")}
+                  >
+                    <List size={17} />
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          /* TABLE LIST VIEW */
-          <div className="course-table-container">
-            <table className="course-table">
-              <thead>
-                <tr>
-                  <th>Course Title</th>
-                  <th>Category</th>
-                  <th>Type</th>
-                  <th>Level</th>
-                  <th>Provider</th>
-                  <th>Duration</th>
-                  <th>Skills</th>
-                  <th className="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+
+              <div className="filter-options-row">
+                <div className="select-wrapper">
+                  <label>Category:</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
+                    {defaultCategories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="select-wrapper">
+                  <label>Level:</label>
+                  <select
+                    value={selectedLevel}
+                    onChange={(e) => setSelectedLevel(e.target.value)}
+                  >
+                    {levels.map((lvl) => (
+                      <option key={lvl} value={lvl}>
+                        {lvl}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="types-pill-scroll">
+                  {courseTypes.map((type) => (
+                    <button
+                      key={type}
+                      className={`type-pill ${selectedType === type ? "active" : ""}`}
+                      onClick={() => setSelectedType(type)}
+                    >
+                      {type !== "All" && getTypeIcon(type)}
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Courses Display */}
+            {loadingCourses ? (
+              <div className="learning-empty-state">
+                <Loader2 size={36} className="spin text-indigo" />
+                <p>Loading course catalogue...</p>
+              </div>
+            ) : filteredCourses.length === 0 ? (
+              <div className="learning-empty-state">
+                <BookOpen size={40} className="text-muted" />
+                <h3>No courses found</h3>
+                <p>Add your first course to populate the user dashboard.</p>
+                <button onClick={openCreateModal} className="add-course-btn mt-4">
+                  <Plus size={16} /> Add First Course
+                </button>
+              </div>
+            ) : viewMode === "grid" ? (
+              <div className="courses-grid-layout">
                 {filteredCourses.map((course) => (
-                  <tr key={course._id}>
-                    <td>
-                      <div className="table-title-box">
-                        <strong>{course.title}</strong>
-                        {course.description && (
-                          <span className="table-desc">{course.description}</span>
+                  <div key={course._id} className="course-card-grid">
+                    <div className="card-header-bar">
+                      <span className="badge-category">{course.category || "Development"}</span>
+                      <span className={`badge-level ${course.level?.toLowerCase()}`}>
+                        {course.level || "Beginner"}
+                      </span>
+                    </div>
+
+                    <div className="card-body">
+                      <div className="type-indicator">
+                        {getTypeIcon(course.type)}
+                        <span>{course.type || "Course"}</span>
+                      </div>
+
+                      <h3 className="course-title-text" title={course.title}>
+                        {course.title}
+                      </h3>
+
+                      <p className="course-desc-text">
+                        {course.description || "Curated course resource."}
+                      </p>
+
+                      <div className="course-meta-tags">
+                        {course.provider && (
+                          <span className="meta-pill">
+                            <Globe size={13} /> {course.provider}
+                          </span>
+                        )}
+                        {course.duration && (
+                          <span className="meta-pill">
+                            <Clock size={13} /> {course.duration}
+                          </span>
                         )}
                       </div>
-                    </td>
-                    <td>
-                      <span className="badge-category">{course.category || "General"}</span>
-                    </td>
-                    <td>
-                      <span className="table-type-pill">
-                        {getTypeIcon(course.type)} {course.type}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge-level ${course.level?.toLowerCase()}`}>
-                        {course.level}
-                      </span>
-                    </td>
-                    <td>{course.provider || "—"}</td>
-                    <td>{course.duration || "—"}</td>
-                    <td>
-                      <div className="table-skills">
-                        {Array.isArray(course.skills) &&
-                          course.skills.slice(0, 3).map((s, i) => (
-                            <span key={i} className="skill-tag">
-                              {s}
+
+                      {Array.isArray(course.skills) && course.skills.length > 0 && (
+                        <div className="skill-chips-row">
+                          {course.skills.map((skill, idx) => (
+                            <span key={idx} className="skill-tag">
+                              <Tag size={10} /> {skill}
                             </span>
                           ))}
-                        {course.skills?.length > 3 && (
-                          <span className="skill-tag-more">+{course.skills.length - 3}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="text-right">
-                      <div className="table-action-btns">
-                        {course.url && (
-                          <a
-                            href={course.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="table-btn"
-                            title="Open Link"
-                          >
-                            <ExternalLink size={14} />
-                          </a>
-                        )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="card-actions-bar">
+                      {course.url && (
+                        <a
+                          href={course.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="visit-link-btn"
+                        >
+                          <ExternalLink size={14} /> Open
+                        </a>
+                      )}
+
+                      <div className="action-buttons-group">
                         <button
+                          className="icon-action-btn"
                           onClick={() => handleCopyLink(course)}
-                          className="table-btn"
-                          title="Copy Link"
+                          title="Copy URL"
                         >
-                          <Copy size={14} />
+                          {copiedId === course._id ? (
+                            <Check size={15} className="text-green" />
+                          ) : (
+                            <Copy size={15} />
+                          )}
                         </button>
+
                         <button
+                          className="icon-action-btn"
                           onClick={() => handleDuplicate(course)}
-                          className="table-btn"
-                          title="Clone"
+                          title="Clone Course"
                         >
-                          <CopyPlus size={14} />
+                          <CopyPlus size={15} />
                         </button>
+
                         <button
+                          className="icon-action-btn"
                           onClick={() => openEditModal(course)}
-                          className="table-btn"
-                          title="Edit"
+                          title="Edit Course"
                         >
-                          <Edit3 size={14} />
+                          <Edit3 size={15} />
                         </button>
+
                         <button
+                          className="icon-action-btn danger"
                           onClick={() => handleDelete(course)}
-                          className="table-btn danger"
                           disabled={deletingId === course._id}
-                          title="Delete"
+                          title="Delete Course"
                         >
-                          <Trash2 size={14} />
+                          {deletingId === course._id ? (
+                            <Loader2 size={15} className="spin" />
+                          ) : (
+                            <Trash2 size={15} />
+                          )}
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            ) : (
+              /* List Table View */
+              <div className="course-table-container">
+                <table className="course-table">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Category</th>
+                      <th>Type</th>
+                      <th>Level</th>
+                      <th>Provider</th>
+                      <th>Duration</th>
+                      <th className="text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCourses.map((course) => (
+                      <tr key={course._id}>
+                        <td>
+                          <strong>{course.title}</strong>
+                        </td>
+                        <td>
+                          <span className="badge-category">{course.category}</span>
+                        </td>
+                        <td>{course.type}</td>
+                        <td>{course.level}</td>
+                        <td>{course.provider || "—"}</td>
+                        <td>{course.duration || "—"}</td>
+                        <td className="text-right">
+                          <div className="table-action-btns">
+                            <button onClick={() => openEditModal(course)} className="table-btn">
+                              <Edit3 size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(course)}
+                              className="table-btn danger"
+                              disabled={deletingId === course._id}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* =========================================================
+            TAB 2: USER LEARNING INSIGHTS
+        ========================================================= */}
+        {activeTab === "user-learnings" && (
+          <div className="user-insights-container">
+            <div className="learning-filter-card">
+              <div className="learning-search-box" style={{ maxWidth: "450px" }}>
+                <Search className="search-icon" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search user name, email, or target role..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {loadingUsers ? (
+              <div className="learning-empty-state">
+                <Loader2 size={36} className="spin text-indigo" />
+                <p>Loading user learning records...</p>
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="learning-empty-state">
+                <Users size={40} className="text-muted" />
+                <h3>No user learning plans generated yet</h3>
+                <p>When users complete Skill Gap Analysis and generate learning plans, they appear here.</p>
+              </div>
+            ) : (
+              <div className="user-learnings-grid">
+                {filteredUsers.map((u) => (
+                  <div key={u._id} className="user-learning-card">
+                    <div className="user-card-top">
+                      <div className="user-avatar-badge">{u.initials}</div>
+                      <div className="user-info-meta">
+                        <h4 className="user-full-name">{u.user}</h4>
+                        <span className="user-email-text">{u.email}</span>
+                      </div>
+                      <span className="user-date-tag">{u.date}</span>
+                    </div>
+
+                    <div className="target-role-banner">
+                      <Compass size={16} />
+                      <div>
+                        <span className="banner-sub">Target Role</span>
+                        <strong>{u.targetRole}</strong>
+                      </div>
+                    </div>
+
+                    {u.missingSkills.length > 0 && (
+                      <div className="missing-skills-section">
+                        <label className="section-mini-label">Learning Gaps to Bridge:</label>
+                        <div className="skill-chips-row">
+                          {u.missingSkills.map((sk, i) => (
+                            <span key={i} className="skill-tag user-skill">
+                              {sk}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="user-card-footer">
+                      <span>🤖 {u.totalRecommendations} AI Recommended Courses</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* CREATE / EDIT MODAL WITH LIVE PREVIEW */}
+      {/* CREATE / EDIT MODAL */}
       {showModal && (
         <div className="learning-modal-overlay">
           <div className="learning-modal-box">
-            {/* Modal Header */}
             <div className="learning-modal-header">
               <div className="modal-title-wrap">
                 <h2>{editingCourse ? "Edit Learning Resource" : "Create Learning Resource"}</h2>
@@ -835,44 +859,32 @@ export default function AdminLearning() {
               </button>
             </div>
 
-            {/* Modal Body & Live Preview */}
             <div className="modal-grid-body">
-              {/* Form Column */}
               <form onSubmit={handleSubmit} className="modal-form-side">
-                {/* Title */}
                 <div className="form-item">
-                  <label>
-                    Course / Resource Title <span className="req">*</span>
-                  </label>
+                  <label>Course Title *</label>
                   <input
                     type="text"
                     name="title"
                     value={form.title}
                     onChange={handleInputChange}
-                    placeholder="e.g. Master Full-Stack Web Development"
+                    placeholder="e.g. Full Stack Web Development"
                     required
                   />
                 </div>
 
-                {/* Category & Type */}
                 <div className="form-row-2">
                   <div className="form-item">
-                    <label>Category / Domain</label>
-                    <input
-                      type="text"
-                      name="category"
-                      value={form.category}
-                      onChange={handleInputChange}
-                      placeholder="e.g. Web Development"
-                      list="category-suggestions"
-                    />
-                    <datalist id="category-suggestions">
+                    <label>Category</label>
+                    <select name="category" value={form.category} onChange={handleInputChange}>
                       {defaultCategories
                         .filter((c) => c !== "All")
-                        .map((c) => (
-                          <option key={c} value={c} />
+                        .map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
                         ))}
-                    </datalist>
+                    </select>
                   </div>
 
                   <div className="form-item">
@@ -889,15 +901,13 @@ export default function AdminLearning() {
                   </div>
                 </div>
 
-                {/* Level & Duration */}
                 <div className="form-row-2">
                   <div className="form-item">
-                    <label>Difficulty Level</label>
+                    <label>Level</label>
                     <select name="level" value={form.level} onChange={handleInputChange}>
                       <option value="Beginner">Beginner</option>
                       <option value="Intermediate">Intermediate</option>
                       <option value="Advanced">Advanced</option>
-                      <option value="All Levels">All Levels</option>
                     </select>
                   </div>
 
@@ -908,28 +918,25 @@ export default function AdminLearning() {
                       name="duration"
                       value={form.duration}
                       onChange={handleInputChange}
-                      placeholder="e.g. 12 Hours, 4 Weeks"
+                      placeholder="e.g. 15 Hours"
                     />
                   </div>
                 </div>
 
-                {/* Provider & URL */}
                 <div className="form-row-2">
                   <div className="form-item">
-                    <label>Provider / Platform</label>
+                    <label>Provider</label>
                     <input
                       type="text"
                       name="provider"
                       value={form.provider}
                       onChange={handleInputChange}
-                      placeholder="e.g. Coursera, YouTube, Udemy"
+                      placeholder="e.g. YouTube, Coursera"
                     />
                   </div>
 
                   <div className="form-item">
-                    <label>
-                      Resource URL / Link <span className="req">*</span>
-                    </label>
+                    <label>Course URL *</label>
                     <input
                       type="url"
                       name="url"
@@ -941,7 +948,6 @@ export default function AdminLearning() {
                   </div>
                 </div>
 
-                {/* Skills Tag Input */}
                 <div className="form-item">
                   <label>Covered Skills / Tags</label>
                   <div className="tag-input-container">
@@ -949,10 +955,7 @@ export default function AdminLearning() {
                       {form.skills.map((skill, index) => (
                         <span key={index} className="removable-chip">
                           {skill}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSkill(skill)}
-                          >
+                          <button type="button" onClick={() => handleRemoveSkill(skill)}>
                             <X size={12} />
                           </button>
                         </span>
@@ -961,66 +964,48 @@ export default function AdminLearning() {
                     <div className="input-with-add">
                       <input
                         type="text"
-                        placeholder="Type skill & press Enter or Add..."
+                        placeholder="Type skill & press Enter..."
                         value={skillInput}
                         onChange={(e) => setSkillInput(e.target.value)}
                         onKeyDown={handleSkillKeyDown}
                       />
-                      <button
-                        type="button"
-                        onClick={handleAddSkill}
-                        className="btn-add-tag"
-                      >
+                      <button type="button" onClick={handleAddSkill} className="btn-add-tag">
                         Add
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Description */}
                 <div className="form-item">
-                  <label>Description & Objectives</label>
+                  <label>Description</label>
                   <textarea
                     name="description"
                     value={form.description}
                     onChange={handleInputChange}
                     rows={3}
-                    placeholder="Briefly explain what students or users will gain from this course..."
+                    placeholder="Brief description of the course..."
                   />
                 </div>
 
-                {/* Modal Footer Buttons */}
                 <div className="modal-buttons-row">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    disabled={saving}
-                    className="modal-cancel-btn"
-                  >
+                  <button type="button" onClick={closeModal} disabled={saving} className="modal-cancel-btn">
                     Cancel
                   </button>
-
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="modal-submit-btn"
-                  >
+                  <button type="submit" disabled={saving} className="modal-submit-btn">
                     {saving ? (
                       <>
-                        <Loader2 className="spin" size={16} />
-                        <span>Saving...</span>
+                        <Loader2 className="spin" size={16} /> Saving...
                       </>
                     ) : (
                       <>
-                        <Save size={16} />
-                        <span>{editingCourse ? "Update Course" : "Publish Course"}</span>
+                        <Save size={16} /> {editingCourse ? "Update Course" : "Publish Course"}
                       </>
                     )}
                   </button>
                 </div>
               </form>
 
-              {/* Live Preview Column */}
+              {/* Live Preview */}
               <div className="modal-preview-side">
                 <div className="preview-sticky">
                   <div className="preview-label">
@@ -1030,9 +1015,7 @@ export default function AdminLearning() {
 
                   <div className="course-card-grid preview-card">
                     <div className="card-header-bar">
-                      <span className="badge-category">
-                        {form.category || "Web Development"}
-                      </span>
+                      <span className="badge-category">{form.category || "Development"}</span>
                       <span className={`badge-level ${form.level?.toLowerCase()}`}>
                         {form.level || "Beginner"}
                       </span>
@@ -1044,13 +1027,9 @@ export default function AdminLearning() {
                         <span>{form.type || "Course"}</span>
                       </div>
 
-                      <h3 className="course-title-text">
-                        {form.title || "Course Title Preview"}
-                      </h3>
-
+                      <h3 className="course-title-text">{form.title || "Course Title Preview"}</h3>
                       <p className="course-desc-text">
-                        {form.description ||
-                          "Description will appear here as you type in the form."}
+                        {form.description || "Description will appear here as you type."}
                       </p>
 
                       <div className="course-meta-tags">
@@ -1061,22 +1040,6 @@ export default function AdminLearning() {
                           <Clock size={13} /> {form.duration || "Duration"}
                         </span>
                       </div>
-
-                      {form.skills.length > 0 && (
-                        <div className="skill-chips-row">
-                          {form.skills.map((s, i) => (
-                            <span key={i} className="skill-tag">
-                              <Tag size={10} /> {s}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="card-actions-bar">
-                      <span className="preview-badge-status">
-                        <Check size={13} /> Ready for user portal
-                      </span>
                     </div>
                   </div>
                 </div>

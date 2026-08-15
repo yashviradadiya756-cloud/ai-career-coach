@@ -60,26 +60,12 @@ export const getAdminInterviews = () => {
 // ==========================================
 // ADMIN COURSES / LEARNING
 // ==========================================
-export const getAdminCourses = () => {
-  return api.get("/api/admin/courses");
-};
-export const createAdminCourse = (courseData) => {
-  return api.post("/api/admin/courses", courseData);
-};
-export const updateAdminCourse = (id, courseData) => {
-  return api.put(`/api/admin/courses/${id}`, courseData);
-};
 
-export const deleteAdminCourse = (id) => {
-  return api.delete(`/api/admin/courses/${id}`);
-};
-// ==========================================
-// USER COURSES API
-// ==========================================
-export const getUserCourses = (params = {}) => {
-  return api.get("/api/courses", { params });
-};
-
+export const getAdminCourses = () => api.get("/api/admin/courses");
+export const createAdminCourse = (data) => api.post("/api/admin/courses", data);
+export const updateAdminCourse = (id, data) => api.put(`/api/admin/courses/${id}`, data);
+export const deleteAdminCourse = (id) => api.delete(`/api/admin/courses/${id}`);
+export const getAdminUserLearnings = () => api.get("/api/admin/user-learnings");
 // ==========================================
 // ADMIN PAYMENTS
 // ==========================================
