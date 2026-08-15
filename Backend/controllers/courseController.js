@@ -1,10 +1,15 @@
 const Course = require("../models/Course");
 
+// ==========================================
+// GET USER COURSES
+// ==========================================
 const getUserCourses = async (req, res) => {
   try {
     const courses = await Course.find({
       isPublished: true,
-    }).sort({ createdAt: -1 });
+    }).sort({
+      createdAt: -1,
+    });
 
     return res.status(200).json({
       success: true,

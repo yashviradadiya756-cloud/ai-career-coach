@@ -57,15 +57,49 @@ export const getAdminInterviews = () => {
   return api.get("/api/admin/interviews");
 };
 
+
 // ==========================================
-// ADMIN COURSES / LEARNING
+// ADMIN COURSES
 // ==========================================
 
-export const getAdminCourses = () => api.get("/api/admin/courses");
-export const createAdminCourse = (data) => api.post("/api/admin/courses", data);
-export const updateAdminCourse = (id, data) => api.put(`/api/admin/courses/${id}`, data);
-export const deleteAdminCourse = (id) => api.delete(`/api/admin/courses/${id}`);
-export const getAdminUserLearnings = () => api.get("/api/admin/user-learnings");
+export const getAdminCourses = async () => {
+  const response = await api.get("/api/admin/courses");
+  return response.data;
+};
+
+export const createAdminCourse = async (courseData) => {
+  const response = await api.post(
+    "/api/admin/courses",
+    courseData
+  );
+
+  return response.data;
+};
+
+export const updateAdminCourse = async (id, courseData) => {
+  const response = await api.put(
+    `/api/admin/courses/${id}`,
+    courseData
+  );
+
+  return response.data;
+};
+
+export const deleteAdminCourse = async (id) => {
+  const response = await api.delete(
+    `/api/admin/courses/${id}`
+  );
+
+  return response.data;
+};
+
+export const getAdminUserLearnings = async () => {
+  const response = await api.get(
+    "/api/admin/user-learnings"
+  );
+
+  return response.data;
+};
 // ==========================================
 // ADMIN PAYMENTS
 // ==========================================
