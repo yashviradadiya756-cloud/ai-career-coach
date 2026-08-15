@@ -2,6 +2,8 @@ const User = require("../models/User");
 const Resume = require("../models/Resume");
 const Roadmap = require("../models/Roadmap");
 const Interview = require("../models/Interview");
+const Course = require("../models/Course");
+const Learning = require("../models/Learning");
 
 // ==========================================
 // ADMIN DASHBOARD
@@ -486,6 +488,186 @@ const getAdminInterviews = async (req, res) => {
 };
 
 // ==========================================
+// ADMIN: GET ALL COURSES
+// GET /api/admin/courses
+// ==========================================
+const getAdminCourses = async (req, res) => {
+  try {
+    const courses = await Course.find().sort({ createdAt: -1 });
+    return res.status(200).json({
+      success: true,
+      count: courses.length,
+      courses,
+    });
+  } catch (error) {
+    console.error("Admin courses error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load courses",
+      error: error.message,
+    });
+  }
+};
+// ==========================================
+// ADMIN: CREATE COURSE
+// POST /api/admin/courses
+// ==========================================
+const createAdminCourse = async (req, res) => {
+  try {
+    const {
+      title,
+      type,
+      category,
+      level,
+      provider,
+      duration,
+      url,
+      description,
+      skills,
+    } = req.body;
+    if (!title || !url) {
+      return res.status(400).json({
+        success: false,
+        message: "Course title and URL are required",
+      });
+    }
+    const newCourse = await Course.create({
+      title: title.trim(),
+      type: type || "Video Course",
+      category: category ? category.trim() : "Web Development",
+      level: level || "Beginner",
+      provider: provider ? provider.trim() : "Online",
+      duration: duration ? duration.trim() : "Self-Paced",
+      url: url.trim(),
+      description: description ? description.trim() : "",
+      skills: Array.isArray(skills) ? skills : [],
+      addedBy: req.user?._id,
+    });
+    return res.status(201).json({
+      success: true,
+      message: "Course created successfully",
+      course: newCourse,
+    });
+  } catch (error) {
+    console.error("Create course error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create course",
+      error: error.message,
+    });
+  }
+};
+// ==========================================
+// ADMIN: UPDATE COURSE
+// PUT /api/admin/courses/:id
+// ==========================================
+const updateAdminCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await Course.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Course updated successfully",
+      course: updated,
+    });
+  } catch (error) {
+    console.error("Update course error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update course",
+      error: error.message,
+    });
+  }
+};
+// ==========================================
+// ADMIN: DELETE COURSE
+// DELETE /api/admin/courses/:id
+// ==========================================
+const deleteAdminCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Course.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Course deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete course error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete course",
+      error: error.message,
+    });
+  }
+};
+// ==========================================
+// ADMIN: GET USER LEARNING PLANS & INSIGHTS
+// GET /api/admin/user-learnings
+// ==========================================
+const getAdminUserLearnings = async (req, res) => {
+  try {
+    const learnings = await Learning.find()
+      .populate("user", "name username email")
+      .populate("skillGap")
+      .sort({ createdAt: -1 });
+    const formattedLearnings = learnings.map((item) => {
+      const userName =
+        item.user?.name || item.user?.username || "Unknown User";
+      const initials = userName
+        .split(" ")
+        .map((w) => w.charAt(0))
+        .join("")
+        .substring(0, 2)
+        .toUpperCase();
+      return {
+        _id: item._id,
+        user: userName,
+        email: item.user?.email || "No email",
+        initials,
+        targetRole: item.targetRole || item.skillGap?.targetRole || "General",
+        missingSkills: Array.isArray(item.skillGap?.missingSkills)
+          ? item.skillGap.missingSkills
+          : [],
+        recommendations: Array.isArray(item.recommendations)
+          ? item.recommendations
+          : [],
+        totalRecommendations: Array.isArray(item.recommendations)
+          ? item.recommendations.length
+          : 0,
+        date: item.createdAt
+          ? new Date(item.createdAt).toLocaleDateString()
+          : "Recent",
+      };
+    });
+    return res.status(200).json({
+      success: true,
+      learnings: formattedLearnings,
+    });
+  } catch (error) {
+    console.error("User learnings error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch user learnings",
+    });
+  }
+};
+
+// ==========================================
 // PAYMENTS
 // ==========================================
 
@@ -541,6 +723,11 @@ module.exports = {
   getAdminRoadmaps,
   getAdminSkillGaps,
   getAdminInterviews,
+  getAdminCourses,
+  createAdminCourse,
+  updateAdminCourse,
+  deleteAdminCourse,
+  getAdminUserLearnings,
   getAdminPayments,
   getAdminFeedback,
 };

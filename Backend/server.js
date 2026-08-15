@@ -139,10 +139,13 @@ app.use("/api/settings", settingsRoutes);
 // ===============================
 
 const adminRoutes = require("./routes/adminRoutes");
+const courseRoutes = require("./routes/courseRoutes");
+
 
 console.log("🔥 ADMIN ROUTES LOADED:", typeof adminRoutes);
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/courses", courseRoutes);
 
 app.get("/api/admin-route-test", (req, res) => {
   res.status(200).json({

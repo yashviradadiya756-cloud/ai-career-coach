@@ -13,6 +13,11 @@ const {
   getAdminRoadmaps,
   getAdminSkillGaps,
   getAdminInterviews,
+  getAdminCourses,
+  createAdminCourse,
+  updateAdminCourse,
+  deleteAdminCourse,
+  getAdminUserLearnings,
   getAdminPayments,
   getAdminFeedback,
 } = require("../controllers/adminController");
@@ -97,6 +102,18 @@ router.get(
   "/interviews",
   getAdminInterviews
 );
+
+// ==========================================
+// COURSE MANAGEMENT ROUTES (FIXES 404)
+// ==========================================
+router.get("/courses", getAdminCourses);
+router.post("/courses", createAdminCourse);
+router.put("/courses/:id", updateAdminCourse);
+router.delete("/courses/:id", deleteAdminCourse);
+// ==========================================
+// USER LEARNING INSIGHTS ROUTE
+// ==========================================
+router.get("/user-learnings", getAdminUserLearnings);
 
 // ==========================================
 // PAYMENTS
