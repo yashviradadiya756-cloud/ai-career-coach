@@ -494,17 +494,17 @@ const getAdminInterviews = async (req, res) => {
 const getAdminCourses = async (req, res) => {
   try {
     const courses = await Course.find().sort({ createdAt: -1 });
-    return res.status(200).json({
+
+    res.status(200).json({
       success: true,
-      count: courses.length,
       courses,
     });
   } catch (error) {
-    console.error("Admin courses error:", error);
-    return res.status(500).json({
+    console.error("Get admin courses error:", error);
+
+    res.status(500).json({
       success: false,
-      message: "Failed to load courses",
-      error: error.message,
+      message: "Failed to fetch courses",
     });
   }
 };
@@ -621,46 +621,19 @@ const deleteAdminCourse = async (req, res) => {
 // ==========================================
 const getAdminUserLearnings = async (req, res) => {
   try {
-    const learnings = await Learning.find()
+    const learnings = await LearningProgress.find()
       .populate("user", "name username email")
-      .populate("skillGap")
+      .populate("course")
       .sort({ createdAt: -1 });
-    const formattedLearnings = learnings.map((item) => {
-      const userName =
-        item.user?.name || item.user?.username || "Unknown User";
-      const initials = userName
-        .split(" ")
-        .map((w) => w.charAt(0))
-        .join("")
-        .substring(0, 2)
-        .toUpperCase();
-      return {
-        _id: item._id,
-        user: userName,
-        email: item.user?.email || "No email",
-        initials,
-        targetRole: item.targetRole || item.skillGap?.targetRole || "General",
-        missingSkills: Array.isArray(item.skillGap?.missingSkills)
-          ? item.skillGap.missingSkills
-          : [],
-        recommendations: Array.isArray(item.recommendations)
-          ? item.recommendations
-          : [],
-        totalRecommendations: Array.isArray(item.recommendations)
-          ? item.recommendations.length
-          : 0,
-        date: item.createdAt
-          ? new Date(item.createdAt).toLocaleDateString()
-          : "Recent",
-      };
-    });
-    return res.status(200).json({
+
+    res.status(200).json({
       success: true,
-      learnings: formattedLearnings,
+      learnings,
     });
   } catch (error) {
-    console.error("User learnings error:", error);
-    return res.status(500).json({
+    console.error("Get user learnings error:", error);
+
+    res.status(500).json({
       success: false,
       message: "Failed to fetch user learnings",
     });
