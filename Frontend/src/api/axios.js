@@ -1,33 +1,23 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    "http://localhost:5000",
+  baseURL: "https://ai-career-coach-jpzu.onrender.com",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-/* =====================================================
-   ATTACH JWT TOKEN
-===================================================== */
-
 api.interceptors.request.use(
   (config) => {
-    const token =
-      localStorage.getItem("token") ||
-      localStorage.getItem("accessToken");
+    const token = localStorage.getItem("token");
 
     if (token) {
-      config.headers.Authorization =
-        `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
   },
-  (error) =>
-    Promise.reject(error)
+  (error) => Promise.reject(error)
 );
 
 export default api;

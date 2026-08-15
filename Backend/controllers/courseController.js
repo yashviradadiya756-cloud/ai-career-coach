@@ -1,15 +1,18 @@
 const Course = require("../models/Course");
 
 // ==========================================
-// GET USER COURSES
+// GET ALL COURSES FOR USERS
+// GET /api/courses
 // ==========================================
-const getUserCourses = async (req, res) => {
+const getCourses = async (req, res) => {
   try {
-    const courses = await Course.find({
-      isPublished: true,
-    }).sort({
-      createdAt: -1,
-    });
+    console.log("========== USER COURSES API ==========");
+
+    const courses = await Course.find()
+      .sort({ createdAt: -1 })
+      .lean();
+
+    console.log("TOTAL COURSES:", courses.length);
 
     return res.status(200).json({
       success: true,
@@ -21,11 +24,12 @@ const getUserCourses = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to load courses",
+      message: "Failed to fetch courses",
+      error: error.message,
     });
   }
 };
 
 module.exports = {
-  getUserCourses,
+  getCourses,
 };

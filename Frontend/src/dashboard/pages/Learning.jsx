@@ -140,13 +140,21 @@ export default function Learning() {
       // -----------------------------------------------------
       try {
   const courseRes = await api.get("/api/courses");
-  const data =
-    courseRes?.data?.courses ||
-    courseRes?.courses ||
-    (Array.isArray(courseRes?.data) ? courseRes?.data : []);
-  setAdminCourses(Array.isArray(data) ? data : []);
+
+  console.log("========== USER COURSES RESPONSE ==========");
+  console.log(courseRes.data);
+
+  if (courseRes.data?.success) {
+    setAdminCourses(courseRes.data.courses || []);
+  } else {
+    setAdminCourses([]);
+  }
 } catch (err) {
-  console.error("Fetch courses error:", err);
+  console.error(
+    "Fetch courses error:",
+    err.response?.data || err.message
+  );
+
   setAdminCourses([]);
 }
 

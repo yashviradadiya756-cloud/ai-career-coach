@@ -2,29 +2,13 @@ const express = require("express");
 
 const router = express.Router();
 
-// ==========================================
-// MIDDLEWARE
-// ==========================================
-const protect = require("../middleware/authMiddleware");
-
-// ==========================================
-// CONTROLLER
-// ==========================================
-const {
-  getUserCourses,
-} = require("../controllers/courseController");
+const { getCourses } = require("../controllers/courseController");
 
 // ==========================================
 // USER COURSES
 // GET /api/courses
 // ==========================================
-router.get(
-  "/",
-  protect,
-  getUserCourses
-);
 
-// ==========================================
-// EXPORT
-// ==========================================
+router.get("/", getCourses);
+
 module.exports = router;
