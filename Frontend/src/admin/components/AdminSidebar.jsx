@@ -83,7 +83,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
     // ==========================================
 
     {
-      name: "User Progress",
+      name: "Progress",
       path: "/admin/progress",
       icon: TrendingUp,
     },
@@ -112,16 +112,6 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
       name: "Payments",
       path: "/admin/payments",
       icon: CreditCard,
-    },
-
-    // ==========================================
-    // NOTIFICATIONS
-    // ==========================================
-
-    {
-      name: "Notifications",
-      path: "/admin/notifications",
-      icon: Bell,
     },
   ];
 
