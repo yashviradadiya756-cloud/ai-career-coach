@@ -213,16 +213,14 @@ const AdminMockInterviews = () => {
       setLoading(true);
       setError("");
 
-      const response =
-        await getAdminInterviews();
+     const response = await getAdminInterviews();
 
       console.log(
         "ADMIN INTERVIEW RESPONSE:",
-        response.data
+        response
       );
 
-      const data =
-        response.data?.interviews;
+      const data = response?.interviews;
 
       setInterviews(
         Array.isArray(data)
