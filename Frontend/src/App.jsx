@@ -72,6 +72,7 @@ import AdminLearning from "./admin/pages/AdminLearning";
 import AdminPayments from "./admin/pages/AdminPayments";
 import AdminProgress from "./admin/pages/AdminProgress";
 import AdminAchievements from "./admin/pages/AdminAchievements";
+import AdminCertificateCriteria from "./admin/pages/AdminCertificateCriteria";
 
 
 // ==========================================
@@ -351,8 +352,12 @@ function App() {
         }
       />
 
-      </Route>
+      <Route
+        path="/admin/certificate-criteria"
+        element={<AdminCertificateCriteria />}
+      />
 
+      </Route>
 
     </Routes>
 

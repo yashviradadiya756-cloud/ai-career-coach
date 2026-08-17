@@ -30,6 +30,12 @@ const {
   getAdminPayments,
   getAdminProgress,
   getAdminAchievements,
+  createCertificateCriteria,
+  getCertificateCriteria,
+  updateCertificateCriteria,
+  deleteCertificateCriteria,
+  checkCertificateEligibility,
+  generateCertificate,
   getAdminFeedback,
 } = require("../controllers/adminController");
 
@@ -176,6 +182,7 @@ router.get(
   getAdminProgress
 );
 
+
 // ==========================================
 // ADMIN ACHIEVEMENTS
 // GET /api/admin/achievements
@@ -186,6 +193,60 @@ router.get(
   protect,
   adminMiddleware,
   getAdminAchievements
+);
+
+// ==========================================
+// CERTIFICATE CRITERIA
+// ==========================================
+
+router.get(
+  "/certificate-criteria",
+  protect,
+  adminMiddleware,
+  getCertificateCriteria
+);
+
+router.post(
+  "/certificate-criteria",
+  protect,
+  adminMiddleware,
+  createCertificateCriteria
+);
+
+router.put(
+  "/certificate-criteria/:id",
+  protect,
+  adminMiddleware,
+  updateCertificateCriteria
+);
+
+router.delete(
+  "/certificate-criteria/:id",
+  protect,
+  adminMiddleware,
+  deleteCertificateCriteria
+);
+
+// ==========================================
+// CERTIFICATE ELIGIBILITY
+// ==========================================
+
+router.get(
+  "/certificate-eligibility/:userId/:criteriaId",
+  protect,
+  adminMiddleware,
+  checkCertificateEligibility
+);
+
+// ==========================================
+// GENERATE CERTIFICATE
+// ==========================================
+
+router.post(
+  "/certificates/generate",
+  protect,
+  adminMiddleware,
+  generateCertificate
 );
 
 // ==========================================

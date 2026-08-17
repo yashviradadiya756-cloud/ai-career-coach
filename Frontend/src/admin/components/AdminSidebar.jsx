@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  Award,
 } from "lucide-react";
 
 const AdminSidebar = ({ collapsed, setCollapsed }) => {
@@ -95,6 +96,12 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
       name: "Achievements",
       path: "/admin/achievements",
       icon: Trophy,
+    },
+
+    {
+      name: "Certificate Rules",
+      path: "/admin/certificate-criteria",
+      icon: Award,
     },
 
     // ==========================================

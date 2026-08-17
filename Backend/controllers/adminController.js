@@ -7,6 +7,8 @@ const Learning = require("../models/Learning");
 const Payment = require("../models/Payment");
 const Progress = require("../models/Progress");
 const Achievement = require("../models/Achievement");
+const CertificateCriteria = require("../models/CertificateCriteria");
+const Certificate = require("../models/Certificate");
 
 // ==========================================
 // ADMIN DASHBOARD
@@ -700,18 +702,28 @@ const getAdminPayments = async (req, res) => {
 // GET ALL USER PROGRESS
 // GET /api/admin/progress
 // ==========================================
+
 const getAdminProgress = async (req, res) => {
   try {
     const progress = await Progress.find()
-      .populate("user", "name username email")
-      .sort({ updatedAt: -1 });
+      .populate(
+        "user",
+        "name username email phone"
+      )
+      .sort({
+        updatedAt: -1,
+      });
 
     return res.status(200).json({
       success: true,
+      count: progress.length,
       progress,
     });
   } catch (error) {
-    console.error("ADMIN PROGRESS ERROR:", error);
+    console.error(
+      "ADMIN PROGRESS ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -726,22 +738,375 @@ const getAdminProgress = async (req, res) => {
 // GET ALL USER ACHIEVEMENTS
 // GET /api/admin/achievements
 // ==========================================
+
 const getAdminAchievements = async (req, res) => {
   try {
     const achievements = await Achievement.find()
-      .populate("user", "name username email")
-      .sort({ createdAt: -1 });
+      .populate(
+        "user",
+        "name username email phone"
+      )
+      .sort({
+        createdAt: -1,
+      });
 
     return res.status(200).json({
       success: true,
+      count: achievements.length,
       achievements,
     });
   } catch (error) {
-    console.error("ADMIN ACHIEVEMENTS ERROR:", error);
+    console.error(
+      "ADMIN ACHIEVEMENTS ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
       message: "Failed to load achievements",
+      error: error.message,
+    });
+  }
+};
+
+const createCertificateCriteria = async (req, res) => {
+  try {
+    const {
+      name,
+      description,
+      resumeScore,
+      roadmapCompleted,
+      learningCompleted,
+      interviewScore,
+      overallProgress,
+      certificateTitle,
+      organizationName,
+    } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        success: false,
+        message: "Certificate criteria name is required",
+      });
+    }
+
+    const criteria = await CertificateCriteria.create({
+      name,
+      description,
+      resumeScore,
+      roadmapCompleted,
+      learningCompleted,
+      interviewScore,
+      overallProgress,
+      certificateTitle,
+      organizationName,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Certificate criteria created successfully",
+      criteria,
+    });
+  } catch (error) {
+    console.error(
+      "CREATE CERTIFICATE CRITERIA ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create certificate criteria",
+      error: error.message,
+    });
+  }
+};
+
+const getCertificateCriteria = async (req, res) => {
+  try {
+    const criteria = await CertificateCriteria.find()
+      .sort({
+        createdAt: -1,
+      });
+
+    return res.status(200).json({
+      success: true,
+      criteria,
+    });
+  } catch (error) {
+    console.error(
+      "GET CERTIFICATE CRITERIA ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load certificate criteria",
+      error: error.message,
+    });
+  }
+};
+
+const updateCertificateCriteria = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const criteria =
+      await CertificateCriteria.findByIdAndUpdate(
+        id,
+        req.body,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+    if (!criteria) {
+      return res.status(404).json({
+        success: false,
+        message: "Certificate criteria not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Certificate criteria updated successfully",
+      criteria,
+    });
+  } catch (error) {
+    console.error(
+      "UPDATE CERTIFICATE CRITERIA ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update certificate criteria",
+      error: error.message,
+    });
+  }
+};
+
+const deleteCertificateCriteria = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const criteria =
+      await CertificateCriteria.findByIdAndDelete(id);
+
+    if (!criteria) {
+      return res.status(404).json({
+        success: false,
+        message: "Certificate criteria not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Certificate criteria deleted successfully",
+    });
+  } catch (error) {
+    console.error(
+      "DELETE CERTIFICATE CRITERIA ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete certificate criteria",
+      error: error.message,
+    });
+  }
+};
+
+const checkCertificateEligibility = async (
+  req,
+  res
+) => {
+  try {
+    const { userId, criteriaId } = req.params;
+
+    const criteria =
+      await CertificateCriteria.findById(criteriaId);
+
+    if (!criteria) {
+      return res.status(404).json({
+        success: false,
+        message: "Certificate criteria not found",
+      });
+    }
+
+    const progress = await Progress.findOne({
+      user: userId,
+    });
+
+    if (!progress) {
+      return res.status(404).json({
+        success: false,
+        message: "User progress not found",
+      });
+    }
+
+    const checks = {
+      resumeScore:
+        progress.resumeScore >= criteria.resumeScore,
+
+      roadmapCompleted:
+        progress.roadmapCompleted >=
+        criteria.roadmapCompleted,
+
+      learningCompleted:
+        progress.learningCompleted >=
+        criteria.learningCompleted,
+
+      interviewScore:
+        progress.interviewScore >=
+        criteria.interviewScore,
+
+      overallProgress:
+        progress.overallProgress >=
+        criteria.overallProgress,
+    };
+
+    const eligible = Object.values(checks).every(
+      Boolean
+    );
+
+    return res.status(200).json({
+      success: true,
+      eligible,
+      checks,
+      progress,
+      criteria,
+    });
+  } catch (error) {
+    console.error(
+      "CHECK CERTIFICATE ELIGIBILITY ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to check certificate eligibility",
+      error: error.message,
+    });
+  }
+};
+
+const generateCertificate = async (req, res) => {
+  try {
+    const { userId, criteriaId } = req.body;
+
+    const criteria =
+      await CertificateCriteria.findById(criteriaId);
+
+    if (!criteria) {
+      return res.status(404).json({
+        success: false,
+        message: "Certificate criteria not found",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const progress = await Progress.findOne({
+      user: userId,
+    });
+
+    if (!progress) {
+      return res.status(404).json({
+        success: false,
+        message: "User progress not found",
+      });
+    }
+
+    // ==========================================
+    // CHECK ALL CONDITIONS
+    // ==========================================
+
+    const eligible =
+      progress.resumeScore >=
+        criteria.resumeScore &&
+      progress.roadmapCompleted >=
+        criteria.roadmapCompleted &&
+      progress.learningCompleted >=
+        criteria.learningCompleted &&
+      progress.interviewScore >=
+        criteria.interviewScore &&
+      progress.overallProgress >=
+        criteria.overallProgress;
+
+    if (!eligible) {
+      return res.status(400).json({
+        success: false,
+        eligible: false,
+        message:
+          "User does not satisfy certificate criteria.",
+      });
+    }
+
+    // ==========================================
+    // PREVENT DUPLICATE CERTIFICATE
+    // ==========================================
+
+    const existingCertificate =
+      await Certificate.findOne({
+        user: userId,
+        criteria: criteriaId,
+        status: "Generated",
+      });
+
+    if (existingCertificate) {
+      return res.status(200).json({
+        success: true,
+        message: "Certificate already generated",
+        certificate: existingCertificate,
+      });
+    }
+
+    // ==========================================
+    // GENERATE UNIQUE ID
+    // ==========================================
+
+    const certificateId =
+      "CP-" +
+      new Date().getFullYear() +
+      "-" +
+      Date.now();
+
+    const certificate = await Certificate.create({
+      user: userId,
+      criteria: criteriaId,
+      certificateId,
+      title: criteria.certificateTitle,
+      achievementName: criteria.name,
+      recipientName: user.name,
+      organizationName:
+        criteria.organizationName,
+      issueDate: new Date(),
+      status: "Generated",
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Certificate generated successfully",
+      certificate,
+    });
+  } catch (error) {
+    console.error(
+      "GENERATE CERTIFICATE ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate certificate",
       error: error.message,
     });
   }
@@ -789,5 +1154,11 @@ module.exports = {
   getAdminPayments,
   getAdminProgress,
   getAdminAchievements,
+  createCertificateCriteria,
+  getCertificateCriteria,
+  updateCertificateCriteria,
+  deleteCertificateCriteria,
+  checkCertificateEligibility,
+  generateCertificate,
   getAdminFeedback,
 };
