@@ -28,6 +28,8 @@ const {
   getAdminSkillGaps,
   getAdminInterviews,
   getAdminPayments,
+  getAdminProgress,
+  getAdminAchievements,
   getAdminFeedback,
 } = require("../controllers/adminController");
 
@@ -160,6 +162,30 @@ router.get(
   protect,
   adminMiddleware,
   getAdminPayments
+);
+
+// ==========================================
+// ADMIN USER PROGRESS
+// GET /api/admin/progress
+// ==========================================
+
+router.get(
+  "/progress",
+  protect,
+  adminMiddleware,
+  getAdminProgress
+);
+
+// ==========================================
+// ADMIN ACHIEVEMENTS
+// GET /api/admin/achievements
+// ==========================================
+
+router.get(
+  "/achievements",
+  protect,
+  adminMiddleware,
+  getAdminAchievements
 );
 
 // ==========================================

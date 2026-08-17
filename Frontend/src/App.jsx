@@ -70,6 +70,8 @@ import AdminRoadmaps from "./admin/pages/AdminRoadmaps";
 import AdminInterviews from "./admin/pages/AdminInterviews";
 import AdminLearning from "./admin/pages/AdminLearning";
 import AdminPayments from "./admin/pages/AdminPayments";
+import AdminProgress from "./admin/pages/AdminProgress";
+import AdminAchievements from "./admin/pages/AdminAchievements";
 
 
 // ==========================================
@@ -335,6 +337,20 @@ function App() {
         path="/admin/payments"
         element={<AdminPayments />}
         />
+        <Route
+        path="/admin/progress"
+        element={
+          <AdminProgress />
+        }
+      />
+
+      <Route
+        path="/admin/achievements"
+        element={
+          <AdminAchievements />
+        }
+      />
+
       </Route>
 
 

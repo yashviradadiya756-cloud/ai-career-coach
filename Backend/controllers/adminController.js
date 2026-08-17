@@ -5,6 +5,8 @@ const Interview = require("../models/Interview");
 const Course = require("../models/Course");
 const Learning = require("../models/Learning");
 const Payment = require("../models/Payment");
+const Progress = require("../models/Progress");
+const Achievement = require("../models/Achievement");
 
 // ==========================================
 // ADMIN DASHBOARD
@@ -695,6 +697,57 @@ const getAdminPayments = async (req, res) => {
 };
 
 // ==========================================
+// GET ALL USER PROGRESS
+// GET /api/admin/progress
+// ==========================================
+const getAdminProgress = async (req, res) => {
+  try {
+    const progress = await Progress.find()
+      .populate("user", "name username email")
+      .sort({ updatedAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      progress,
+    });
+  } catch (error) {
+    console.error("ADMIN PROGRESS ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load user progress",
+      error: error.message,
+    });
+  }
+};
+
+
+// ==========================================
+// GET ALL USER ACHIEVEMENTS
+// GET /api/admin/achievements
+// ==========================================
+const getAdminAchievements = async (req, res) => {
+  try {
+    const achievements = await Achievement.find()
+      .populate("user", "name username email")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      achievements,
+    });
+  } catch (error) {
+    console.error("ADMIN ACHIEVEMENTS ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load achievements",
+      error: error.message,
+    });
+  }
+};
+
+// ==========================================
 // FEEDBACK
 // ==========================================
 
@@ -734,5 +787,7 @@ module.exports = {
   deleteAdminCourse,
   getAdminUserLearnings,
   getAdminPayments,
+  getAdminProgress,
+  getAdminAchievements,
   getAdminFeedback,
 };

@@ -121,6 +121,43 @@ export const getAdminPayments = async () => {
 };
 
 // ==========================================
+// ADMIN PROGRESS
+// ==========================================
+
+export const getAdminProgress = async () => {
+  const response = await api.get("/api/admin/progress", {
+    headers: {
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+    params: {
+      _: Date.now(),
+    },
+  });
+
+  return response.data;
+};
+
+
+// ==========================================
+// ADMIN ACHIEVEMENTS
+// ==========================================
+
+export const getAdminAchievements = async () => {
+  const response = await api.get("/api/admin/achievements", {
+    headers: {
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+    params: {
+      _: Date.now(),
+    },
+  });
+
+  return response.data;
+};
+
+// ==========================================
 // ADMIN FEEDBACK
 // ==========================================
 

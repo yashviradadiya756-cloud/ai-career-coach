@@ -10,6 +10,8 @@ import {
   Brain,
   Mic,
   BookOpen,
+  TrendingUp,
+  Trophy,
   CreditCard,
   Bell,
   Settings,
@@ -22,58 +24,103 @@ import {
 const AdminSidebar = ({ collapsed, setCollapsed }) => {
   const navigate = useNavigate();
 
+  // ==========================================
+  // ADMIN MENU ITEMS
+  // ==========================================
+
   const menuItems = [
     {
       name: "Dashboard",
       path: "/admin",
       icon: LayoutDashboard,
     },
+
     {
       name: "Users",
       path: "/admin/users",
       icon: Users,
     },
+
     {
-    name: "AI Coach",
-    path: "/admin/ai-coach",
-    icon: Bot,
+      name: "AI Coach",
+      path: "/admin/ai-coach",
+      icon: Bot,
     },
+
     {
       name: "Resumes",
       path: "/admin/resumes",
       icon: FileText,
     },
+
     {
       name: "Roadmaps",
       path: "/admin/roadmaps",
       icon: Map,
     },
+
     {
       name: "Skill Gap",
       path: "/admin/skillgap",
       icon: Brain,
     },
+
     {
       name: "Interviews",
       path: "/admin/interviews",
       icon: Mic,
     },
+
     {
       name: "Learning",
       path: "/admin/learning",
       icon: BookOpen,
     },
+
+    // ==========================================
+    // USER PROGRESS
+    // ==========================================
+
+    {
+      name: "User Progress",
+      path: "/admin/progress",
+      icon: TrendingUp,
+    },
+
+    // ==========================================
+    // ACHIEVEMENTS
+    // ==========================================
+
+    {
+      name: "Achievements",
+      path: "/admin/achievements",
+      icon: Trophy,
+    },
+
+    // ==========================================
+    // PAYMENTS
+    // ==========================================
+
     {
       name: "Payments",
       path: "/admin/payments",
       icon: CreditCard,
     },
+
+    // ==========================================
+    // NOTIFICATIONS
+    // ==========================================
+
     {
       name: "Notifications",
       path: "/admin/notifications",
       icon: Bell,
     },
   ];
+
+  // ==========================================
+  // LOGOUT
+  // ==========================================
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -83,8 +130,15 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
   };
 
   return (
-    <aside className={`admin-sidebar ${collapsed ? "collapsed" : ""}`}>
-      {/* Logo */}
+    <aside
+      className={`admin-sidebar ${
+        collapsed ? "collapsed" : ""
+      }`}
+    >
+      {/* ==========================================
+          LOGO
+      ========================================== */}
+
       <div className="admin-logo-area">
         <div className="admin-logo-icon">
           <ShieldCheck size={22} />
@@ -98,11 +152,17 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
         )}
       </div>
 
-      {/* Menu */}
+      {/* ==========================================
+          NAVIGATION
+      ========================================== */}
+
       <nav className="admin-nav">
         <div className="admin-nav-section">
+
           {!collapsed && (
-            <p className="admin-nav-label">MAIN MENU</p>
+            <p className="admin-nav-label">
+              MAIN MENU
+            </p>
           )}
 
           {menuItems.map((item) => {
@@ -120,7 +180,10 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
                 }
                 title={collapsed ? item.name : ""}
               >
-                <Icon size={19} strokeWidth={2} />
+                <Icon
+                  size={19}
+                  strokeWidth={2}
+                />
 
                 {!collapsed && (
                   <span>{item.name}</span>
@@ -130,11 +193,19 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
           })}
         </div>
 
-        {/* Bottom Menu */}
+        {/* ==========================================
+            SYSTEM MENU
+        ========================================== */}
+
         <div className="admin-nav-section admin-bottom-nav">
+
           {!collapsed && (
-            <p className="admin-nav-label">SYSTEM</p>
+            <p className="admin-nav-label">
+              SYSTEM
+            </p>
           )}
+
+          {/* SETTINGS */}
 
           <NavLink
             to="/admin/settings"
@@ -145,25 +216,41 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
             }
             title={collapsed ? "Settings" : ""}
           >
-            <Settings size={19} />
-            {!collapsed && <span>Settings</span>}
+            <Settings size={19} strokeWidth={2} />
+
+            {!collapsed && (
+              <span>Settings</span>
+            )}
           </NavLink>
 
+          {/* LOGOUT */}
+
           <button
+            type="button"
             className="admin-nav-item logout-item"
             onClick={handleLogout}
             title={collapsed ? "Logout" : ""}
           >
-            <LogOut size={19} />
-            {!collapsed && <span>Logout</span>}
+            <LogOut size={19} strokeWidth={2} />
+
+            {!collapsed && (
+              <span>Logout</span>
+            )}
           </button>
+
         </div>
       </nav>
 
-      {/* Collapse Button */}
+      {/* ==========================================
+          COLLAPSE BUTTON
+      ========================================== */}
+
       <button
+        type="button"
         className="admin-sidebar-toggle"
-        onClick={() => setCollapsed(!collapsed)}
+        onClick={() =>
+          setCollapsed(!collapsed)
+        }
         aria-label="Toggle sidebar"
       >
         {collapsed ? (
