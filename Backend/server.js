@@ -49,6 +49,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 
 const app = express();
+app.disable("etag");
 
 console.log("ASSESSMENT API VERSION: 2026-08-06");
 

@@ -69,6 +69,7 @@ import AdminSkillGap from "./admin/pages/AdminSkillGap";
 import AdminRoadmaps from "./admin/pages/AdminRoadmaps";
 import AdminInterviews from "./admin/pages/AdminInterviews";
 import AdminLearning from "./admin/pages/AdminLearning";
+import AdminPayments from "./admin/pages/AdminPayments";
 
 
 // ==========================================
@@ -328,6 +329,11 @@ function App() {
         <Route
           path="Learning"
           element={<AdminLearning />}
+        />
+
+        <Route
+        path="/admin/payments"
+        element={<AdminPayments />}
         />
       </Route>
 

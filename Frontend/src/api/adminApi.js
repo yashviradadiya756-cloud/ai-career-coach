@@ -100,14 +100,25 @@ export const getAdminUserLearnings = async () => {
 
   return response.data;
 };
+
+
 // ==========================================
 // ADMIN PAYMENTS
 // ==========================================
 
-export const getAdminPayments = () => {
-  return api.get("/api/admin/payments");
-};
+export const getAdminPayments = async () => {
+  const response = await api.get("/api/admin/payments", {
+    headers: {
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+    params: {
+      _: Date.now(),
+    },
+  });
 
+  return response.data;
+};
 
 // ==========================================
 // ADMIN FEEDBACK

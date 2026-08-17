@@ -1,10 +1,42 @@
 const razorpay = require("../config/razorpay");
 const Payment = require("../models/Payment");
+const User = require("../models/User");
 const crypto = require("crypto");
+
+const getAdminPayments = async (req, res) => {
+  try {
+    // Disable caching for admin payment data
+    res.set({
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+    });
+
+    const payments = await Payment.find()
+      .populate("user", "name username email phone")
+      .sort({ createdAt: -1 });
+
+    console.log("ADMIN PAYMENTS COUNT:", payments.length);
+
+    return res.status(200).json({
+      success: true,
+      payments,
+    });
+  } catch (error) {
+    console.error("ADMIN PAYMENTS ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load payments",
+      error: error.message,
+    });
+  }
+};
 
 // ==========================================
 // CREATE RAZORPAY ORDER
 // ==========================================
+
 const createOrder = async (req, res) => {
   try {
     if (!process.env.RAZORPAY_KEY_ID) {
@@ -35,7 +67,7 @@ const createOrder = async (req, res) => {
       amount: order.amount,
       currency: order.currency,
       status: "Pending",
-      transactionId: order.id,
+      orderId: order.id,
     });
 
     return res.status(200).json({
@@ -49,15 +81,16 @@ const createOrder = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to create Razorpay order",
+      message:
+        error.message || "Failed to create Razorpay order",
     });
   }
 };
 
-
 // ==========================================
 // VERIFY PAYMENT
 // ==========================================
+
 const verifyPayment = async (req, res) => {
   try {
     const {
@@ -77,7 +110,10 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    // Create signature
+    // ==========================================
+    // GENERATE SIGNATURE
+    // ==========================================
+
     const generatedSignature = crypto
       .createHmac(
         "sha256",
@@ -88,12 +124,15 @@ const verifyPayment = async (req, res) => {
       )
       .digest("hex");
 
-    // Compare signatures
+    // ==========================================
+    // VERIFY SIGNATURE
+    // ==========================================
+
     if (generatedSignature !== razorpay_signature) {
       await Payment.findOneAndUpdate(
         {
           user: req.user._id,
-          transactionId: razorpay_order_id,
+          orderId: razorpay_order_id,
         },
         {
           status: "Failed",
@@ -106,9 +145,13 @@ const verifyPayment = async (req, res) => {
       });
     }
 
+    // ==========================================
+    // FIND PAYMENT
+    // ==========================================
+
     const payment = await Payment.findOne({
       user: req.user._id,
-      transactionId: razorpay_order_id,
+      orderId: razorpay_order_id,
     });
 
     if (!payment) {
@@ -118,10 +161,31 @@ const verifyPayment = async (req, res) => {
       });
     }
 
+    // ==========================================
+    // UPDATE PAYMENT
+    // ==========================================
+
     payment.transactionId = razorpay_payment_id;
+    payment.signature = razorpay_signature;
     payment.status = "Success";
 
     await payment.save();
+
+    // ==========================================
+    // ACTIVATE PRO PLAN
+    // ==========================================
+
+    const startDate = new Date();
+
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1);
+
+    await User.findByIdAndUpdate(req.user._id, {
+      plan: "Pro",
+      subscriptionStatus: "Active",
+      subscriptionStartDate: startDate,
+      subscriptionEndDate: endDate,
+    });
 
     return res.status(200).json({
       success: true,
@@ -133,15 +197,16 @@ const verifyPayment = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Payment verification failed",
+      message:
+        error.message || "Payment verification failed",
     });
   }
 };
 
-
 // ==========================================
 // PAYMENT HISTORY
 // ==========================================
+
 const getPaymentHistory = async (req, res) => {
   try {
     const payments = await Payment.find({
@@ -159,13 +224,14 @@ const getPaymentHistory = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to load payment history",
+      message:
+        error.message || "Failed to load payment history",
     });
   }
 };
 
-
 module.exports = {
+  getAdminPayments,
   createOrder,
   verifyPayment,
   getPaymentHistory,

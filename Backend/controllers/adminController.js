@@ -4,6 +4,7 @@ const Roadmap = require("../models/Roadmap");
 const Interview = require("../models/Interview");
 const Course = require("../models/Course");
 const Learning = require("../models/Learning");
+const Payment = require("../models/Payment");
 
 // ==========================================
 // ADMIN DASHBOARD
@@ -646,21 +647,52 @@ const getAdminUserLearnings = async (req, res) => {
 
 const getAdminPayments = async (req, res) => {
   try {
+    console.log("\n========== ADMIN PAYMENTS ==========");
 
-    res.status(200).json({
-      success: true,
-      payments: [],
+    const payments = await Payment.find({})
+      .populate("user", "name username email phone")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    console.log("TOTAL PAYMENTS:", payments.length);
+
+    console.log(
+      "PAYMENTS:",
+      payments.map((payment) => ({
+        id: payment._id,
+        user: payment.user?.email,
+        plan: payment.plan,
+        amount: payment.amount,
+        status: payment.status,
+        orderId: payment.orderId,
+        transactionId: payment.transactionId,
+      }))
+    );
+
+    // IMPORTANT:
+    // Prevent browser / proxy caching
+    res.set({
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+      "Surrogate-Control": "no-store",
     });
 
+    return res.status(200).json({
+      success: true,
+      count: payments.length,
+      payments,
+    });
   } catch (error) {
+    console.error("ADMIN PAYMENTS ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to load payments",
+      error: error.message,
     });
   }
 };
-
 
 // ==========================================
 // FEEDBACK

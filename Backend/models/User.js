@@ -60,6 +60,32 @@ const userSchema = new mongoose.Schema(
     },
 
     // ==========================================
+// SUBSCRIPTION
+// ==========================================
+
+plan: {
+  type: String,
+  enum: ["Free", "Pro"],
+  default: "Free",
+},
+
+subscriptionStatus: {
+  type: String,
+  enum: ["Active", "Inactive", "Expired"],
+  default: "Inactive",
+},
+
+subscriptionStartDate: {
+  type: Date,
+  default: null,
+},
+
+subscriptionEndDate: {
+  type: Date,
+  default: null,
+},
+
+    // ==========================================
     // PREFERENCES
     // ==========================================
 
