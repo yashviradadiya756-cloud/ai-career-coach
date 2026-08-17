@@ -344,16 +344,14 @@ const AdminSkillGap = () => {
       setLoading(true);
       setError("");
 
-      const response =
-        await getAdminSkillGaps();
+      const response = await getAdminSkillGaps();
 
       console.log(
         "ADMIN SKILL GAP RESPONSE:",
-        response.data
+        response
       );
 
-      const data =
-        response.data?.skillGaps;
+      const data = response?.skillGaps;
 
       setSkillGaps(
         Array.isArray(data)

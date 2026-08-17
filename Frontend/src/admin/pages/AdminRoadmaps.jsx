@@ -52,7 +52,7 @@ const AdminRoadmaps = () => {
         setError("");
 
         const response = await api.get(
-          "/api/admin/roadmap"
+          "/api/admin/roadmaps"
         );
 
         console.log(
