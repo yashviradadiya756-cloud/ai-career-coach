@@ -30,12 +30,15 @@ const {
   getAdminPayments,
   getAdminProgress,
   getAdminAchievements,
+
   createCertificateCriteria,
   getCertificateCriteria,
   updateCertificateCriteria,
   deleteCertificateCriteria,
+
   checkCertificateEligibility,
   generateCertificate,
+
   getAdminFeedback,
 } = require("../controllers/adminController");
 
@@ -171,10 +174,9 @@ router.get(
 );
 
 // ==========================================
-// ADMIN USER PROGRESS
+// ADMIN PROGRESS
 // GET /api/admin/progress
 // ==========================================
-
 router.get(
   "/progress",
   protect,
@@ -182,12 +184,10 @@ router.get(
   getAdminProgress
 );
 
-
 // ==========================================
 // ADMIN ACHIEVEMENTS
 // GET /api/admin/achievements
 // ==========================================
-
 router.get(
   "/achievements",
   protect,
@@ -198,7 +198,6 @@ router.get(
 // ==========================================
 // CERTIFICATE CRITERIA
 // ==========================================
-
 router.get(
   "/certificate-criteria",
   protect,
@@ -230,7 +229,6 @@ router.delete(
 // ==========================================
 // CERTIFICATE ELIGIBILITY
 // ==========================================
-
 router.get(
   "/certificate-eligibility/:userId/:criteriaId",
   protect,
@@ -241,7 +239,6 @@ router.get(
 // ==========================================
 // GENERATE CERTIFICATE
 // ==========================================
-
 router.post(
   "/certificates/generate",
   protect,

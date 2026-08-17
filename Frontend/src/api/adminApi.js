@@ -1,41 +1,58 @@
 import api from "./axios";
 
 // ==========================================
-// ADMIN DASHBOARD
+// NO CACHE CONFIG
 // ==========================================
+const noCacheConfig = {
+  headers: {
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+  },
+  params: {
+    _: Date.now(),
+  },
+};
 
+// ==========================================
+// ADMIN DASHBOARD
+// GET /api/admin/dashboard
+// ==========================================
 export const getAdminDashboard = async () => {
-  const response = await api.get("/api/admin/dashboard", {
-    headers: {
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-    params: {
-      _: Date.now(),
-    },
-  });
+  const response = await api.get(
+    "/api/admin/dashboard",
+    noCacheConfig
+  );
+
+  console.log(
+    "ADMIN DASHBOARD API:",
+    response.data
+  );
 
   return response.data;
 };
 
 // ==========================================
 // ADMIN USERS
+// GET /api/admin/users
 // ==========================================
-
 export const getAdminUsers = async () => {
-  const response = await api.get("/api/admin/users", {
-    headers: {
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-    params: {
-      _: Date.now(),
-    },
-  });
+  const response = await api.get(
+    "/api/admin/users",
+    noCacheConfig
+  );
+
+  console.log(
+    "ADMIN USERS API:",
+    response.data
+  );
 
   return response.data;
 };
 
+// ==========================================
+// DELETE ADMIN USER
+// DELETE /api/admin/users/:id
+// ==========================================
 export const deleteAdminUser = async (id) => {
   const response = await api.delete(
     `/api/admin/users/${id}`
@@ -46,95 +63,96 @@ export const deleteAdminUser = async (id) => {
 
 // ==========================================
 // ADMIN RESUMES
+// GET /api/admin/resumes
 // ==========================================
-
 export const getAdminResumes = async () => {
-  const response = await api.get("/api/admin/resumes", {
-    headers: {
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-    params: {
-      _: Date.now(),
-    },
-  });
+  const response = await api.get(
+    "/api/admin/resumes",
+    noCacheConfig
+  );
+
+  console.log(
+    "ADMIN RESUMES API:",
+    response.data
+  );
 
   return response.data;
 };
 
 // ==========================================
 // ADMIN ROADMAPS
+// GET /api/admin/roadmaps
 // ==========================================
-
 export const getAdminRoadmaps = async () => {
-  const response = await api.get("/api/admin/roadmaps", {
-    headers: {
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-    params: {
-      _: Date.now(),
-    },
-  });
+  const response = await api.get(
+    "/api/admin/roadmaps",
+    noCacheConfig
+  );
+
+  console.log(
+    "ADMIN ROADMAPS API:",
+    response.data
+  );
 
   return response.data;
 };
 
 // ==========================================
 // ADMIN SKILL GAPS
+// GET /api/admin/skill-gaps
 // ==========================================
-
 export const getAdminSkillGaps = async () => {
-  const response = await api.get("/api/admin/skill-gaps", {
-    headers: {
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-    params: {
-      _: Date.now(),
-    },
-  });
+  const response = await api.get(
+    "/api/admin/skill-gaps",
+    noCacheConfig
+  );
+
+  console.log(
+    "ADMIN SKILL GAPS API:",
+    response.data
+  );
 
   return response.data;
 };
 
 // ==========================================
 // ADMIN INTERVIEWS
+// GET /api/admin/interviews
 // ==========================================
-
 export const getAdminInterviews = async () => {
-  const response = await api.get("/api/admin/interviews", {
-    headers: {
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-    params: {
-      _: Date.now(),
-    },
-  });
+  const response = await api.get(
+    "/api/admin/interviews",
+    noCacheConfig
+  );
+
+  console.log(
+    "ADMIN INTERVIEWS API:",
+    response.data
+  );
 
   return response.data;
 };
 
 // ==========================================
 // ADMIN COURSES
+// GET /api/admin/courses
 // ==========================================
-
 export const getAdminCourses = async () => {
-  const response = await api.get("/api/admin/courses", {
-    headers: {
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-    params: {
-      _: Date.now(),
-    },
-  });
+  const response = await api.get(
+    "/api/admin/courses",
+    noCacheConfig
+  );
 
   return response.data;
 };
 
-export const createAdminCourse = async (courseData) => {
+// ==========================================
+// CREATE ADMIN COURSE
+// POST /api/admin/courses
+// ==========================================
+export const createAdminCourse = async (
+  courseData
+) => {
   const response = await api.post(
     "/api/admin/courses",
     courseData
@@ -143,7 +161,14 @@ export const createAdminCourse = async (courseData) => {
   return response.data;
 };
 
-export const updateAdminCourse = async (id, courseData) => {
+// ==========================================
+// UPDATE ADMIN COURSE
+// PUT /api/admin/courses/:id
+// ==========================================
+export const updateAdminCourse = async (
+  id,
+  courseData
+) => {
   const response = await api.put(
     `/api/admin/courses/${id}`,
     courseData
@@ -152,6 +177,10 @@ export const updateAdminCourse = async (id, courseData) => {
   return response.data;
 };
 
+// ==========================================
+// DELETE ADMIN COURSE
+// DELETE /api/admin/courses/:id
+// ==========================================
 export const deleteAdminCourse = async (id) => {
   const response = await api.delete(
     `/api/admin/courses/${id}`
@@ -162,20 +191,17 @@ export const deleteAdminCourse = async (id) => {
 
 // ==========================================
 // ADMIN USER LEARNINGS
+// GET /api/admin/user-learnings
 // ==========================================
-
 export const getAdminUserLearnings = async () => {
   const response = await api.get(
     "/api/admin/user-learnings",
-    {
-      headers: {
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      },
-      params: {
-        _: Date.now(),
-      },
-    }
+    noCacheConfig
+  );
+
+  console.log(
+    "ADMIN USER LEARNINGS API:",
+    response.data
   );
 
   return response.data;
@@ -183,41 +209,25 @@ export const getAdminUserLearnings = async () => {
 
 // ==========================================
 // ADMIN PAYMENTS
+// GET /api/admin/payments
 // ==========================================
-
 export const getAdminPayments = async () => {
   const response = await api.get(
     "/api/admin/payments",
-    {
-      headers: {
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      },
-      params: {
-        _: Date.now(),
-      },
-    }
+    noCacheConfig
   );
 
   return response.data;
 };
 
 // ==========================================
-// ADMIN USER PROGRESS
+// ADMIN PROGRESS
+// GET /api/admin/progress
 // ==========================================
-
 export const getAdminProgress = async () => {
   const response = await api.get(
     "/api/admin/progress",
-    {
-      headers: {
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      },
-      params: {
-        _: Date.now(),
-      },
-    }
+    noCacheConfig
   );
 
   return response.data;
@@ -225,20 +235,12 @@ export const getAdminProgress = async () => {
 
 // ==========================================
 // ADMIN ACHIEVEMENTS
+// GET /api/admin/achievements
 // ==========================================
-
 export const getAdminAchievements = async () => {
   const response = await api.get(
     "/api/admin/achievements",
-    {
-      headers: {
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      },
-      params: {
-        _: Date.now(),
-      },
-    }
+    noCacheConfig
   );
 
   return response.data;
@@ -247,15 +249,10 @@ export const getAdminAchievements = async () => {
 // ==========================================
 // CERTIFICATE CRITERIA
 // ==========================================
-
 export const getCertificateCriteria = async () => {
   const response = await api.get(
     "/api/admin/certificate-criteria",
-    {
-      params: {
-        _: Date.now(),
-      },
-    }
+    noCacheConfig
   );
 
   return response.data;
@@ -297,7 +294,6 @@ export const deleteCertificateCriteria = async (
 // ==========================================
 // CERTIFICATE ELIGIBILITY
 // ==========================================
-
 export const checkCertificateEligibility = async (
   userId,
   criteriaId
@@ -312,7 +308,6 @@ export const checkCertificateEligibility = async (
 // ==========================================
 // GENERATE CERTIFICATE
 // ==========================================
-
 export const generateCertificate = async (
   userId,
   criteriaId
@@ -330,20 +325,12 @@ export const generateCertificate = async (
 
 // ==========================================
 // ADMIN FEEDBACK
+// GET /api/admin/feedback
 // ==========================================
-
 export const getAdminFeedback = async () => {
   const response = await api.get(
     "/api/admin/feedback",
-    {
-      headers: {
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      },
-      params: {
-        _: Date.now(),
-      },
-    }
+    noCacheConfig
   );
 
   return response.data;

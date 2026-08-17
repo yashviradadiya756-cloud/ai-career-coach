@@ -1,4 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   FileText,
@@ -15,15 +19,17 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-import {
-  getAdminResumes,
-} from "../../api/adminApi";
+import { getAdminResumes } from "../../api/adminApi";
 
 import AdminResumeModal from "../components/AdminResumeModal";
 
 import "../styles/adminResumes.css";
 
 const AdminResumes = () => {
+  // =====================================================
+  // STATE
+  // =====================================================
+
   const [resumes, setResumes] = useState([]);
 
   const [search, setSearch] = useState("");
@@ -48,355 +54,543 @@ const AdminResumes = () => {
 
   const resumesPerPage = 6;
 
-  /* =====================================================
-     LOAD RESUMES FROM BACKEND
-  ===================================================== */
+  // =====================================================
+  // GET BACKEND BASE URL
+  // =====================================================
+
+  const getBackendUrl = () => {
+    const envUrl =
+      import.meta.env.VITE_API_URL;
+
+    if (envUrl) {
+      return envUrl.replace(/\/+$/, "");
+    }
+
+    return "http://localhost:5000";
+  };
+
+  // =====================================================
+  // FORMAT DATE
+  // =====================================================
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) {
+      return "Unknown date";
+    }
+
+    const date = new Date(dateValue);
+
+    if (Number.isNaN(date.getTime())) {
+      return "Unknown date";
+    }
+
+    return date.toLocaleDateString(
+      "en-US",
+      {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      }
+    );
+  };
+
+  // =====================================================
+  // CREATE FILE URL
+  // =====================================================
+
+  const createFileUrl = (resume) => {
+    // If backend already provides fileUrl
+    if (resume.fileUrl) {
+      return resume.fileUrl;
+    }
+
+    // If backend provides URL
+    if (resume.url) {
+      return resume.url;
+    }
+
+    if (!resume.filePath) {
+      return "";
+    }
+
+    const backendUrl =
+      getBackendUrl();
+
+    let cleanPath =
+      String(resume.filePath)
+        .replace(/\\/g, "/")
+        .replace(/^\/+/, "");
+
+    /*
+      Example:
+
+      uploads/resume.pdf
+      OR
+      resume.pdf
+    */
+
+    if (
+      cleanPath.startsWith(
+        "uploads/"
+      )
+    ) {
+      return `${backendUrl}/${cleanPath}`;
+    }
+
+    return `${backendUrl}/uploads/${cleanPath}`;
+  };
+
+  // =====================================================
+  // FORMAT USER NAME
+  // =====================================================
+
+  const getUserName = (resume) => {
+    const user = resume.user;
+
+    // user is populated object
+    if (
+      user &&
+      typeof user === "object"
+    ) {
+      return (
+        user.username ||
+        user.name ||
+        user.fullName ||
+        user.email ||
+        "Unknown User"
+      );
+    }
+
+    // backend sends separate username
+    if (resume.userName) {
+      return resume.userName;
+    }
+
+    if (resume.username) {
+      return resume.username;
+    }
+
+    if (resume.name) {
+      return resume.name;
+    }
+
+    // backend sends user as string
+    if (
+      typeof user === "string"
+    ) {
+      return user;
+    }
+
+    return "Unknown User";
+  };
+
+  // =====================================================
+  // GET USER EMAIL
+  // =====================================================
+
+  const getUserEmail = (resume) => {
+    const user = resume.user;
+
+    if (
+      user &&
+      typeof user === "object"
+    ) {
+      return (
+        user.email ||
+        resume.email ||
+        "No email"
+      );
+    }
+
+    return (
+      resume.email ||
+      "No email"
+    );
+  };
+
+  // =====================================================
+  // GET INITIALS
+  // =====================================================
+
+  const getInitials = (name) => {
+    if (!name) {
+      return "U";
+    }
+
+    const initials = String(name)
+      .split(" ")
+      .filter(Boolean)
+      .map(
+        (part) =>
+          part.charAt(0)
+      )
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
+    return initials || "U";
+  };
+
+  // =====================================================
+  // NORMALIZE RESUME
+  // =====================================================
+
+  const normalizeResume = (
+    resume,
+    index
+  ) => {
+    const userName =
+      getUserName(resume);
+
+    const userEmail =
+      getUserEmail(resume);
+
+    const score =
+      Number(
+        resume.atsScore ??
+          resume.score ??
+          0
+      );
+
+    const uploadedDate =
+      resume.createdAt ||
+      resume.updatedAt ||
+      resume.uploadedAt ||
+      resume.date;
+
+    return {
+      ...resume,
+
+      id:
+        resume._id ||
+        resume.id ||
+        index,
+
+      user: userName,
+
+      email: userEmail,
+
+      initials:
+        getInitials(userName),
+
+      fileName:
+        resume.fileName ||
+        resume.originalName ||
+        resume.filename ||
+        "Resume",
+
+      atsScore:
+        Number.isFinite(score)
+          ? score
+          : 0,
+
+      date:
+        formatDate(
+          uploadedDate
+        ),
+
+      uploadedDate,
+
+      status:
+        resume.status ||
+        "Analyzed",
+
+      fileUrl:
+        createFileUrl(
+          resume
+        ),
+
+      strengths:
+        Array.isArray(
+          resume.strengths
+        )
+          ? resume.strengths
+          : [],
+
+      weaknesses:
+        Array.isArray(
+          resume.weaknesses
+        )
+          ? resume.weaknesses
+          : [],
+
+      missingSkills:
+        Array.isArray(
+          resume.missingSkills
+        )
+          ? resume.missingSkills
+          : [],
+
+      suggestions:
+        Array.isArray(
+          resume.suggestions
+        )
+          ? resume.suggestions
+          : [],
+    };
+  };
+
+  // =====================================================
+  // LOAD RESUMES
+  // =====================================================
 
   const loadResumes = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await getAdminResumes();
+      const response =
+        await getAdminResumes();
 
       console.log(
-        "ADMIN RESUMES RESPONSE:",
-        response.data
+        "ADMIN RESUMES RAW RESPONSE:",
+        response
       );
 
-      if (
-        response.data &&
-        response.data.success
-      ) {
-        const backendResumes =
-          response.data.resumes || [];
+      /*
+        Supports both:
 
-        /*
-          Normalize backend data.
+        1. getAdminResumes() returns Axios response
 
-          This keeps your existing UI unchanged
-          even if backend returns user as an object.
-        */
+        {
+          data: {
+            success: true,
+            resumes: []
+          }
+        }
 
-        const formattedResumes =
-          backendResumes.map(
-            (resume, index) => {
-              const user =
-                resume.user &&
-                typeof resume.user === "object"
-                  ? resume.user
-                  : null;
+        2. getAdminResumes() returns response.data
 
-              const userName =
-                user?.username ||
-                user?.name ||
-                resume.userName ||
-                resume.name ||
-                (typeof resume.user === "string"
-                  ? resume.user
-                  : "Unknown User");
+        {
+          success: true,
+          resumes: []
+        }
+      */
 
-              const userEmail =
-                user?.email ||
-                resume.email ||
-                "No email";
+      const data =
+        response?.data?.success !== undefined
+          ? response.data
+          : response;
 
-              const initials =
-                userName
-                  .split(" ")
-                  .filter(Boolean)
-                  .map(
-                    (part) =>
-                      part.charAt(0)
-                  )
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase() || "U";
+      console.log(
+        "ADMIN RESUMES DATA:",
+        data
+      );
 
-              const score =
-                Number(resume.atsScore) || 0;
-
-              const uploadedDate =
-                resume.createdAt ||
-                resume.updatedAt ||
-                resume.uploadedAt ||
-                resume.date;
-
-              let formattedDate =
-                "Unknown date";
-
-              if (uploadedDate) {
-                const date =
-                  new Date(uploadedDate);
-
-                if (
-                  !Number.isNaN(
-                    date.getTime()
-                  )
-                ) {
-                  formattedDate =
-                    date.toLocaleDateString(
-                      "en-US",
-                      {
-                        month: "short",
-                        day: "2-digit",
-                        year: "numeric",
-                      }
-                    );
-                }
-              }
-
-              /*
-                Backend file path handling.
-
-                If backend already sends fileUrl,
-                use it.
-
-                Otherwise use filePath.
-              */
-
-              let fileUrl =
-                resume.fileUrl || "";
-
-              if (
-                !fileUrl &&
-                resume.filePath
-              ) {
-                const backendBaseUrl =
-                  import.meta.env
-                    .VITE_API_URL ||
-                  "http://localhost:5000";
-
-                let cleanPath =
-                  String(
-                    resume.filePath
-                  )
-                    .replace(/\\/g, "/")
-                    .replace(/^\/+/, "");
-
-                if (
-                  cleanPath.startsWith(
-                    "uploads/"
-                  )
-                ) {
-                  fileUrl =
-                    `${backendBaseUrl}/${cleanPath}`;
-                } else {
-                  fileUrl =
-                    `${backendBaseUrl}/uploads/${cleanPath}`;
-                }
-              }
-
-              return {
-                ...resume,
-
-                id:
-                  resume._id ||
-                  resume.id ||
-                  index,
-
-                user: userName,
-
-                email: userEmail,
-
-                initials,
-
-                fileName:
-                  resume.fileName ||
-                  "Resume",
-
-                atsScore: score,
-
-                date: formattedDate,
-
-                status:
-                  resume.status ||
-                  "Analyzed",
-
-                fileUrl,
-
-                strengths:
-                  Array.isArray(
-                    resume.strengths
-                  )
-                    ? resume.strengths
-                    : [],
-
-                weaknesses:
-                  Array.isArray(
-                    resume.weaknesses
-                  )
-                    ? resume.weaknesses
-                    : [],
-
-                missingSkills:
-                  Array.isArray(
-                    resume.missingSkills
-                  )
-                    ? resume.missingSkills
-                    : [],
-
-                suggestions:
-                  Array.isArray(
-                    resume.suggestions
-                  )
-                    ? resume.suggestions
-                    : [],
-              };
-            }
-          );
-
-        setResumes(formattedResumes);
-      } else {
+      if (!data?.success) {
         setError(
-          response?.data?.message ||
+          data?.message ||
             "Failed to load resumes"
         );
+
+        setResumes([]);
+
+        return;
       }
-    } catch (error) {
-      console.error(
-        "Admin resumes error:",
-        error
+
+      const backendResumes =
+        Array.isArray(
+          data.resumes
+        )
+          ? data.resumes
+          : [];
+
+      const formattedResumes =
+        backendResumes.map(
+          normalizeResume
+        );
+
+      console.log(
+        "FORMATTED ADMIN RESUMES:",
+        formattedResumes
       );
 
-      setError(
-        error?.response?.data?.message ||
-          "Failed to load resumes"
+      setResumes(
+        formattedResumes
       );
+
+    } catch (err) {
+      console.error(
+        "ADMIN RESUMES ERROR:",
+        err
+      );
+
+      const message =
+        err?.response?.data
+          ?.message ||
+        err?.message ||
+        "Failed to load resumes";
+
+      setError(message);
+
+      setResumes([]);
+
     } finally {
       setLoading(false);
     }
   };
 
-  /* =====================================================
-     INITIAL LOAD
-  ===================================================== */
+  // =====================================================
+  // INITIAL LOAD
+  // =====================================================
 
   useEffect(() => {
     loadResumes();
   }, []);
 
-  /* =====================================================
-     FILTER
-  ===================================================== */
+  // =====================================================
+  // SEARCH + FILTER
+  // =====================================================
 
-  const filteredResumes = useMemo(() => {
-    return resumes.filter((resume) => {
-      const searchText =
-        search.toLowerCase();
+  const filteredResumes =
+    useMemo(() => {
+      return resumes.filter(
+        (resume) => {
+          const searchText =
+            search
+              .trim()
+              .toLowerCase();
 
-      const searchMatch =
-        String(resume.user || "")
-          .toLowerCase()
-          .includes(searchText) ||
-        String(resume.email || "")
-          .toLowerCase()
-          .includes(searchText) ||
-        String(resume.fileName || "")
-          .toLowerCase()
-          .includes(searchText);
+          const searchMatch =
+            !searchText ||
+            String(
+              resume.user || ""
+            )
+              .toLowerCase()
+              .includes(searchText) ||
+            String(
+              resume.email || ""
+            )
+              .toLowerCase()
+              .includes(searchText) ||
+            String(
+              resume.fileName || ""
+            )
+              .toLowerCase()
+              .includes(searchText);
 
-      let scoreMatch = true;
+          // -------------------------------------------
+          // SCORE FILTER
+          // -------------------------------------------
 
-      if (
-        scoreFilter === "Excellent"
-      ) {
-        scoreMatch =
-          resume.atsScore >= 80;
-      }
+          let scoreMatch = true;
 
-      if (scoreFilter === "Good") {
-        scoreMatch =
-          resume.atsScore >= 60 &&
-          resume.atsScore < 80;
-      }
+          if (
+            scoreFilter ===
+            "Excellent"
+          ) {
+            scoreMatch =
+              resume.atsScore >= 80;
+          }
 
-      if (
-        scoreFilter === "Needs Work"
-      ) {
-        scoreMatch =
-          resume.atsScore < 60;
-      }
+          if (
+            scoreFilter ===
+            "Good"
+          ) {
+            scoreMatch =
+              resume.atsScore >= 60 &&
+              resume.atsScore < 80;
+          }
 
-      let dateMatch = true;
+          if (
+            scoreFilter ===
+            "Needs Work"
+          ) {
+            scoreMatch =
+              resume.atsScore < 60;
+          }
 
-      /*
-        Use actual current date instead of
-        hardcoded Aug 12, 2026.
-      */
+          // -------------------------------------------
+          // DATE FILTER
+          // -------------------------------------------
 
-      if (dateFilter === "Today") {
-        const today =
-          new Date()
-            .toLocaleDateString(
-              "en-US",
-              {
-                month: "short",
-                day: "2-digit",
-                year: "numeric",
-              }
-            );
+          let dateMatch = true;
 
-        dateMatch =
-          resume.date === today;
-      }
+          if (
+            dateFilter ===
+            "Today"
+          ) {
+            if (
+              resume.uploadedDate
+            ) {
+              const uploaded =
+                new Date(
+                  resume.uploadedDate
+                );
 
-      if (dateFilter === "Recent") {
-        /*
-          Show resumes from the last 7 days.
-        */
+              const today =
+                new Date();
 
-        const sourceDate =
-          resume.createdAt ||
-          resume.updatedAt ||
-          resume.uploadedAt;
+              dateMatch =
+                uploaded.getDate() ===
+                  today.getDate() &&
+                uploaded.getMonth() ===
+                  today.getMonth() &&
+                uploaded.getFullYear() ===
+                  today.getFullYear();
+            } else {
+              dateMatch = false;
+            }
+          }
 
-        if (sourceDate) {
-          const uploaded =
-            new Date(sourceDate);
+          if (
+            dateFilter ===
+            "Recent"
+          ) {
+            if (
+              resume.uploadedDate
+            ) {
+              const uploaded =
+                new Date(
+                  resume.uploadedDate
+                );
 
-          const now = new Date();
+              const now =
+                new Date();
 
-          const difference =
-            now.getTime() -
-            uploaded.getTime();
+              const difference =
+                now.getTime() -
+                uploaded.getTime();
 
-          const sevenDays =
-            7 *
-            24 *
-            60 *
-            60 *
-            1000;
+              const sevenDays =
+                7 *
+                24 *
+                60 *
+                60 *
+                1000;
 
-          dateMatch =
-            difference >= 0 &&
-            difference <= sevenDays;
-        } else {
-          dateMatch = true;
+              dateMatch =
+                difference >= 0 &&
+                difference <=
+                  sevenDays;
+            } else {
+              dateMatch = false;
+            }
+          }
+
+          return (
+            searchMatch &&
+            scoreMatch &&
+            dateMatch
+          );
         }
-      }
-
-      return (
-        searchMatch &&
-        scoreMatch &&
-        dateMatch
       );
-    });
-  }, [
-    resumes,
-    search,
-    scoreFilter,
-    dateFilter,
-  ]);
+    }, [
+      resumes,
+      search,
+      scoreFilter,
+      dateFilter,
+    ]);
 
-  /* =====================================================
-     PAGINATION
-  ===================================================== */
+  // =====================================================
+  // PAGINATION
+  // =====================================================
 
-  const totalPages = Math.ceil(
-    filteredResumes.length /
-      resumesPerPage
-  );
+  const totalPages =
+    Math.ceil(
+      filteredResumes.length /
+        resumesPerPage
+    );
 
   const startIndex =
     (currentPage - 1) *
@@ -405,29 +599,38 @@ const AdminResumes = () => {
   const currentResumes =
     filteredResumes.slice(
       startIndex,
-      startIndex + resumesPerPage
+      startIndex +
+        resumesPerPage
     );
 
-  /*
-    Prevent page from becoming invalid
-    after filtering.
-  */
+  // =====================================================
+  // RESET INVALID PAGE
+  // =====================================================
 
   useEffect(() => {
     if (
       totalPages > 0 &&
       currentPage > totalPages
     ) {
-      setCurrentPage(totalPages);
+      setCurrentPage(
+        totalPages
+      );
+    }
+
+    if (
+      totalPages === 0 &&
+      currentPage !== 1
+    ) {
+      setCurrentPage(1);
     }
   }, [
-    currentPage,
     totalPages,
+    currentPage,
   ]);
 
-  /* =====================================================
-     STATS
-  ===================================================== */
+  // =====================================================
+  // STATISTICS
+  // =====================================================
 
   const totalResumes =
     resumes.length;
@@ -438,85 +641,133 @@ const AdminResumes = () => {
           resumes.reduce(
             (sum, resume) =>
               sum +
-              (Number(
-                resume.atsScore
-              ) || 0),
+              Number(
+                resume.atsScore || 0
+              ),
             0
-          ) / totalResumes
+          ) /
+            totalResumes
         )
       : 0;
 
-  const todayString =
-    new Date().toLocaleDateString(
-      "en-US",
-      {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-      }
-    );
-
   const uploadedToday =
     resumes.filter(
-      (resume) =>
-        resume.date === todayString
+      (resume) => {
+        if (
+          !resume.uploadedDate
+        ) {
+          return false;
+        }
+
+        const uploaded =
+          new Date(
+            resume.uploadedDate
+          );
+
+        const today =
+          new Date();
+
+        return (
+          uploaded.getDate() ===
+            today.getDate() &&
+          uploaded.getMonth() ===
+            today.getMonth() &&
+          uploaded.getFullYear() ===
+            today.getFullYear()
+        );
+      }
     ).length;
 
   const lowScoreResumes =
     resumes.filter(
       (resume) =>
-        Number(resume.atsScore) < 60
+        Number(
+          resume.atsScore
+        ) < 60
     ).length;
 
-  /* =====================================================
-     SCORE CLASS
-  ===================================================== */
+  // =====================================================
+  // SCORE CLASS
+  // =====================================================
 
-  const getScoreClass = (score) => {
-    if (score >= 80)
+  const getScoreClass = (
+    score
+  ) => {
+    if (score >= 80) {
       return "excellent";
+    }
 
-    if (score >= 60)
+    if (score >= 60) {
       return "good";
+    }
 
     return "low";
   };
 
-  /* =====================================================
-     HANDLERS
-  ===================================================== */
+  // =====================================================
+  // FILTER HANDLERS
+  // =====================================================
 
-  const handleSearch = (value) => {
+  const handleSearch = (
+    value
+  ) => {
     setSearch(value);
     setCurrentPage(1);
   };
 
-  const handleScoreFilter = (value) => {
+  const handleScoreFilter = (
+    value
+  ) => {
     setScoreFilter(value);
     setCurrentPage(1);
   };
 
-  const handleDateFilter = (value) => {
+  const handleDateFilter = (
+    value
+  ) => {
     setDateFilter(value);
     setCurrentPage(1);
   };
 
-  /* =====================================================
-     LOADING
-  ===================================================== */
+  // =====================================================
+  // DOWNLOAD / OPEN RESUME
+  // =====================================================
+
+  const handleDownload = (
+    resume
+  ) => {
+    if (!resume.fileUrl) {
+      alert(
+        "Resume file is not available."
+      );
+
+      return;
+    }
+
+    window.open(
+      resume.fileUrl,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
+  // =====================================================
+  // LOADING
+  // =====================================================
 
   if (loading) {
     return (
       <div className="admin-resumes-page">
-
         <div
           className="admin-resume-page-loading"
           style={{
             minHeight: "400px",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
+            justifyContent:
+              "center",
+            flexDirection:
+              "column",
             gap: "10px",
           }}
         >
@@ -526,52 +777,61 @@ const AdminResumes = () => {
             Loading resumes...
           </p>
         </div>
-
       </div>
     );
   }
 
-  /* =====================================================
-     ERROR
-  ===================================================== */
+  // =====================================================
+  // ERROR
+  // =====================================================
 
   if (error) {
     return (
       <div className="admin-resumes-page">
-
         <div
           className="admin-resume-page-error"
           style={{
             minHeight: "400px",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
+            justifyContent:
+              "center",
+            flexDirection:
+              "column",
             gap: "12px",
           }}
         >
+          <AlertTriangle
+            size={40}
+          />
+
           <h2>
             Failed to load resumes
           </h2>
 
-          <p>{error}</p>
+          <p>
+            {error}
+          </p>
 
           <button
-            onClick={loadResumes}
+            onClick={
+              loadResumes
+            }
           >
-            <RefreshCw size={16} />
+            <RefreshCw
+              size={16}
+            />
+
             Retry
           </button>
-
         </div>
-
       </div>
     );
   }
 
-  /* =====================================================
-     PAGE
-  ===================================================== */
+  // =====================================================
+  // MAIN PAGE
+  // =====================================================
 
   return (
     <div className="admin-resumes-page">
@@ -592,17 +852,41 @@ const AdminResumes = () => {
           </h1>
 
           <p>
-            Monitor uploaded resumes and
-            AI-powered ATS analysis.
+            Monitor uploaded resumes
+            and AI-powered ATS
+            analysis.
           </p>
         </div>
 
-        <div className="admin-resume-header-badge">
-          <FileText size={15} />
+        <div className="admin-resume-header-actions">
 
-          Resume Analyzer
+          <button
+            className="admin-resume-refresh"
+            onClick={
+              loadResumes
+            }
+          >
+            <RefreshCw
+              size={15}
+            />
 
-          <strong>Active</strong>
+            Refresh
+          </button>
+
+          <div className="admin-resume-header-badge">
+
+            <FileText
+              size={15}
+            />
+
+            Resume Analyzer
+
+            <strong>
+              Active
+            </strong>
+
+          </div>
+
         </div>
 
       </div>
@@ -613,10 +897,14 @@ const AdminResumes = () => {
 
       <div className="admin-resume-stats">
 
+        {/* TOTAL */}
+
         <div className="admin-resume-stat-card">
 
           <div className="admin-resume-stat-icon blue">
-            <FileText size={18} />
+            <FileText
+              size={18}
+            />
           </div>
 
           <div>
@@ -629,16 +917,21 @@ const AdminResumes = () => {
             </strong>
 
             <small>
-              All uploaded resumes
+              All uploaded
+              resumes
             </small>
           </div>
 
         </div>
 
+        {/* AVERAGE */}
+
         <div className="admin-resume-stat-card">
 
           <div className="admin-resume-stat-icon purple">
-            <TrendingUp size={18} />
+            <TrendingUp
+              size={18}
+            />
           </div>
 
           <div>
@@ -657,10 +950,14 @@ const AdminResumes = () => {
 
         </div>
 
+        {/* TODAY */}
+
         <div className="admin-resume-stat-card">
 
           <div className="admin-resume-stat-icon green">
-            <Upload size={18} />
+            <Upload
+              size={18}
+            />
           </div>
 
           <div>
@@ -679,10 +976,14 @@ const AdminResumes = () => {
 
         </div>
 
+        {/* LOW */}
+
         <div className="admin-resume-stat-card">
 
           <div className="admin-resume-stat-icon orange">
-            <AlertTriangle size={18} />
+            <AlertTriangle
+              size={18}
+            />
           </div>
 
           <div>
@@ -704,10 +1005,12 @@ const AdminResumes = () => {
       </div>
 
       {/* =================================================
-          TABLE
+          DATABASE
       ================================================= */}
 
       <div className="admin-resume-table-card">
+
+        {/* TABLE HEADER */}
 
         <div className="admin-resume-table-header">
 
@@ -722,20 +1025,29 @@ const AdminResumes = () => {
           </div>
 
           <div className="admin-resume-count">
-            {filteredResumes.length} resumes
+            {filteredResumes.length}{" "}
+            resume
+            {filteredResumes.length !==
+            1
+              ? "s"
+              : ""}
           </div>
 
         </div>
 
         {/* =================================================
-            FILTERS
+            TOOLBAR
         ================================================= */}
 
         <div className="admin-resume-toolbar">
 
+          {/* SEARCH */}
+
           <div className="admin-resume-search">
 
-            <Search size={15} />
+            <Search
+              size={15}
+            />
 
             <input
               value={search}
@@ -749,14 +1061,22 @@ const AdminResumes = () => {
 
           </div>
 
+          {/* FILTERS */}
+
           <div className="admin-resume-filters">
+
+            {/* SCORE */}
 
             <div className="admin-resume-filter">
 
-              <Filter size={13} />
+              <Filter
+                size={13}
+              />
 
               <select
-                value={scoreFilter}
+                value={
+                  scoreFilter
+                }
                 onChange={(e) =>
                   handleScoreFilter(
                     e.target.value
@@ -782,12 +1102,18 @@ const AdminResumes = () => {
 
             </div>
 
+            {/* DATE */}
+
             <div className="admin-resume-filter">
 
-              <CalendarDays size={13} />
+              <CalendarDays
+                size={13}
+              />
 
               <select
-                value={dateFilter}
+                value={
+                  dateFilter
+                }
                 onChange={(e) =>
                   handleDateFilter(
                     e.target.value
@@ -803,7 +1129,7 @@ const AdminResumes = () => {
                 </option>
 
                 <option value="Recent">
-                  Recent
+                  Last 7 Days
                 </option>
               </select>
 
@@ -823,57 +1149,97 @@ const AdminResumes = () => {
 
             <thead>
               <tr>
-                <th>User</th>
-                <th>Resume</th>
-                <th>ATS Score</th>
-                <th>Status</th>
-                <th>Uploaded</th>
-                <th>Actions</th>
+                <th>
+                  User
+                </th>
+
+                <th>
+                  Resume
+                </th>
+
+                <th>
+                  ATS Score
+                </th>
+
+                <th>
+                  Status
+                </th>
+
+                <th>
+                  Uploaded
+                </th>
+
+                <th>
+                  Actions
+                </th>
               </tr>
             </thead>
 
             <tbody>
 
-              {currentResumes.length > 0 ? (
+              {currentResumes.length >
+              0 ? (
                 currentResumes.map(
                   (resume) => (
                     <tr
-                      key={resume.id}
+                      key={
+                        resume.id
+                      }
                     >
+
+                      {/* USER */}
 
                       <td>
                         <div className="admin-resume-user">
 
                           <div className="admin-resume-avatar">
-                            {resume.initials}
+                            {
+                              resume.initials
+                            }
                           </div>
 
                           <div>
                             <strong>
-                              {resume.user}
+                              {
+                                resume.user
+                              }
                             </strong>
 
                             <span>
-                              {resume.email}
+                              {
+                                resume.email
+                              }
                             </span>
                           </div>
 
                         </div>
                       </td>
 
+                      {/* FILE */}
+
                       <td>
                         <div className="admin-resume-file">
 
                           <div>
-                            <FileText size={15} />
+                            <FileText
+                              size={15}
+                            />
                           </div>
 
-                          <span>
-                            {resume.fileName}
+                          <span
+                            title={
+                              resume.fileName
+                            }
+                          >
+                            {
+                              resume.fileName
+                            }
                           </span>
 
                         </div>
                       </td>
+
+                      {/* ATS */}
 
                       <td>
                         <div
@@ -882,7 +1248,9 @@ const AdminResumes = () => {
                           )}`}
                         >
                           <strong>
-                            {resume.atsScore}
+                            {
+                              resume.atsScore
+                            }
                           </strong>
 
                           <span>
@@ -891,18 +1259,31 @@ const AdminResumes = () => {
                         </div>
                       </td>
 
+                      {/* STATUS */}
+
                       <td>
                         <span className="admin-resume-status">
-                          <i></i>
-                          {resume.status}
+
+                          <i />
+
+                          {
+                            resume.status
+                          }
+
                         </span>
                       </td>
 
+                      {/* DATE */}
+
                       <td>
                         <div className="admin-resume-date">
-                          {resume.date}
+                          {
+                            resume.date
+                          }
                         </div>
                       </td>
+
+                      {/* ACTIONS */}
 
                       <td>
                         <div className="admin-resume-actions">
@@ -914,28 +1295,24 @@ const AdminResumes = () => {
                               )
                             }
                           >
-                            <Eye size={14} />
+                            <Eye
+                              size={14}
+                            />
+
                             View
                           </button>
 
                           <button
-                            onClick={() => {
-                              if (
-                                resume.fileUrl
-                              ) {
-                                window.open(
-                                  resume.fileUrl,
-                                  "_blank",
-                                  "noopener,noreferrer"
-                                );
-                              } else {
-                                alert(
-                                  "Resume file is not available."
-                                );
-                              }
-                            }}
+                            title="Open Resume"
+                            onClick={() =>
+                              handleDownload(
+                                resume
+                              )
+                            }
                           >
-                            <Download size={14} />
+                            <Download
+                              size={14}
+                            />
                           </button>
 
                         </div>
@@ -946,21 +1323,26 @@ const AdminResumes = () => {
                 )
               ) : (
                 <tr>
+
                   <td
                     colSpan="6"
                     className="admin-resume-empty"
                   >
-                    <FileText size={30} />
+                    <FileText
+                      size={30}
+                    />
 
                     <strong>
                       No resumes found
                     </strong>
 
                     <span>
-                      Try changing your
-                      search or filters.
+                      Try changing
+                      your search or
+                      filters.
                     </span>
                   </td>
+
                 </tr>
               )}
 
@@ -980,7 +1362,8 @@ const AdminResumes = () => {
             Showing{" "}
 
             <strong>
-              {filteredResumes.length === 0
+              {filteredResumes.length ===
+              0
                 ? 0
                 : startIndex + 1}
             </strong>{" "}
@@ -998,7 +1381,9 @@ const AdminResumes = () => {
             of{" "}
 
             <strong>
-              {filteredResumes.length}
+              {
+                filteredResumes.length
+              }
             </strong>{" "}
 
             resumes
@@ -1006,54 +1391,74 @@ const AdminResumes = () => {
 
           <div>
 
-            <button
-              disabled={
-                currentPage === 1
-              }
-              onClick={() =>
-                setCurrentPage(
-                  currentPage - 1
-                )
-              }
-            >
-              <ChevronLeft size={14} />
-            </button>
-
-            {Array.from(
-              {
-                length: totalPages,
-              },
-              (_, index) =>
-                index + 1
-            ).map((page) => (
-              <button
-                key={page}
-                className={
-                  currentPage === page
-                    ? "active"
-                    : ""
-                }
-                onClick={() =>
-                  setCurrentPage(page)
-                }
-              >
-                {page}
-              </button>
-            ))}
+            {/* PREVIOUS */}
 
             <button
               disabled={
                 currentPage ===
-                  totalPages ||
-                totalPages === 0
+                1
               }
               onClick={() =>
                 setCurrentPage(
-                  currentPage + 1
+                  (page) =>
+                    page - 1
                 )
               }
             >
-              <ChevronRight size={14} />
+              <ChevronLeft
+                size={14}
+              />
+            </button>
+
+            {/* PAGE NUMBERS */}
+
+            {Array.from(
+              {
+                length:
+                  totalPages,
+              },
+              (_, index) =>
+                index + 1
+            ).map(
+              (page) => (
+                <button
+                  key={page}
+                  className={
+                    currentPage ===
+                    page
+                      ? "active"
+                      : ""
+                  }
+                  onClick={() =>
+                    setCurrentPage(
+                      page
+                    )
+                  }
+                >
+                  {page}
+                </button>
+              )
+            )}
+
+            {/* NEXT */}
+
+            <button
+              disabled={
+                totalPages ===
+                  0 ||
+                currentPage ===
+                  totalPages
+              }
+              onClick={() =>
+                setCurrentPage(
+                  (page) =>
+                    page + 1
+                )
+              }
+            >
+              <ChevronRight
+                size={14}
+              />
             </button>
 
           </div>
@@ -1068,9 +1473,13 @@ const AdminResumes = () => {
 
       {selectedResume && (
         <AdminResumeModal
-          resume={selectedResume}
+          resume={
+            selectedResume
+          }
           onClose={() =>
-            setSelectedResume(null)
+            setSelectedResume(
+              null
+            )
           }
         />
       )}

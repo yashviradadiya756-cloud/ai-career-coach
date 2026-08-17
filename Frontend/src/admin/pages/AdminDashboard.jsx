@@ -19,43 +19,44 @@ const AdminDashboard = () => {
   const [error, setError] = useState("");
 
   const loadDashboard = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  try {
+    const response = await getAdminDashboard();
 
-      const response =
-        await getAdminDashboard();
+    console.log(
+      "ADMIN DASHBOARD RESPONSE:",
+      response
+    );
 
-      console.log(
-        "ADMIN DASHBOARD RESPONSE:",
-        response.data
+    if (response?.success) {
+      setStats(
+        response.stats || {
+          totalUsers: 0,
+          totalAdmins: 0,
+        }
       );
-
-      if (response.data.success) {
-        setStats(
-          response.data.stats || {
-            totalUsers: 0,
-            totalAdmins: 0,
-          }
-        );
-      }
-
-    } catch (error) {
+    } else {
       console.error(
-        "Admin dashboard error:",
-        error
+        "ADMIN DASHBOARD FAILED:",
+        response?.message
       );
 
-      setError(
-        error?.response?.data?.message ||
-        "Failed to load admin dashboard"
-      );
-
-    } finally {
-      setLoading(false);
+      setStats({
+        totalUsers: 0,
+        totalAdmins: 0,
+      });
     }
-  };
+  } catch (error) {
+    console.error(
+      "Admin dashboard error:",
+      error.response?.data || error
+    );
 
+    setStats({
+      totalUsers: 0,
+      totalAdmins: 0,
+    });
+  }
+};
   useEffect(() => {
     loadDashboard();
   }, []);
