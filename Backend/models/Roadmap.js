@@ -1,44 +1,5 @@
 const mongoose = require("mongoose");
 
-const roadmapPhaseSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    duration: {
-      type: String,
-      default: "Flexible",
-      trim: true,
-    },
-
-    topics: {
-      type: [String],
-      default: [],
-    },
-
-    projects: {
-      type: [String],
-      default: [],
-    },
-
-    resources: {
-      type: [String],
-      default: [],
-    },
-
-    completed: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  {
-    _id: true,
-  }
-);
-
 const roadmapSchema = new mongoose.Schema(
   {
     user: {
@@ -55,14 +16,42 @@ const roadmapSchema = new mongoose.Schema(
 
     roadmapTitle: {
       type: String,
-      required: true,
-      trim: true,
+      default: "AI Career Roadmap",
     },
 
-    phases: {
-      type: [roadmapPhaseSchema],
-      default: [],
-    },
+    phases: [
+      {
+        title: {
+          type: String,
+          required: true,
+        },
+
+        duration: {
+          type: String,
+          default: "Flexible",
+        },
+
+        topics: {
+          type: [String],
+          default: [],
+        },
+
+        projects: {
+          type: [String],
+          default: [],
+        },
+
+        resources: {
+          type: [String],
+          default: [],
+        },
+
+        completed: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

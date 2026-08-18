@@ -1,40 +1,61 @@
-import api from "./axios";
+import axios from "axios";
 
-// =====================================================
-// GET ROADMAP
-// =====================================================
+const API_URL =
+  "https://ai-career-coach-jpzu.onrender.com/api/roadmap";
 
-export const getRoadmap = () => {
-  return api.get("/roadmap");
+// ======================================================
+// GET SAVED ROADMAP
+// ======================================================
+
+export const getRoadmap = async () => {
+  return axios.get(`${API_URL}`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
 };
 
-// =====================================================
+// ======================================================
 // GENERATE ROADMAP
-// =====================================================
+// ======================================================
 
-export const generateRoadmap = (
-  targetRole
-) => {
-  return api.post(
-    "/roadmap/generate",
+export const generateRoadmap = async (targetRole) => {
+  console.log("ROADMAP API REQUEST");
+  console.log("URL:", `${API_URL}/generate`);
+  console.log("TARGET ROLE:", targetRole);
+
+  return axios.post(
+    `${API_URL}/generate`,
     {
-      targetRole,
+      targetRole: targetRole.trim(),
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+      },
     }
   );
 };
 
-// =====================================================
+// ======================================================
 // UPDATE PHASE COMPLETION
-// =====================================================
+// ======================================================
 
-export const updatePhaseCompletion = (
+export const updatePhaseCompletion = async (
   phaseId,
   completed
 ) => {
-  return api.patch(
-    `/roadmap/phase/${phaseId}`,
+  return axios.patch(
+    `${API_URL}/phase/${phaseId}`,
     {
       completed,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+      },
     }
   );
 };

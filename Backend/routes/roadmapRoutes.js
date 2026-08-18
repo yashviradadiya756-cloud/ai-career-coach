@@ -3,40 +3,44 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  generateRoadmapController,
-  getRoadmapController,
-  updatePhaseCompletionController,
+  generateRoadmap,
+  getRoadmap,
+  updatePhaseCompletion,
 } = require("../controllers/roadmapController");
 
 const protect = require("../middleware/authMiddleware");
 
-// =====================================================
-// GET SAVED ROADMAP
+// ======================================================
+// GET ROADMAP
 // GET /api/roadmap
-// =====================================================
+// ======================================================
 
-router.get("/", protect, getRoadmapController);
+router.get(
+  "/",
+  protect,
+  getRoadmap
+);
 
-// =====================================================
+// ======================================================
 // GENERATE ROADMAP
 // POST /api/roadmap/generate
-// =====================================================
+// ======================================================
 
 router.post(
   "/generate",
   protect,
-  generateRoadmapController
+  generateRoadmap
 );
 
-// =====================================================
-// UPDATE PHASE COMPLETION
-// PUT /api/roadmap/phase/:phaseId
-// =====================================================
+// ======================================================
+// UPDATE PHASE
+// PATCH /api/roadmap/phase/:phaseId
+// ======================================================
 
-router.put(
+router.patch(
   "/phase/:phaseId",
   protect,
-  updatePhaseCompletionController
+  updatePhaseCompletion
 );
 
 module.exports = router;
