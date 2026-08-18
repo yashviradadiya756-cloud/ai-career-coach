@@ -4,7 +4,6 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  Bot,
   FileText,
   Map,
   Brain,
@@ -42,11 +41,11 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
       icon: Users,
     },
 
-    {
-      name: "AI Coach",
-      path: "/admin/ai-coach",
-      icon: Bot,
-    },
+    // {
+    //   name: "AI Coach",
+    //   path: "/admin/ai-coach",
+    //   icon: Bot,
+    // },
 
     {
       name: "Resumes",
