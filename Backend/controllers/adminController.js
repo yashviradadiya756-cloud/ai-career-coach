@@ -1141,27 +1141,56 @@ const deleteAdminCourse = async (req, res) => {
     });
   }
 };
+
 // ==========================================
-// ADMIN: GET USER LEARNING PLANS & INSIGHTS
-// GET /api/admin/user-learnings
+// ADMIN USER LEARNINGS
 // ==========================================
 const getAdminUserLearnings = async (req, res) => {
   try {
-    const learnings = await LearningProgress.find()
-      .populate("user", "name username email")
-      .populate("course")
+    console.log("========== ADMIN USER LEARNINGS ==========");
+
+    let query = Learning.find({})
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
+    // User reference
+    if (Learning.schema.paths.user) {
+      query = query.populate(
+        "user",
+        "username name email"
+      );
+    }
+
+    // Course reference
+    if (Learning.schema.paths.course) {
+      query = query.populate(
+        "course",
+        "title category provider"
+      );
+    }
+
+    const learnings = await query.lean();
+
+    console.log(
+      "TOTAL USER LEARNINGS:",
+      learnings.length
+    );
+
+    return res.status(200).json({
       success: true,
+      count: learnings.length,
       learnings,
     });
-  } catch (error) {
-    console.error("Get user learnings error:", error);
 
-    res.status(500).json({
+  } catch (error) {
+    console.error(
+      "ADMIN USER LEARNINGS ERROR:",
+      error.stack
+    );
+
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch user learnings",
+      error: error.message,
     });
   }
 };
