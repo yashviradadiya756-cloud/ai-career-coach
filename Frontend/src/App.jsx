@@ -73,6 +73,7 @@ import AdminPayments from "./admin/pages/AdminPayments";
 import AdminProgress from "./admin/pages/AdminProgress";
 import AdminAchievements from "./admin/pages/AdminAchievements";
 import AdminCertificateCriteria from "./admin/pages/AdminCertificateCriteria";
+import AdminSettings from "./admin/pages/AdminSettings";
 
 
 // ==========================================
@@ -90,153 +91,39 @@ function App() {
           PUBLIC ROUTES
       ====================================== */}
 
-      <Route
-        path="/"
-        element={<LandingPage />}
-      />
-
-      <Route
-        path="/login"
-        element={<Login />}
-      />
-
-      <Route
-        path="/register"
-        element={<Register />}
-      />
-
-      <Route
-        path="/profile"
-        element={<Profile />}
-      />
-
-      <Route
-        path="/pricing"
-        element={<Pricing />}
-      />
-
-      <Route
-        path="/contactus"
-        element={<ContactUs />}
-      />
-
-      <Route
-        path="/demo"
-        element={<Demo />}
-      />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/contactus" element={<ContactUs />} />
+      <Route path="/demo" element={<Demo />} />
 
 
       {/* ======================================
           USER DASHBOARD
       ====================================== */}
 
-      <Route
-        path="/dashboard"
+      <Route path="/dashboard"
         element={
           <ProtectedRoute>
             <DashboardLayout />
           </ProtectedRoute>
-        }
-      >
-
-        <Route
-          index
-          element={
-            <Overview />
-          }
-        />
-
-        <Route
-          path="overview"
-          element={
-            <Overview />
-          }
-        />
-
-        <Route
-          path="assessment"
-          element={
-            <Assessment />
-          }
-        />
-
-        <Route
-          path="resume"
-          element={
-            <Resume />
-          }
-        />
-
-        <Route
-          path="skill-gap"
-          element={
-            <SkillGap />
-          }
-        />
-
-        <Route
-          path="roadmap"
-          element={
-            <Roadmap />
-          }
-        />
-
-        <Route
-          path="interview"
-          element={
-            <Interview />
-          }
-        />
-
-        <Route
-          path="ai-coach"
-          element={
-            <AICoach />
-          }
-        />
-
-        <Route
-          path="learning"
-          element={
-            <Learning />
-          }
-        />
-
-        <Route
-          path="progress"
-          element={
-            <Progress />
-          }
-        />
-
-        <Route
-          path="achievement"
-          element={
-            <Achievements />
-          }
-        />
-
-        <Route
-          path="notification"
-          element={
-            <Notification />
-          }
-        />
-
-        <Route
-          path="payment"
-          element={
-            <Payment />
-          }
-        />
-
-        <Route
-          path="settings"
-          element={
-            <Settings />
-          }
-        />
-
+        }>
+        <Route index element={ <Overview /> }/>
+        <Route path="overview" element={ <Overview />} />
+        <Route path="assessment" element={ <Assessment />}/>
+        <Route path="resume" element={ <Resume /> }/>
+        <Route path="skill-gap" element={ <SkillGap /> } />
+        <Route path="roadmap" element={ <Roadmap /> }/>
+        <Route path="interview" element={ <Interview /> } />
+        <Route path="ai-coach" element={ <AICoach /> } />
+        <Route path="learning" element={ <Learning />  }/>
+        <Route path="progress" element={ <Progress />  }/>
+        <Route path="achievement" element={ <Achievements /> } />
+        <Route path="notification" element={ <Notification /> } />
+        <Route path="payment" element={ <Payment /> } />
+        <Route path="settings" element={ <Settings />} />
       </Route>
 
 
@@ -244,121 +131,33 @@ function App() {
           ADMIN LOGIN
       ====================================== */}
 
-      <Route
-        path="/admin/login"
-        element={
-          <AdminLogin />
-        }
-      />
-
+      <Route path="/admin/login" element={ <AdminLogin /> }/>
 
       {/* ======================================
           ADMIN PANEL
       ====================================== */}
 
-      <Route
-        path="/admin"
-        element={
+      <Route path="/admin" element={
           <AdminProtectedRoute>
             <AdminLayout />
-          </AdminProtectedRoute>
-        }
-      >
+          </AdminProtectedRoute> }>
 
         {/* ADMIN DASHBOARD */}
 
-        <Route
-          index
-          element={
-            <AdminDashboard />
-          }
-        />
-
-
-        {/* USERS */}
-
-        <Route
-          path="users"
-          element={
-            <AdminUsers />
-          }
-        />
-
-
-        {/* AI COACH */}
-
-        <Route
-          path="ai-coach"
-          element={
-            <AdminAICoach />
-          }
-        />
-
-
-        {/* RESUMES */}
-
-        <Route
-          path="resumes"
-          element={
-            <AdminResumes />
-          }
-        />
-
-
-        {/* SKILL GAP */}
-
-        <Route
-          path="skillgap"
-          element={
-            <AdminSkillGap />
-          }
-        />
-
-
-        {/* ROADMAPS */}
-
-        <Route
-          path="roadmaps"
-          element={
-            <AdminRoadmaps />
-          }
-        />
-
-        <Route
-          path="interviews"
-          element={<AdminInterviews />}
-        />
-
-        <Route
-          path="Learning"
-          element={<AdminLearning />}
-        />
-
-        <Route
-        path="/admin/payments"
-        element={<AdminPayments />}
-        />
-        <Route
-        path="/admin/progress"
-        element={
-          <AdminProgress />
-        }
-      />
-
-      <Route
-        path="/admin/achievements"
-        element={
-          <AdminAchievements />
-        }
-      />
-
-      <Route
-        path="/admin/certificate-criteria"
-        element={<AdminCertificateCriteria />}
-      />
-
+        <Route index element={ <AdminDashboard /> } />
+        <Route path="users" element={ <AdminUsers /> } />
+        <Route path="ai-coach" element={ <AdminAICoach /> }/>
+        <Route path="resumes" element={ <AdminResumes /> } />
+        <Route path="skillgap" element={ <AdminSkillGap /> } />
+        <Route path="roadmaps" element={ <AdminRoadmaps /> } />
+        <Route path="interviews" element={<AdminInterviews />}/>
+        <Route path="Learning" element={<AdminLearning />}/>
+        <Route path="/admin/payments" element={<AdminPayments />}/>
+        <Route path="/admin/progress" element={ <AdminProgress /> }/>
+        <Route path="/admin/achievements" element={ <AdminAchievements /> } />
+        <Route path="/admin/certificate-criteria" element={<AdminCertificateCriteria />}/>
+        <Route path="settings" element={<AdminSettings />} />
       </Route>
-
     </Routes>
 
   );

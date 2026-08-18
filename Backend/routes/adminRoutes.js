@@ -257,6 +257,12 @@ router.get(
   getAdminFeedback
 );
 
+router.get(
+  "/settings",
+  protect,
+  adminMiddleware,
+  getAdminFeedback
+);
 // ==========================================
 // EXPORT
 // ==========================================

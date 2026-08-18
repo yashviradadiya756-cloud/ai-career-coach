@@ -1014,8 +1014,7 @@ const getAdminInterviews = async (req, res) => {
 };
 
 // ==========================================
-// ADMIN: GET ALL COURSES
-// GET /api/admin/courses
+// ADMIN GET ALL COURSES
 // ==========================================
 const getAdminCourses = async (req, res) => {
   try {
@@ -1035,8 +1034,7 @@ const getAdminCourses = async (req, res) => {
   }
 };
 // ==========================================
-// ADMIN: CREATE COURSE
-// POST /api/admin/courses
+// ADMIN CREATE COURSE
 // ==========================================
 const createAdminCourse = async (req, res) => {
   try {
@@ -1084,8 +1082,7 @@ const createAdminCourse = async (req, res) => {
   }
 };
 // ==========================================
-// ADMIN: UPDATE COURSE
-// PUT /api/admin/courses/:id
+// ADMIN UPDATE COURSE
 // ==========================================
 const updateAdminCourse = async (req, res) => {
   try {
@@ -1115,8 +1112,7 @@ const updateAdminCourse = async (req, res) => {
   }
 };
 // ==========================================
-// ADMIN: DELETE COURSE
-// DELETE /api/admin/courses/:id
+// ADMIN DELETE COURSE
 // ==========================================
 const deleteAdminCourse = async (req, res) => {
   try {
