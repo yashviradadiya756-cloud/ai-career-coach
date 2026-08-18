@@ -1,15 +1,4 @@
-const { GoogleGenAI } = require("@google/genai");
-
 const Roadmap = require("../models/Roadmap");
-const { generateAI } = require("../utils/geminiHelper");
-
-// =====================================================
-// GEMINI
-// =====================================================
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
 
 // =====================================================
 // GENERATE ROADMAP
@@ -23,8 +12,6 @@ const generateRoadmapController = async (req, res) => {
 
     console.log("USER:", req.user?._id);
     console.log("BODY:", req.body);
-
-    const targetRole = req.body?.targetRole;
 
     // ---------------------------------------------------
     // CHECK USER
@@ -41,7 +28,12 @@ const generateRoadmapController = async (req, res) => {
     // CHECK TARGET ROLE
     // ---------------------------------------------------
 
-    if (!targetRole || !targetRole.trim()) {
+    const targetRole = req.body?.targetRole;
+
+    if (
+      typeof targetRole !== "string" ||
+      !targetRole.trim()
+    ) {
       return res.status(400).json({
         success: false,
         message: "Target role is required",
@@ -53,110 +45,97 @@ const generateRoadmapController = async (req, res) => {
     console.log("TARGET ROLE:", cleanRole);
 
     // ---------------------------------------------------
-    // PROMPT
+    // GEMINI
     // ---------------------------------------------------
+
+    console.log("Calling Gemini...");
+
+    /*
+      IMPORTANT:
+
+      Use your existing geminiHelper here.
+
+      The helper should return parsed JSON.
+    */
+
+    const { generateAI } = require("../utils/geminiHelper");
 
     const prompt = `
-    You are an expert career roadmap generator.
+You are an expert career roadmap generator.
 
-    Create a detailed learning roadmap for this target role:
+Create a detailed learning roadmap for this target role:
 
-    ${cleanRole}
+${cleanRole}
 
-    The roadmap must focus specifically on the target role.
+The roadmap must focus specifically on the target role.
 
-    Return ONLY valid JSON.
+Return ONLY valid JSON.
 
-    Use exactly this structure:
+Use exactly this structure:
 
+{
+  "roadmapTitle": "string",
+  "phases": [
     {
-      "roadmapTitle": "string",
-      "phases": [
-        {
-          "title": "string",
-          "duration": "string",
-          "topics": ["string"],
-          "projects": ["string"],
-          "resources": ["string"],
-          "completed": false
-        }
-      ]
+      "title": "string",
+      "duration": "string",
+      "topics": ["string"],
+      "projects": ["string"],
+      "resources": ["string"]
     }
+  ]
+}
 
-    Requirements:
+Requirements:
 
-    - Create 5 to 6 learning phases.
-    - The roadmap must be suitable for a Full Stack Developer career when the target role is Full Stack Developer.
-    - Include frontend development.
-    - Include backend development.
-    - Include databases.
-    - Include APIs.
-    - Include authentication.
-    - Include Git/GitHub.
-    - Include deployment.
-    - Include practical projects.
-    - Every phase must have useful topics.
-    - Every phase must have practical projects.
-    - Every phase must have learning resources.
-    - Duration should be realistic.
-    - Do not generate AI/ML topics unless the target role explicitly requires them.
-    - Do not use markdown.
-    - Do not use code fences.
-    - Return JSON only.
-    `;
+- Create 5 to 6 learning phases.
+- Focus specifically on ${cleanRole}.
+- Every phase must contain useful topics.
+- Every phase must contain practical projects.
+- Every phase must contain useful learning resources.
+- Duration should be realistic.
+- Topics must be specific to the target role.
+- Projects must be practical and portfolio-friendly.
+- Resources should be useful learning resources.
+- Do not generate unrelated AI/ML topics unless the target role requires them.
+- Do not use markdown.
+- Do not use code fences.
+- Return JSON only.
+`;
 
-    // ---------------------------------------------------
-    // GEMINI REQUEST
-    // ---------------------------------------------------
+    const aiResult = await generateAI(prompt);
 
-    console.log("Calling Gemini with automatic retry/fallback...");
-
-    const result = await generateAI(ai, prompt);
-
-    console.log("Gemini model used:", result.model);
-
-    let text = result.text;
-
-    console.log("RAW GEMINI RESPONSE:");
-    console.log(text);
-
-    if (!text) {
-      throw new Error("Gemini returned an empty response");
-    }
+    console.log("RAW AI RESULT:");
+    console.log(aiResult);
 
     // ---------------------------------------------------
-    // CLEAN RESPONSE
-    // ---------------------------------------------------
-
-    text = text
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
-
-    // ---------------------------------------------------
-    // PARSE JSON
+    // PARSE AI RESULT
     // ---------------------------------------------------
 
     let aiRoadmap;
 
-    try {
-      aiRoadmap = JSON.parse(text);
-    } catch (parseError) {
-      console.error("GEMINI JSON PARSE ERROR:");
-      console.error(parseError);
-      console.error("TEXT:", text);
-
-      return res.status(500).json({
-        success: false,
-        message: "AI returned invalid roadmap data",
-      });
+    if (typeof aiResult === "string") {
+      aiRoadmap = JSON.parse(
+        aiResult
+          .replace(/```json/gi, "")
+          .replace(/```/g, "")
+          .trim()
+      );
+    } else {
+      aiRoadmap = aiResult;
     }
 
     console.log("PARSED AI ROADMAP:");
-    console.log(JSON.stringify(aiRoadmap, null, 2));
+    console.log(
+      JSON.stringify(
+        aiRoadmap,
+        null,
+        2
+      )
+    );
 
     // ---------------------------------------------------
-    // VALIDATE PHASES
+    // VALIDATE AI RESPONSE
     // ---------------------------------------------------
 
     if (
@@ -165,7 +144,8 @@ const generateRoadmapController = async (req, res) => {
     ) {
       return res.status(500).json({
         success: false,
-        message: "AI roadmap does not contain valid phases",
+        message:
+          "AI roadmap does not contain valid phases",
       });
     }
 
@@ -173,69 +153,140 @@ const generateRoadmapController = async (req, res) => {
     // NORMALIZE PHASES
     // ---------------------------------------------------
 
-    const phases = aiRoadmap.phases.map((phase) => ({
-      title:
-        phase.title ||
-        "Learning Phase",
+    const phases = aiRoadmap.phases
+      .map((phase) => {
+        if (
+          !phase ||
+          typeof phase !== "object"
+        ) {
+          return null;
+        }
 
-      duration:
-        phase.duration ||
-        "Flexible",
+        const topics =
+          Array.isArray(phase.topics)
+            ? phase.topics
+                .map((item) =>
+                  String(item).trim()
+                )
+                .filter(Boolean)
+            : [];
 
-      topics:
-        Array.isArray(phase.topics)
-          ? phase.topics
-          : [],
+        const projects =
+          Array.isArray(phase.projects)
+            ? phase.projects
+                .map((item) =>
+                  String(item).trim()
+                )
+                .filter(Boolean)
+            : [];
 
-      projects:
-        Array.isArray(phase.projects)
-          ? phase.projects
-          : [],
+        const resources =
+          Array.isArray(phase.resources)
+            ? phase.resources
+                .map((item) =>
+                  String(item).trim()
+                )
+                .filter(Boolean)
+            : [];
 
-      resources:
-        Array.isArray(phase.resources)
-          ? phase.resources
-          : [],
+        return {
+          title:
+            String(
+              phase.title ||
+                "Learning Phase"
+            ).trim(),
 
-      completed: false,
-    }));
+          duration:
+            String(
+              phase.duration ||
+                "Flexible"
+            ).trim(),
+
+          topics,
+
+          projects,
+
+          resources,
+
+          completed: false,
+        };
+      })
+      .filter(Boolean);
+
+    // ---------------------------------------------------
+    // CHECK PHASES
+    // ---------------------------------------------------
+
+    if (phases.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "AI generated roadmap contains no phases",
+      });
+    }
+
+    console.log("NORMALIZED PHASES:");
+
+    console.log(
+      JSON.stringify(
+        phases,
+        null,
+        2
+      )
+    );
 
     // ---------------------------------------------------
     // DELETE OLD ROADMAP
     // ---------------------------------------------------
 
-    console.log("Removing previous roadmap...");
+    console.log(
+      "Removing previous roadmap..."
+    );
 
     await Roadmap.deleteMany({
       user: req.user._id,
     });
 
     // ---------------------------------------------------
-    // SAVE NEW ROADMAP
+    // CREATE ROADMAP
     // ---------------------------------------------------
 
-    console.log("Saving new roadmap to MongoDB...");
+    console.log(
+      "Saving roadmap to MongoDB..."
+    );
 
-    const roadmap = await Roadmap.create({
-      user: req.user._id,
+    const roadmap =
+      await Roadmap.create({
+        user: req.user._id,
 
-      career: cleanRole,
+        targetRole: cleanRole,
 
-      targetRole: cleanRole,
+        roadmapTitle:
+          aiRoadmap.roadmapTitle ||
+          `${cleanRole} Career Roadmap`,
 
-      roadmapTitle:
-        aiRoadmap.roadmapTitle ||
-        `${cleanRole} Career Roadmap`,
+        phases,
+      });
 
-      phases,
-    });
+    console.log(
+      "ROADMAP SAVED:"
+    );
 
-    console.log("ROADMAP SAVED:");
-    console.log(roadmap._id);
+    console.log(
+      roadmap._id
+    );
 
-    console.log("======================================");
-    console.log("ROADMAP GENERATION SUCCESS");
-    console.log("======================================");
+    console.log(
+      "======================================"
+    );
+
+    console.log(
+      "ROADMAP GENERATION SUCCESS"
+    );
+
+    console.log(
+      "======================================"
+    );
 
     // ---------------------------------------------------
     // RESPONSE
@@ -243,20 +294,65 @@ const generateRoadmapController = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Roadmap generated successfully",
+
+      message:
+        "Roadmap generated successfully",
+
       roadmap,
     });
   } catch (error) {
-    console.error("======================================");
-    console.error("ROADMAP GENERATION ERROR");
+    console.error(
+      "======================================"
+    );
+
+    console.error(
+      "ROADMAP GENERATION ERROR"
+    );
+
     console.error(error);
-    console.error("======================================");
+
+    console.error(
+      "======================================"
+    );
+
+    const message =
+      error?.message ||
+      "Failed to generate roadmap";
+
+    // ---------------------------------------------------
+    // GEMINI 503
+    // ---------------------------------------------------
+
+    if (
+      message.includes("503") ||
+      message.includes("UNAVAILABLE") ||
+      message.includes("high demand")
+    ) {
+      return res.status(503).json({
+        success: false,
+        message:
+          "AI service is temporarily busy. Please try again.",
+      });
+    }
+
+    // ---------------------------------------------------
+    // GEMINI MODEL ERROR
+    // ---------------------------------------------------
+
+    if (
+      message.includes("NOT_FOUND") ||
+      message.toLowerCase().includes("model")
+    ) {
+      return res.status(503).json({
+        success: false,
+        message:
+          "Gemini AI model is unavailable. Please check the configured model.",
+      });
+    }
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to generate roadmap",
+      message,
     });
   }
 };
@@ -265,43 +361,55 @@ const generateRoadmapController = async (req, res) => {
 // GET ROADMAP
 // =====================================================
 
-const getRoadmapController = async (req, res) => {
+const getRoadmapController = async (
+  req,
+  res
+) => {
   try {
-    console.log("======================================");
-    console.log("GET ROADMAP");
-    console.log("USER:", req.user?._id);
-    console.log("======================================");
+    console.log(
+      "======================================"
+    );
+
+    console.log(
+      "GET ROADMAP"
+    );
+
+    console.log(
+      "USER:",
+      req.user?._id
+    );
+
+    console.log(
+      "======================================"
+    );
 
     if (!req.user?._id) {
       return res.status(401).json({
         success: false,
-        message: "Authentication required",
+        message:
+          "Authentication required",
       });
     }
 
-    const roadmap = await Roadmap.findOne({
-      user: req.user._id,
-    }).sort({
-      createdAt: -1,
-    });
-
-    // ---------------------------------------------------
-    // NO ROADMAP
-    // ---------------------------------------------------
+    const roadmap =
+      await Roadmap.findOne({
+        user: req.user._id,
+      }).sort({
+        createdAt: -1,
+      });
 
     if (!roadmap) {
-      console.log("NO ROADMAP FOUND FOR USER");
+      console.log(
+        "NO ROADMAP FOUND"
+      );
 
       return res.status(200).json({
         success: true,
         roadmap: null,
-        message: "No roadmap found",
+        message:
+          "No roadmap found",
       });
     }
-
-    // ---------------------------------------------------
-    // ROADMAP FOUND
-    // ---------------------------------------------------
 
     console.log(
       "ROADMAP FOUND:",
@@ -321,7 +429,7 @@ const getRoadmapController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message:
-        error.message ||
+        error?.message ||
         "Failed to get roadmap",
     });
   }
@@ -331,75 +439,96 @@ const getRoadmapController = async (req, res) => {
 // UPDATE PHASE COMPLETION
 // =====================================================
 
-const updatePhaseCompletionController = async (
-  req,
-  res
-) => {
-  try {
-    const { phaseId } = req.params;
-    const { completed } = req.body;
+const updatePhaseCompletionController =
+  async (req, res) => {
+    try {
+      const { phaseId } =
+        req.params;
 
-    if (!req.user?._id) {
-      return res.status(401).json({
+      const { completed } =
+        req.body;
+
+      console.log(
+        "UPDATE PHASE:"
+      );
+
+      console.log(
+        "PHASE ID:",
+        phaseId
+      );
+
+      console.log(
+        "COMPLETED:",
+        completed
+      );
+
+      if (!req.user?._id) {
+        return res.status(401).json({
+          success: false,
+          message:
+            "Authentication required",
+        });
+      }
+
+      if (!phaseId) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Phase ID is required",
+        });
+      }
+
+      const roadmap =
+        await Roadmap.findOne({
+          user: req.user._id,
+        });
+
+      if (!roadmap) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Roadmap not found",
+        });
+      }
+
+      const phase =
+        roadmap.phases.id(
+          phaseId
+        );
+
+      if (!phase) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Phase not found",
+        });
+      }
+
+      phase.completed =
+        Boolean(completed);
+
+      await roadmap.save();
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Phase updated successfully",
+        roadmap,
+      });
+    } catch (error) {
+      console.error(
+        "PHASE UPDATE ERROR:",
+        error
+      );
+
+      return res.status(500).json({
         success: false,
-        message: "Authentication required",
+        message:
+          error?.message ||
+          "Failed to update phase",
       });
     }
-
-    if (!phaseId) {
-      return res.status(400).json({
-        success: false,
-        message: "Phase ID is required",
-      });
-    }
-
-    const roadmap = await Roadmap.findOne({
-      user: req.user._id,
-    });
-
-    if (!roadmap) {
-      return res.status(404).json({
-        success: false,
-        message: "Roadmap not found",
-      });
-    }
-
-    const phase = roadmap.phases.id(phaseId);
-
-    if (!phase) {
-      return res.status(404).json({
-        success: false,
-        message: "Phase not found",
-      });
-    }
-
-    phase.completed = Boolean(completed);
-
-    await roadmap.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Phase updated successfully",
-      roadmap,
-    });
-  } catch (error) {
-    console.error(
-      "PHASE UPDATE ERROR:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message:
-        error.message ||
-        "Failed to update phase",
-    });
-  }
-};
-
-// =====================================================
-// EXPORTS
-// =====================================================
+  };
 
 module.exports = {
   generateRoadmapController,

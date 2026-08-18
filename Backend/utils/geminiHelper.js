@@ -1,81 +1,96 @@
-const sleep = (ms) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const { GoogleGenAI } = require("@google/genai");
 
-const MODELS = [
-  "gemini-3.6-flash",
-  "gemini-3.5-flash",
-  "gemini-2.5-flash",
-];
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
-const isTemporaryError = (error) => {
-  const code =
-    error?.code ||
-    error?.status ||
-    error?.error?.code ||
-    error?.error?.status;
+// =====================================================
+// GENERATE AI
+// =====================================================
 
-  return (
-    code === 503 ||
-    code === "503" ||
-    code === "UNAVAILABLE" ||
-    code === 429 ||
-    code === "429" ||
-    code === "RESOURCE_EXHAUSTED"
-  );
-};
+const generateAI = async (prompt) => {
+  try {
+    console.log(
+      "===================================="
+    );
 
-const generateAI = async (ai, prompt) => {
-  let lastError = null;
+    console.log(
+      "GEMINI AI REQUEST"
+    );
 
-  for (const model of MODELS) {
-    console.log(`🤖 Trying Gemini model: ${model}`);
+    console.log(
+      "===================================="
+    );
 
-    for (let attempt = 0; attempt < 2; attempt++) {
+    const models = [
+      "gemini-2.5-flash",
+      "gemini-3.5-flash",
+      "gemini-3.6-flash",
+    ];
+
+    let lastError = null;
+
+    for (const model of models) {
       try {
-        const response = await ai.models.generateContent({
-          model,
-          contents: prompt,
-        });
+        console.log(
+          `Trying Gemini model: ${model}`
+        );
 
-        console.log(`✅ Gemini success: ${model}`);
+        const response =
+          await ai.models.generateContent({
+            model,
+            contents: prompt,
+          });
 
-        return {
-          success: true,
-          model,
-          text: response.text,
-        };
+        const text =
+          response?.text;
+
+        if (!text) {
+          throw new Error(
+            "Gemini returned empty response"
+          );
+        }
+
+        console.log(
+          `Gemini success with model: ${model}`
+        );
+
+        console.log(
+          "===================================="
+        );
+
+        return text
+          .replace(/```json/gi, "")
+          .replace(/```/g, "")
+          .trim();
       } catch (error) {
         lastError = error;
 
         console.error(
-          `❌ ${model} attempt ${attempt + 1} failed:`,
-          error?.message || error
+          `Gemini model ${model} failed:`,
+          error?.message
         );
 
-        if (!isTemporaryError(error)) {
-          throw error;
-        }
-
-        if (attempt < 1) {
-          const delay = 1000 * Math.pow(2, attempt);
-
-          console.log(
-            `⏳ Waiting ${delay}ms before retry...`
-          );
-
-          await sleep(delay);
-        }
+        // Try next model
+        continue;
       }
     }
 
-    console.log(
-      `⚠️ ${model} unavailable. Switching model...`
+    throw lastError ||
+      new Error(
+        "All Gemini models failed"
+      );
+  } catch (error) {
+    console.error(
+      "GEMINI HELPER ERROR:"
     );
-  }
 
-  throw lastError || new Error(
-    "All Gemini models are temporarily unavailable."
-  );
+    console.error(
+      error
+    );
+
+    throw error;
+  }
 };
 
 module.exports = {

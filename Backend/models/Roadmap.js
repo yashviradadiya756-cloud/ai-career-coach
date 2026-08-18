@@ -1,5 +1,44 @@
 const mongoose = require("mongoose");
 
+const roadmapPhaseSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    duration: {
+      type: String,
+      default: "Flexible",
+      trim: true,
+    },
+
+    topics: {
+      type: [String],
+      default: [],
+    },
+
+    projects: {
+      type: [String],
+      default: [],
+    },
+
+    resources: {
+      type: [String],
+      default: [],
+    },
+
+    completed: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    _id: true,
+  }
+);
+
 const roadmapSchema = new mongoose.Schema(
   {
     user: {
@@ -11,19 +50,19 @@ const roadmapSchema = new mongoose.Schema(
     targetRole: {
       type: String,
       required: true,
+      trim: true,
     },
 
-    steps: [
-      {
-        title: String,
-        duration: String,
-        description: String,
-        completed: {
-          type: Boolean,
-          default: false,
-        },
-      },
-    ],
+    roadmapTitle: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    phases: {
+      type: [roadmapPhaseSchema],
+      default: [],
+    },
   },
   {
     timestamps: true,

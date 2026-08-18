@@ -4,17 +4,19 @@ import api from "./axios";
 // GET ROADMAP
 // =====================================================
 
-export const getRoadmap = async () => {
-  return api.get("/api/roadmap");
+export const getRoadmap = () => {
+  return api.get("/roadmap");
 };
 
 // =====================================================
 // GENERATE ROADMAP
 // =====================================================
 
-export const generateRoadmap = async (targetRole) => {
+export const generateRoadmap = (
+  targetRole
+) => {
   return api.post(
-    "/api/roadmap/generate",
+    "/roadmap/generate",
     {
       targetRole,
     }
@@ -22,15 +24,15 @@ export const generateRoadmap = async (targetRole) => {
 };
 
 // =====================================================
-// UPDATE PHASE
+// UPDATE PHASE COMPLETION
 // =====================================================
 
-export const updatePhaseCompletion = async (
+export const updatePhaseCompletion = (
   phaseId,
   completed
 ) => {
-  return api.put(
-    `/api/roadmap/phase/${phaseId}`,
+  return api.patch(
+    `/roadmap/phase/${phaseId}`,
     {
       completed,
     }

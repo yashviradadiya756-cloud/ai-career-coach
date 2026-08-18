@@ -203,7 +203,7 @@ export default function Roadmap() {
     );
 
     // =================================================
-    // STEP 1 — GET LATEST SKILL GAP
+    // STEP 1
     // =================================================
 
     console.log(
@@ -218,11 +218,8 @@ export default function Roadmap() {
       skillGapResponse.data
     );
 
-    const skillGapData =
-      skillGapResponse.data;
-
     const latestSkillGap =
-      skillGapData?.skillGap;
+      skillGapResponse.data?.skillGap;
 
     if (!latestSkillGap) {
       alert(
@@ -233,7 +230,7 @@ export default function Roadmap() {
     }
 
     // =================================================
-    // STEP 2 — GET TARGET ROLE
+    // STEP 2
     // =================================================
 
     const role =
@@ -245,7 +242,10 @@ export default function Roadmap() {
       role
     );
 
-    if (!role || !role.trim()) {
+    if (
+      !role ||
+      !role.trim()
+    ) {
       alert(
         "Target role not found. Please complete Skill Gap Analysis again."
       );
@@ -254,7 +254,7 @@ export default function Roadmap() {
     }
 
     // =================================================
-    // STEP 3 — GENERATE ROADMAP
+    // STEP 3
     // =================================================
 
     console.log(
@@ -272,19 +272,68 @@ export default function Roadmap() {
     );
 
     // =================================================
-    // STEP 4 — SUCCESS
+    // STEP 4
     // =================================================
 
     if (
       response.data?.success &&
       response.data?.roadmap
     ) {
+      const generatedRoadmap =
+        response.data.roadmap;
+
+      console.log(
+        "===================================="
+      );
+
+      console.log(
+        "ROADMAP GENERATED SUCCESSFULLY"
+      );
+
+      console.log(
+        "ROADMAP:",
+        generatedRoadmap
+      );
+
+      console.log(
+        "PHASES:",
+        generatedRoadmap.phases
+      );
+
+      console.log(
+        "AI TOPICS:",
+        generatedRoadmap.phases?.map(
+          (phase) =>
+            phase.topics
+        )
+      );
+
+      console.log(
+        "AI PROJECTS:",
+        generatedRoadmap.phases?.map(
+          (phase) =>
+            phase.projects
+        )
+      );
+
+      console.log(
+        "AI RESOURCES:",
+        generatedRoadmap.phases?.map(
+          (phase) =>
+            phase.resources
+        )
+      );
+
+      console.log(
+        "===================================="
+      );
+
       setRoadmap(
-        response.data.roadmap
+        generatedRoadmap
       );
 
       alert(
-        "Roadmap Generated Successfully!"
+        "✅ Roadmap Generated Successfully!"
       );
 
       return;
@@ -1084,19 +1133,251 @@ export default function Roadmap() {
           🤖
         </div>
 
-        <div>
+        <div style={{ flex: 1 }}>
 
           <h2 style={styles.aiTitle}>
-            AI Career Recommendation
+            AI Career Recommendations
           </h2>
 
           <p style={styles.aiText}>
-            Follow the roadmap phase by phase.
-            Complete the learning topics and
-            projects before moving to the next stage.
-            Building practical projects alongside
-            learning will help improve your job readiness.
+            Personalized recommendations generated
+            for your target role:
+            {" "}
+            <strong>
+              {roadmap.targetRole}
+            </strong>
           </p>
+
+          <div
+            style={
+              styles.aiRecommendationGrid
+            }
+          >
+
+            {phases.map(
+              (phase, index) => {
+
+                const topics =
+                  Array.isArray(
+                    phase.topics
+                  )
+                    ? phase.topics
+                    : [];
+
+                const projects =
+                  Array.isArray(
+                    phase.projects
+                  )
+                    ? phase.projects
+                    : [];
+
+                const resources =
+                  Array.isArray(
+                    phase.resources
+                  )
+                    ? phase.resources
+                    : [];
+
+                return (
+                  <div
+                    key={
+                      phase._id ||
+                      index
+                    }
+                    style={
+                      styles.aiRecommendationCard
+                    }
+                  >
+
+                    {/* HEADER */}
+
+                    <div
+                      style={
+                        styles.aiRecommendationHeader
+                      }
+                    >
+
+                      <span
+                        style={
+                          styles.aiPhaseNumber
+                        }
+                      >
+                        {index + 1}
+                      </span>
+
+                      <div>
+
+                        <h3
+                          style={
+                            styles.aiPhaseTitle
+                          }
+                        >
+                          {phase.title}
+                        </h3>
+
+                        <span
+                          style={
+                            styles.aiDuration
+                          }
+                        >
+                          ⏱️{" "}
+                          {phase.duration}
+                        </span>
+
+                      </div>
+
+                    </div>
+
+                    {/* TOPICS */}
+
+                    {topics.length > 0 && (
+
+                      <div
+                        style={
+                          styles.aiRecommendationSection
+                        }
+                      >
+
+                        <h4
+                          style={
+                            styles.aiRecommendationSectionTitle
+                          }
+                        >
+                          🎯 Focus On
+                        </h4>
+
+                        <ul
+                          style={
+                            styles.aiRecommendationList
+                          }
+                        >
+
+                          {topics.map(
+                            (
+                              topic,
+                              i
+                            ) => (
+
+                              <li
+                                key={i}
+                                style={
+                                  styles.aiRecommendationItem
+                                }
+                              >
+                                {topic}
+                              </li>
+
+                            )
+                          )}
+
+                        </ul>
+
+                      </div>
+
+                    )}
+
+                    {/* PROJECTS */}
+
+                    {projects.length > 0 && (
+
+                      <div
+                        style={
+                          styles.aiRecommendationSection
+                        }
+                      >
+
+                        <h4
+                          style={
+                            styles.aiRecommendationSectionTitle
+                          }
+                        >
+                          💻 Practice With
+                        </h4>
+
+                        <ul
+                          style={
+                            styles.aiRecommendationList
+                          }
+                        >
+
+                          {projects.map(
+                            (
+                              project,
+                              i
+                            ) => (
+
+                              <li
+                                key={i}
+                                style={
+                                  styles.aiRecommendationItem
+                                }
+                              >
+                                {project}
+                              </li>
+
+                            )
+                          )}
+
+                        </ul>
+
+                      </div>
+
+                    )}
+
+                    {/* RESOURCES */}
+
+                    {resources.length > 0 && (
+
+                      <div
+                        style={
+                          styles.aiRecommendationSection
+                        }
+                      >
+
+                        <h4
+                          style={
+                            styles.aiRecommendationSectionTitle
+                          }
+                        >
+                          📚 Learn From
+                        </h4>
+
+                        <ul
+                          style={
+                            styles.aiRecommendationList
+                          }
+                        >
+
+                          {resources.map(
+                            (
+                              resource,
+                              i
+                            ) => (
+
+                              <li
+                                key={i}
+                                style={
+                                  styles.aiRecommendationItem
+                                }
+                              >
+                                {resource}
+                              </li>
+
+                            )
+                          )}
+
+                        </ul>
+
+                      </div>
+
+                    )}
+
+                  </div>
+                );
+              }
+            )}
+
+          </div>
 
         </div>
 
@@ -1591,4 +1872,79 @@ const styles = {
     color: "#6b7280",
     lineHeight: "1.6",
   },
+  aiRecommendationGrid: {
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(2, minmax(0, 1fr))",
+  gap: "18px",
+  marginTop: "20px",
+},
+
+aiRecommendationCard: {
+  background: "#ffffff",
+  border: "1px solid #e0e7ff",
+  borderRadius: "14px",
+  padding: "18px",
+  boxShadow:
+    "0 4px 15px rgba(79,70,229,.06)",
+},
+
+aiRecommendationHeader: {
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  marginBottom: "15px",
+},
+
+aiPhaseNumber: {
+  width: "36px",
+  height: "36px",
+  borderRadius: "50%",
+  background:
+    "linear-gradient(135deg, #4f46e5, #7c3aed)",
+  color: "#ffffff",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontWeight: "700",
+  flexShrink: 0,
+},
+
+aiPhaseTitle: {
+  margin: 0,
+  fontSize: "16px",
+  color: "#111827",
+},
+
+aiDuration: {
+  display: "inline-block",
+  marginTop: "4px",
+  fontSize: "12px",
+  color: "#6b7280",
+},
+
+aiRecommendationSection: {
+  marginTop: "14px",
+  paddingTop: "12px",
+  borderTop:
+    "1px solid #f1f5f9",
+},
+
+aiRecommendationSectionTitle: {
+  margin: "0 0 8px",
+  fontSize: "13px",
+  color: "#374151",
+},
+
+aiRecommendationList: {
+  margin: 0,
+  paddingLeft: "20px",
+  color: "#4b5563",
+},
+
+aiRecommendationItem: {
+  marginBottom: "6px",
+  fontSize: "13px",
+  lineHeight: "1.5",
+},
 };
