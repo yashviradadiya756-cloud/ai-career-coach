@@ -1,31 +1,14 @@
 import api from "./axios";
 
 // ==========================================
-// NO CACHE CONFIG
-// ==========================================
-const noCacheConfig = {
-  headers: {
-    "Cache-Control": "no-cache",
-    Pragma: "no-cache",
-  },
-  params: {
-    _: Date.now(),
-  },
-};
-
-// ==========================================
 // ADMIN DASHBOARD
-// GET /api/admin/dashboard
 // ==========================================
-export const getAdminDashboard = async () => {
-  const response = await api.get(
-    "/api/admin/dashboard",
-    noCacheConfig
-  );
 
-  console.log(
-    "ADMIN DASHBOARD API:",
-    response.data
+export const getAdminDashboard = async (
+  range = "12m"
+) => {
+  const response = await api.get(
+    `/api/admin/dashboard?range=${range}`
   );
 
   return response.data;

@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Resume = require("../models/Resume");
 const Roadmap = require("../models/Roadmap");
+const SkillGap = require("../models/SkillGap");
 const Interview = require("../models/Interview");
 const Course = require("../models/Course");
 const Learning = require("../models/Learning");
@@ -10,43 +11,637 @@ const Achievement = require("../models/Achievement");
 const CertificateCriteria = require("../models/CertificateCriteria");
 const Certificate = require("../models/Certificate");
 
-// ==========================================
-// ADMIN DASHBOARD
-// ==========================================
+/* =========================================================
+   HELPERS
+========================================================= */
+
+const getDateRange = (range) => {
+  const now = new Date();
+
+  let startDate = new Date(now);
+
+  if (range === "7d") {
+    startDate.setDate(now.getDate() - 6);
+  } else if (range === "30d") {
+    startDate.setDate(now.getDate() - 29);
+  } else {
+    startDate.setMonth(now.getMonth() - 11);
+    startDate.setDate(1);
+  }
+
+  return {
+    startDate,
+    endDate: now,
+  };
+};
+
+const safeCount = async (Model) => {
+  try {
+    return await Model.countDocuments();
+  } catch (error) {
+    console.log(`Count error for ${Model?.modelName}:`, error.message);
+    return 0;
+  }
+};
+
+/* =========================================================
+   ADMIN DASHBOARD
+========================================================= */
 
 const getAdminDashboard = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments({
-      role: "user",
-    });
+    const range = req.query.range || "12m";
 
-    const totalAdmins = await User.countDocuments({
-      role: "admin",
-    });
+    const { startDate, endDate } = getDateRange(range);
 
-    res.status(200).json({
+    /* =====================================================
+       BASIC COUNTS
+    ===================================================== */
+
+    const [
+      totalUsers,
+      totalResumes,
+      totalRoadmaps,
+      totalSkillGaps,
+      totalInterviews,
+      totalPayments,
+      totalProgress,
+    ] = await Promise.all([
+      safeCount(User),
+      safeCount(Resume),
+      safeCount(Roadmap),
+      safeCount(SkillGap),
+      safeCount(Interview),
+      safeCount(Payment),
+      safeCount(Progress),
+    ]);
+
+    /* =====================================================
+       ACTIVE USERS
+       Users active during selected period
+    ===================================================== */
+
+    let activeUsers = 0;
+
+    try {
+      activeUsers = await User.countDocuments({
+        updatedAt: {
+          $gte: startDate,
+          $lte: endDate,
+        },
+      });
+    } catch (error) {
+      console.log("Active users error:", error.message);
+    }
+
+    /* =====================================================
+       REVENUE
+    ===================================================== */
+
+    let revenue = 0;
+
+    try {
+      const paymentData = await Payment.aggregate([
+        {
+          $match: {
+            status: {
+              $in: ["paid", "success", "completed"],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: {
+              $sum: {
+                $convert: {
+                  input: "$amount",
+                  to: "double",
+                  onError: 0,
+                  onNull: 0,
+                },
+              },
+            },
+          },
+        },
+      ]);
+
+      revenue = paymentData[0]?.total || 0;
+    } catch (error) {
+      console.log("Revenue error:", error.message);
+    }
+
+    /* =====================================================
+       USER GROWTH
+       IMPORTANT:
+       Frontend expects:
+       {
+         month: "Jan",
+         users: 10
+       }
+    ===================================================== */
+
+    let userGrowth = [];
+
+    try {
+      if (range === "7d" || range === "30d") {
+        userGrowth = await User.aggregate([
+          {
+            $match: {
+              createdAt: {
+                $gte: startDate,
+                $lte: endDate,
+              },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                $dateToString: {
+                  format: "%d %b",
+                  date: "$createdAt",
+                },
+              },
+              users: {
+                $sum: 1,
+              },
+              sortDate: {
+                $min: "$createdAt",
+              },
+            },
+          },
+          {
+            $sort: {
+              sortDate: 1,
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              month: "$_id",
+              users: 1,
+            },
+          },
+        ]);
+      } else {
+        userGrowth = await User.aggregate([
+          {
+            $match: {
+              createdAt: {
+                $gte: startDate,
+                $lte: endDate,
+              },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                year: {
+                  $year: "$createdAt",
+                },
+                month: {
+                  $month: "$createdAt",
+                },
+              },
+              users: {
+                $sum: 1,
+              },
+            },
+          },
+          {
+            $sort: {
+              "_id.year": 1,
+              "_id.month": 1,
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              month: {
+                $let: {
+                  vars: {
+                    months: [
+                      "",
+                      "Jan",
+                      "Feb",
+                      "Mar",
+                      "Apr",
+                      "May",
+                      "Jun",
+                      "Jul",
+                      "Aug",
+                      "Sep",
+                      "Oct",
+                      "Nov",
+                      "Dec",
+                    ],
+                  },
+                  in: {
+                    $arrayElemAt: [
+                      "$$months",
+                      "$_id.month",
+                    ],
+                  },
+                },
+              },
+              users: 1,
+            },
+          },
+        ]);
+      }
+    } catch (error) {
+      console.log("User growth error:", error.message);
+    }
+
+    /* =====================================================
+       AI USAGE
+       Frontend expects:
+       {
+         name: "Resume",
+         value: 20
+       }
+    ===================================================== */
+
+    let aiUsage = [];
+
+    try {
+      const [
+        resumeCount,
+        roadmapCount,
+        skillGapCount,
+        interviewCount,
+      ] = await Promise.all([
+        Resume.countDocuments({
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate,
+          },
+        }),
+
+        Roadmap.countDocuments({
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate,
+          },
+        }),
+
+        SkillGap.countDocuments({
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate,
+          },
+        }),
+
+        Interview.countDocuments({
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate,
+          },
+        }),
+      ]);
+
+      aiUsage = [
+        {
+          name: "Resume AI",
+          value: resumeCount,
+        },
+        {
+          name: "Roadmap AI",
+          value: roadmapCount,
+        },
+        {
+          name: "Skill Gap",
+          value: skillGapCount,
+        },
+        {
+          name: "Mock Interview",
+          value: interviewCount,
+        },
+      ];
+    } catch (error) {
+      console.log("AI usage error:", error.message);
+    }
+
+    /* =====================================================
+       POPULAR CAREER ROLES
+    ===================================================== */
+
+    let popularRoles = [];
+
+    try {
+      const roleSources = [
+        {
+          model: Roadmap,
+          fields: ["targetRole", "careerGoal", "role"],
+        },
+        {
+          model: SkillGap,
+          fields: ["targetRole", "careerGoal", "role"],
+        },
+      ];
+
+      const roleMap = {};
+
+      for (const source of roleSources) {
+        try {
+          const records = await source.model.find(
+            {},
+            {
+              targetRole: 1,
+              careerGoal: 1,
+              role: 1,
+            }
+          ).lean();
+
+          records.forEach((item) => {
+            let role = "";
+
+            for (const field of source.fields) {
+              if (item[field]) {
+                role = String(item[field]).trim();
+                break;
+              }
+            }
+
+            if (role) {
+              roleMap[role] =
+                (roleMap[role] || 0) + 1;
+            }
+          });
+        } catch (error) {
+          console.log(
+            `Role source error:`,
+            error.message
+          );
+        }
+      }
+
+      popularRoles = Object.entries(roleMap)
+        .map(([role, users]) => ({
+          _id: role,
+          users,
+        }))
+        .sort((a, b) => b.users - a.users)
+        .slice(0, 6);
+    } catch (error) {
+      console.log(
+        "Popular roles error:",
+        error.message
+      );
+    }
+
+    /* =====================================================
+       RECENT USERS
+    ===================================================== */
+
+    const recentUsers = await User.find()
+      .select(
+        "name username email createdAt"
+      )
+      .sort({
+        createdAt: -1,
+      })
+      .limit(6)
+      .lean();
+
+    /* =====================================================
+       RECENT ACTIVITY
+    ===================================================== */
+
+    let recentActivity = [];
+
+    try {
+      const [
+        resumes,
+        roadmaps,
+        interviews,
+        skillGaps,
+      ] = await Promise.all([
+        Resume.find()
+          .select("createdAt fileName")
+          .sort({ createdAt: -1 })
+          .limit(3)
+          .lean(),
+
+        Roadmap.find()
+          .select("createdAt targetRole careerGoal")
+          .sort({ createdAt: -1 })
+          .limit(3)
+          .lean(),
+
+        Interview.find()
+          .select("createdAt")
+          .sort({ createdAt: -1 })
+          .limit(3)
+          .lean(),
+
+        SkillGap.find()
+          .select("createdAt targetRole")
+          .sort({ createdAt: -1 })
+          .limit(3)
+          .lean(),
+      ]);
+
+      resumes.forEach((item) => {
+        recentActivity.push({
+          type: "resume",
+          title: "Resume analyzed",
+          description:
+            item.fileName ||
+            "New resume analysis completed",
+          createdAt: item.createdAt,
+        });
+      });
+
+      roadmaps.forEach((item) => {
+        recentActivity.push({
+          type: "roadmap",
+          title: "Career roadmap created",
+          description:
+            item.targetRole ||
+            item.careerGoal ||
+            "New career roadmap",
+          createdAt: item.createdAt,
+        });
+      });
+
+      interviews.forEach((item) => {
+        recentActivity.push({
+          type: "interview",
+          title: "Mock interview completed",
+          description:
+            "AI interview activity detected",
+          createdAt: item.createdAt,
+        });
+      });
+
+      skillGaps.forEach((item) => {
+        recentActivity.push({
+          type: "skillgap",
+          title: "Skill gap analyzed",
+          description:
+            item.targetRole ||
+            "New skill gap analysis",
+          createdAt: item.createdAt,
+        });
+      });
+
+      recentActivity.sort(
+        (a, b) =>
+          new Date(b.createdAt) -
+          new Date(a.createdAt)
+      );
+
+      recentActivity =
+        recentActivity.slice(0, 8);
+    } catch (error) {
+      console.log(
+        "Recent activity error:",
+        error.message
+      );
+    }
+
+    /* =====================================================
+       USER GROWTH %
+    ===================================================== */
+
+    let userGrowthPercentage = 0;
+
+    try {
+      const previousStart = new Date(startDate);
+      const previousEnd = new Date(startDate);
+
+      const duration =
+        endDate.getTime() -
+        startDate.getTime();
+
+      previousStart.setTime(
+        startDate.getTime() - duration
+      );
+
+      previousEnd.setTime(
+        startDate.getTime()
+      );
+
+      const [
+        currentUsers,
+        previousUsers,
+      ] = await Promise.all([
+        User.countDocuments({
+          createdAt: {
+            $gte: startDate,
+            $lte: endDate,
+          },
+        }),
+
+        User.countDocuments({
+          createdAt: {
+            $gte: previousStart,
+            $lt: previousEnd,
+          },
+        }),
+      ]);
+
+      if (previousUsers > 0) {
+        userGrowthPercentage = Math.round(
+          ((currentUsers - previousUsers) /
+            previousUsers) *
+            100
+        );
+      } else if (currentUsers > 0) {
+        userGrowthPercentage = 100;
+      }
+    } catch (error) {
+      console.log(
+        "Growth percentage error:",
+        error.message
+      );
+    }
+
+    /* =====================================================
+       PLATFORM HEALTH
+    ===================================================== */
+
+    let databaseStatus = "Connected";
+
+    try {
+      const mongoose =
+        require("mongoose");
+
+      databaseStatus =
+        mongoose.connection.readyState === 1
+          ? "Connected"
+          : "Disconnected";
+    } catch (error) {
+      databaseStatus = "Unknown";
+    }
+
+    /* =====================================================
+       RESPONSE
+    ===================================================== */
+
+    return res.status(200).json({
       success: true,
 
       stats: {
         totalUsers,
-        totalAdmins,
+        activeUsers,
+        totalResumes,
+        totalRoadmaps,
+        totalSkillGaps,
+        totalInterviews,
+        totalPayments,
+        totalProgress,
+        revenue,
+        userGrowthPercentage,
+        aiAnalyses:
+          aiUsage.reduce(
+            (sum, item) =>
+              sum + item.value,
+            0
+          ),
+      },
+
+      userGrowth,
+
+      aiUsage,
+
+      popularRoles,
+
+      recentUsers,
+
+      recentActivity,
+
+      platformHealth: {
+        api: "Online",
+        database: databaseStatus,
+        ai: process.env.GEMINI_API_KEY
+          ? "Available"
+          : "Not Configured",
+      },
+
+      meta: {
+        range,
+        generatedAt: new Date(),
       },
     });
-
   } catch (error) {
-
     console.error(
-      "Admin dashboard error:",
+      "ADMIN DASHBOARD ERROR:",
       error
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to load admin dashboard",
+      message:
+        "Failed to load admin dashboard",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : undefined,
     });
   }
 };
-
 
 // ==========================================
 // GET USERS
@@ -393,43 +988,27 @@ const getAdminSkillGaps = async (req, res) => {
 
 
 // ==========================================
-// GET ALL INTERVIEWS FOR ADMIN
+// GET ADMIN INTERVIEWS
 // ==========================================
 
 const getAdminInterviews = async (req, res) => {
   try {
-    console.log("=================================");
-    console.log("ADMIN INTERVIEW API");
-    console.log("Admin:", req.user?._id);
-    console.log("=================================");
+    const interviews = await Interview.find()
+      .populate("user", "name username email")
+      .sort({ createdAt: -1 });
 
-    const interviews = await Interview.find({})
-      .populate(
-        "user",
-        "name username email"
-      )
-      .sort({
-        createdAt: -1,
-      })
-      .lean();
-
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      count: interviews.length,
       interviews,
     });
 
   } catch (error) {
-    console.error(
-      "ADMIN INTERVIEW ERROR:",
-      error
-    );
+    console.error("Get admin interviews error:", error);
 
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to load interviews",
+      message: "Failed to fetch interviews",
+      error: error.message,
     });
   }
 };

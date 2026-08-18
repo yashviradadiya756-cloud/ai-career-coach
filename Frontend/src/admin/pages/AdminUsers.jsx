@@ -19,6 +19,8 @@ import {
   deleteAdminUser,
 } from "../../api/adminApi";
 
+import AdminUserModal from "../components/AdminUserModal";
+
 import "../styles/adminUsers.css";
 
 const AdminUsers = () => {
@@ -45,7 +47,9 @@ const AdminUsers = () => {
 
       const response = await getAdminUsers();
 
-      setUsers(response.data?.users || []);
+      console.log("ADMIN USERS RESPONSE IN COMPONENT:", response);
+
+      setUsers(response?.users || []);
     } catch (err) {
       console.error("Admin users error:", err);
 
