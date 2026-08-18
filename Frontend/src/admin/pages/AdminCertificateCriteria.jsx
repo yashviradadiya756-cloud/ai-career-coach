@@ -36,23 +36,49 @@ const AdminCertificateCriteria = () => {
   const [loading, setLoading] = useState(false);
 
   const loadCriteria = async () => {
-    try {
-      setLoading(true);
+  try {
+    console.log("=================================");
+    console.log("ADMIN CERTIFICATE RULES");
+    console.log("=================================");
 
-      const data = await getCertificateCriteria();
+    const response =
+      await getCertificateCriteria();
 
-      if (data.success) {
-        setCriteria(data.criteria || []);
-      }
-    } catch (error) {
-      console.error(
-        "CERTIFICATE CRITERIA ERROR:",
-        error.response?.data || error.message
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    console.log(
+      "ADMIN CERTIFICATE RULES RESPONSE:",
+      response
+    );
+
+    console.log(
+      "ADMIN CERTIFICATE RULES DATA:",
+      response?.criteria
+    );
+
+    const formattedData =
+      Array.isArray(response?.criteria)
+        ? response.criteria
+        : [];
+
+    console.log(
+      "FORMATTED ADMIN CERTIFICATE RULES:",
+      formattedData
+    );
+
+    setCriteria(formattedData);
+
+  } catch (error) {
+
+    console.error(
+      "ADMIN CERTIFICATE RULES ERROR:",
+      error.response?.data || error
+    );
+
+    setCriteria([]);
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     loadCriteria();

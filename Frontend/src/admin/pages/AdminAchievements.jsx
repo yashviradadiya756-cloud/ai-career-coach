@@ -24,37 +24,49 @@ const AdminAchievements = () => {
   // ==========================================
 
   const loadAchievements = async () => {
-    try {
-      setError("");
+  try {
+    console.log("=================================");
+    console.log("ADMIN ACHIEVEMENTS");
+    console.log("=================================");
 
-      const response =
-        await getAdminAchievements();
+    const response =
+      await getAdminAchievements();
 
-      if (response.success) {
-        setAchievements(
-          response.achievements || []
-        );
-      } else {
-        setError(
-          response.message ||
-            "Failed to load achievements."
-        );
-      }
-    } catch (error) {
-      console.error(
-        "ADMIN ACHIEVEMENTS ERROR:",
-        error.response?.data || error.message
-      );
+    console.log(
+      "ADMIN ACHIEVEMENTS RESPONSE:",
+      response
+    );
 
-      setError(
-        error.response?.data?.message ||
-          "Unable to load achievements."
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+    console.log(
+      "ADMIN ACHIEVEMENTS DATA:",
+      response?.achievements
+    );
+
+    const formattedData =
+      Array.isArray(response?.achievements)
+        ? response.achievements
+        : [];
+
+    console.log(
+      "FORMATTED ADMIN ACHIEVEMENTS:",
+      formattedData
+    );
+
+    setAchievements(formattedData);
+
+  } catch (error) {
+
+    console.error(
+      "ADMIN ACHIEVEMENTS ERROR:",
+      error.response?.data || error
+    );
+
+    setAchievements([]);
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     loadAchievements();

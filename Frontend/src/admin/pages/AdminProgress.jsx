@@ -48,34 +48,49 @@ const AdminProgress = () => {
   // ==========================================
 
   const loadProgress = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  try {
+    console.log("=================================");
+    console.log("ADMIN PROGRESS");
+    console.log("=================================");
 
-      const response = await getAdminProgress();
+    const response =
+      await getAdminProgress();
 
-      if (response.success) {
-        setProgress(response.progress || []);
-      } else {
-        setError(
-          response.message ||
-            "Failed to load progress"
-        );
-      }
-    } catch (err) {
-      console.error(
-        "ADMIN PROGRESS ERROR:",
-        err.response?.data || err.message
-      );
+    console.log(
+      "ADMIN PROGRESS RESPONSE:",
+      response
+    );
 
-      setError(
-        err.response?.data?.message ||
-          "Unable to load user progress."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    console.log(
+      "ADMIN PROGRESS DATA:",
+      response?.progress
+    );
+
+    const formattedData =
+      Array.isArray(response?.progress)
+        ? response.progress
+        : [];
+
+    console.log(
+      "FORMATTED ADMIN PROGRESS:",
+      formattedData
+    );
+
+    setProgress(formattedData);
+
+  } catch (error) {
+
+    console.error(
+      "ADMIN PROGRESS ERROR:",
+      error.response?.data || error
+    );
+
+    setProgress([]);
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     loadProgress();

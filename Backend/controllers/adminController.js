@@ -1147,49 +1147,194 @@ const deleteAdminCourse = async (req, res) => {
 // ==========================================
 const getAdminUserLearnings = async (req, res) => {
   try {
-    console.log("========== ADMIN USER LEARNINGS ==========");
+    console.log("=================================");
+    console.log("ADMIN USER LEARNINGS");
+    console.log("=================================");
 
-    let query = Learning.find({})
-      .sort({ createdAt: -1 });
-
-    // User reference
-    if (Learning.schema.paths.user) {
-      query = query.populate(
-        "user",
-        "username name email"
-      );
-    }
-
-    // Course reference
-    if (Learning.schema.paths.course) {
-      query = query.populate(
-        "course",
-        "title category provider"
-      );
-    }
-
-    const learnings = await query.lean();
+    // ------------------------------------------
+    // CHECK LEARNING MODEL
+    // ------------------------------------------
 
     console.log(
-      "TOTAL USER LEARNINGS:",
+      "Learning model:",
+      Learning?.modelName
+    );
+
+    console.log(
+      "Learning fields:",
+      Object.keys(Learning.schema.paths)
+    );
+
+    // ------------------------------------------
+    // GET ALL LEARNINGS
+    // ------------------------------------------
+
+    const learnings = await Learning.find({})
+      .sort({ createdAt: -1 })
+      .lean();
+
+    console.log(
+      "Total learnings:",
       learnings.length
     );
 
+    // ------------------------------------------
+    // GET USER IDs
+    // ------------------------------------------
+
+    const userIds = learnings
+      .map((item) => item.user)
+      .filter(Boolean);
+
+    // ------------------------------------------
+    // GET COURSE IDs
+    // ------------------------------------------
+
+    const courseIds = learnings
+      .map((item) => item.course)
+      .filter(Boolean);
+
+    // ------------------------------------------
+    // FETCH USERS
+    // ------------------------------------------
+
+    let users = [];
+
+    if (userIds.length > 0) {
+      users = await User.find({
+        _id: { $in: userIds },
+      })
+        .select("name username email")
+        .lean();
+    }
+
+    // ------------------------------------------
+    // FETCH COURSES
+    // ------------------------------------------
+
+    let courses = [];
+
+    if (
+      courseIds.length > 0 &&
+      Course
+    ) {
+      courses = await Course.find({
+        _id: { $in: courseIds },
+      })
+        .select("title category provider")
+        .lean();
+    }
+
+    // ------------------------------------------
+    // CREATE LOOKUP MAPS
+    // ------------------------------------------
+
+    const userMap = {};
+
+    users.forEach((user) => {
+      userMap[String(user._id)] = user;
+    });
+
+    const courseMap = {};
+
+    courses.forEach((course) => {
+      courseMap[String(course._id)] = course;
+    });
+
+    // ------------------------------------------
+    // FORMAT DATA
+    // ------------------------------------------
+
+    const formattedLearnings =
+      learnings.map((learning) => {
+
+        const user =
+          learning.user
+            ? userMap[String(learning.user)]
+            : null;
+
+        const course =
+          learning.course
+            ? courseMap[String(learning.course)]
+            : null;
+
+        return {
+          ...learning,
+
+          user: user
+            ? {
+                _id: user._id,
+                name:
+                  user.name ||
+                  user.username ||
+                  "Unknown User",
+                username:
+                  user.username || "",
+                email:
+                  user.email || "",
+              }
+            : null,
+
+          course: course
+            ? {
+                _id: course._id,
+                title:
+                  course.title ||
+                  "Untitled Course",
+                category:
+                  course.category ||
+                  "",
+                provider:
+                  course.provider ||
+                  "",
+              }
+            : null,
+        };
+      });
+
+    // ------------------------------------------
+    // RESPONSE
+    // ------------------------------------------
+
     return res.status(200).json({
       success: true,
-      count: learnings.length,
-      learnings,
+      count: formattedLearnings.length,
+      learnings: formattedLearnings,
     });
 
   } catch (error) {
+
     console.error(
-      "ADMIN USER LEARNINGS ERROR:",
+      "================================="
+    );
+
+    console.error(
+      "ADMIN USER LEARNINGS ERROR"
+    );
+
+    console.error(
+      error
+    );
+
+    console.error(
+      "ERROR MESSAGE:",
+      error.message
+    );
+
+    console.error(
+      "ERROR STACK:",
       error.stack
+    );
+
+    console.error(
+      "================================="
     );
 
     return res.status(500).json({
       success: false,
       message: "Failed to fetch user learnings",
+
+      // TEMPORARY: useful for Render debugging
       error: error.message,
     });
   }

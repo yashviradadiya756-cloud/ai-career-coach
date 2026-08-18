@@ -88,7 +88,7 @@ export default function AdminLearning() {
 
   // Courses State
   const [courses, setCourses] = useState([]);
-  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [loadingCourses, setLoadingCourses] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
@@ -141,23 +141,132 @@ export default function AdminLearning() {
     }
   };
 
-  const loadUserLearnings = async () => {
-    try {
-      setLoadingUsers(true);
-      const response = await getAdminUserLearnings();
-      const data =
-        response?.learnings ||
-        response?.data?.learnings ||
-        response?.data ||
-        [];
-      setUserLearnings(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("User learnings error:", error);
-      setUserLearnings([]);
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
+ const loadUserLearnings = async () => {
+  try {
+    setLoadingUsers(true);
+
+    const response = await getAdminUserLearnings();
+
+    console.log("=================================");
+    console.log("ADMIN LEARNING RESPONSE:", response);
+    console.log("=================================");
+
+    const learningData =
+      response?.learnings ||
+      response?.data?.learnings ||
+      [];
+
+    console.log("ADMIN LEARNING DATA:", learningData);
+
+    const formattedData = learningData.map((item) => {
+      const userName =
+        item.user?.name ||
+        item.user?.username ||
+        "Unknown User";
+
+      const userEmail =
+        item.user?.email ||
+        "No email";
+
+      const recommendations = Array.isArray(item.recommendations)
+        ? item.recommendations
+        : [];
+
+      // Get skills from recommendations
+      const missingSkills = [
+        ...new Set(
+          recommendations
+            .map((rec) => rec?.skill)
+            .filter(Boolean)
+        ),
+      ];
+
+      // Create initials
+      const initials = userName
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((name) => name.charAt(0).toUpperCase())
+        .join("");
+
+      // Format date
+      const date = item.createdAt
+        ? new Date(item.createdAt).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "N/A";
+
+      return {
+        ...item,
+
+        // User information
+        userName,
+        user: userName,
+        userEmail,
+        email: userEmail,
+
+        // Learning information
+        targetRole:
+          item.targetRole ||
+          "Not specified",
+
+        recommendations,
+
+        totalRecommendations:
+          recommendations.length,
+
+        missingSkills,
+
+        initials:
+          initials || "U",
+
+        date,
+
+        createdAt:
+          item.createdAt || null,
+      };
+    });
+
+    console.log(
+      "FORMATTED ADMIN LEARNING:",
+      formattedData
+    );
+
+    setUserLearnings(formattedData);
+
+  } catch (error) {
+    console.error(
+      "================================="
+    );
+
+    console.error(
+      "USER LEARNINGS ERROR:",
+      error
+    );
+
+    console.error(
+      "ERROR RESPONSE:",
+      error?.response?.data
+    );
+
+    console.error(
+      "================================="
+    );
+
+    setUserLearnings([]);
+
+    showNotification(
+      error?.response?.data?.message ||
+      "Failed to load user learning records",
+      "error"
+    );
+
+  } finally {
+    setLoadingUsers(false);
+  }
+};
 
   useEffect(() => {
     loadCourses();
@@ -370,15 +479,24 @@ export default function AdminLearning() {
 
   // Filtered Users Learning
   const filteredUsers = useMemo(() => {
-    const q = userSearch.toLowerCase().trim();
-    if (!q) return userLearnings;
-    return userLearnings.filter(
-      (u) =>
-        u.user?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.targetRole?.toLowerCase().includes(q)
+  const q = userSearch.toLowerCase().trim();
+
+  if (!q) {
+    return userLearnings;
+  }
+
+  return userLearnings.filter((u) => {
+    const userName = String(u.user || "").toLowerCase();
+    const email = String(u.email || "").toLowerCase();
+    const targetRole = String(u.targetRole || "").toLowerCase();
+
+    return (
+      userName.includes(q) ||
+      email.includes(q) ||
+      targetRole.includes(q)
     );
-  }, [userLearnings, userSearch]);
+  });
+}, [userLearnings, userSearch]);
 
   const getTypeIcon = (type) => {
     switch (type) {
