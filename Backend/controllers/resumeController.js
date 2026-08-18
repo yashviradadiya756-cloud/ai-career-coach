@@ -42,24 +42,16 @@ const uploadResume = async (req, res) => {
 
     const resume = await Resume.create({
       user: req.user._id,
-
       fileName: req.file.originalname,
-
       filePath: req.file.path,
-
       resumeText: resumeText,
-
       atsScore: analysis.atsScore || 0,
-
       strengths:
         analysis.strengths || [],
-
       weaknesses:
         analysis.weaknesses || [],
-
       missingSkills:
         analysis.missingSkills || [],
-
       suggestions:
         analysis.suggestions || [],
     });

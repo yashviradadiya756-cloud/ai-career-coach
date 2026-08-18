@@ -8,7 +8,7 @@ const roadmapSchema = new mongoose.Schema(
       required: true,
     },
 
-    career: {
+    targetRole: {
       type: String,
       required: true,
     },

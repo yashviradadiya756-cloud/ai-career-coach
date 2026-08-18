@@ -1,6 +1,7 @@
 const { GoogleGenAI } = require("@google/genai");
 
 const Roadmap = require("../models/Roadmap");
+const { generateAI } = require("../utils/geminiHelper");
 
 // =====================================================
 // GEMINI
@@ -56,66 +57,65 @@ const generateRoadmapController = async (req, res) => {
     // ---------------------------------------------------
 
     const prompt = `
-You are an expert career roadmap generator.
+    You are an expert career roadmap generator.
 
-Create a detailed learning roadmap for this target role:
+    Create a detailed learning roadmap for this target role:
 
-${cleanRole}
+    ${cleanRole}
 
-The roadmap must focus specifically on the target role.
+    The roadmap must focus specifically on the target role.
 
-Return ONLY valid JSON.
+    Return ONLY valid JSON.
 
-Use exactly this structure:
+    Use exactly this structure:
 
-{
-  "roadmapTitle": "string",
-  "phases": [
     {
-      "title": "string",
-      "duration": "string",
-      "topics": ["string"],
-      "projects": ["string"],
-      "resources": ["string"],
-      "completed": false
+      "roadmapTitle": "string",
+      "phases": [
+        {
+          "title": "string",
+          "duration": "string",
+          "topics": ["string"],
+          "projects": ["string"],
+          "resources": ["string"],
+          "completed": false
+        }
+      ]
     }
-  ]
-}
 
-Requirements:
+    Requirements:
 
-- Create 5 to 6 learning phases.
-- The roadmap must be suitable for a Full Stack Developer career when the target role is Full Stack Developer.
-- Include frontend development.
-- Include backend development.
-- Include databases.
-- Include APIs.
-- Include authentication.
-- Include Git/GitHub.
-- Include deployment.
-- Include practical projects.
-- Every phase must have useful topics.
-- Every phase must have practical projects.
-- Every phase must have learning resources.
-- Duration should be realistic.
-- Do not generate AI/ML topics unless the target role explicitly requires them.
-- Do not use markdown.
-- Do not use code fences.
-- Return JSON only.
-`;
+    - Create 5 to 6 learning phases.
+    - The roadmap must be suitable for a Full Stack Developer career when the target role is Full Stack Developer.
+    - Include frontend development.
+    - Include backend development.
+    - Include databases.
+    - Include APIs.
+    - Include authentication.
+    - Include Git/GitHub.
+    - Include deployment.
+    - Include practical projects.
+    - Every phase must have useful topics.
+    - Every phase must have practical projects.
+    - Every phase must have learning resources.
+    - Duration should be realistic.
+    - Do not generate AI/ML topics unless the target role explicitly requires them.
+    - Do not use markdown.
+    - Do not use code fences.
+    - Return JSON only.
+    `;
 
     // ---------------------------------------------------
     // GEMINI REQUEST
     // ---------------------------------------------------
 
-    console.log("Calling Gemini...");
+    console.log("Calling Gemini with automatic retry/fallback...");
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: prompt,
-    });
+    const result = await generateAI(ai, prompt);
 
-    let text = response.text;
+    console.log("Gemini model used:", result.model);
+
+    let text = result.text;
 
     console.log("RAW GEMINI RESPONSE:");
     console.log(text);
@@ -218,6 +218,8 @@ Requirements:
 
     const roadmap = await Roadmap.create({
       user: req.user._id,
+
+      career: cleanRole,
 
       targetRole: cleanRole,
 
