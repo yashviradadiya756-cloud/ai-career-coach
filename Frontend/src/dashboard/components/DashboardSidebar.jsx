@@ -33,11 +33,11 @@ const navItems = [
     path: "/dashboard/overview",
     icon: LayoutGrid,
   },
-  {
-    name: "Assessment",
-    path: "/dashboard/assessment",
-    icon: ClipboardCheck,
-  },
+  // {
+  //   name: "Assessment",
+  //   path: "/dashboard/assessment",
+  //   icon: ClipboardCheck,
+  // },
   {
     name: "Resume",
     path: "/dashboard/resume",
