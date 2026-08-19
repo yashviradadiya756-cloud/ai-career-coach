@@ -196,6 +196,17 @@ const getProfile = async (req, res) => {
         message: "User not found",
       });
     }
+    if (!user.password) {
+  return res.status(400).json({
+    success: false,
+    message:
+      "This account uses Google login. Please continue with Google.",
+  });
+}
+const isMatch = await bcrypt.compare(
+  password,
+  user.password
+);
 
     return res.status(200).json({
       success: true,
@@ -216,19 +227,22 @@ const getProfile = async (req, res) => {
 // =====================================================
 
 const googleLogin = async (req, res) => {
-  console.log("🔥🔥🔥 NEW GOOGLE LOGIN CONTROLLER IS RUNNING 🔥🔥🔥");
-
-  return res.status(200).json({
-    success: true,
-    message: "TEST GOOGLE CONTROLLER",
-  });
-
   try {
     const { credential } = req.body;
 
     console.log("======================================");
     console.log("GOOGLE LOGIN");
     console.log("======================================");
+
+    console.log("GOOGLE CREDENTIAL EXISTS:", !!credential);
+console.log(
+  "GOOGLE CREDENTIAL LENGTH:",
+  credential?.length
+);
+console.log(
+  "GOOGLE CREDENTIAL SEGMENTS:",
+  credential?.split(".").length
+);
 
     if (!credential) {
       return res.status(400).json({
@@ -334,7 +348,7 @@ const googleLogin = async (req, res) => {
       await user.save();
 
       console.log(
-        "EXISTING USER LINKED TO GOOGLE:",
+        "EXISTING GOOGLE USER LINKED:",
         user._id
       );
     }

@@ -44,6 +44,22 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    googleId: {
+  type: String,
+  default: null,
+},
+
+authProvider: {
+  type: String,
+  enum: ["local", "google"],
+  default: "local",
+},
+
+profileImage: {
+  type: String,
+  default: "",
+},
+
     // ==========================================
     // PHONE
     // ==========================================

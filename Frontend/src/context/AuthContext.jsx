@@ -92,27 +92,36 @@ export const AuthProvider = ({ children }) => {
   };
   const googleLogin = async (credential) => {
   try {
-    const res = await googleLoginUser(
-      credential
-    );
+    const response = await googleLoginUser(credential);
 
     console.log(
       "GOOGLE LOGIN RESPONSE:",
-      res.data
+      response.data
     );
 
-    // Save CareerPilot JWT
+    if (!response.data.success) {
+      throw new Error(
+        response.data.message
+      );
+    }
+
+    const { token, user } = response.data;
+
     localStorage.setItem(
       "token",
-      res.data.token
+      token
     );
 
-    // Save user
-    const userData = res.data.user;
+    localStorage.setItem(
+      "user",
+      JSON.stringify(user)
+    );
 
-    saveUserData(userData);
+    setToken(token);
+    setUser(user);
 
-    return res.data;
+    return response.data;
+
   } catch (error) {
     console.error(
       "Google login error:",
