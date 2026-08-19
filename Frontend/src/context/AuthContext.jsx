@@ -90,6 +90,7 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
   };
+  
   const googleLogin = async (credential) => {
   try {
     const response = await googleLoginUser(credential);
@@ -101,24 +102,39 @@ export const AuthProvider = ({ children }) => {
 
     if (!response.data.success) {
       throw new Error(
-        response.data.message
+        response.data.message || "Google login failed"
       );
     }
 
     const { token, user } = response.data;
 
+    // Make sure backend returned JWT
+    if (!token) {
+      throw new Error(
+        "Google login succeeded but no JWT token was returned"
+      );
+    }
+
+    // Save JWT
     localStorage.setItem(
       "token",
       token
     );
 
-    localStorage.setItem(
-      "user",
-      JSON.stringify(user)
-    );
+    // Save user
+    if (user) {
+      localStorage.setItem(
+        "user",
+        JSON.stringify(user)
+      );
 
-    setToken(token);
-    setUser(user);
+      saveUserData(user);
+    }
+
+    console.log(
+      "GOOGLE TOKEN SAVED:",
+      !!localStorage.getItem("token")
+    );
 
     return response.data;
 
