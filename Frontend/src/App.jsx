@@ -13,13 +13,11 @@ import Pricing from "./components/Pricing";
 import ContactUs from "./pages/ContactUs";
 import Demo from "./components/Demo";
 
-
 // ==========================================
 // USER AUTH
 // ==========================================
 
 import ProtectedRoute from "./components/ProtectedRoute";
-
 
 // ==========================================
 // USER DASHBOARD
@@ -41,7 +39,6 @@ import Payment from "./dashboard/pages/Payment";
 import Notification from "./dashboard/pages/Notification";
 import Settings from "./dashboard/pages/Settings";
 
-
 // ==========================================
 // ADMIN AUTH
 // ==========================================
@@ -49,13 +46,11 @@ import Settings from "./dashboard/pages/Settings";
 import AdminProtectedRoute from "./admin/components/AdminProtectedRoute";
 import AdminLogin from "./admin/pages/AdminLogin";
 
-
 // ==========================================
 // ADMIN LAYOUT
 // ==========================================
 
 import AdminLayout from "./admin/AdminLayout";
-
 
 // ==========================================
 // ADMIN PAGES
@@ -81,49 +76,130 @@ import AdminSettings from "./admin/pages/AdminSettings";
 // ==========================================
 
 function App() {
-
   return (
-
     <Routes>
-
 
       {/* ======================================
           PUBLIC ROUTES
       ====================================== */}
 
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/contactus" element={<ContactUs />} />
-      <Route path="/demo" element={<Demo />} />
+      <Route
+        path="/"
+        element={<LandingPage />}
+      />
+
+      <Route
+        path="/login"
+        element={<Login />}
+      />
+
+      <Route
+        path="/register"
+        element={<Register />}
+      />
+
+      <Route
+        path="/profile"
+        element={<Profile />}
+      />
+
+      <Route
+        path="/pricing"
+        element={<Pricing />}
+      />
+
+      <Route
+        path="/contactus"
+        element={<ContactUs />}
+      />
+
+      <Route
+        path="/demo"
+        element={<Demo />}
+      />
 
 
       {/* ======================================
           USER DASHBOARD
       ====================================== */}
 
-      <Route path="/dashboard"
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <DashboardLayout />
           </ProtectedRoute>
-        }>
-        <Route index element={ <Overview /> }/>
-        <Route path="overview" element={ <Overview />} />
-        <Route path="assessment" element={ <Assessment />}/>
-        <Route path="resume" element={ <Resume /> }/>
-        <Route path="skill-gap" element={ <SkillGap /> } />
-        <Route path="roadmap" element={ <Roadmap /> }/>
-        <Route path="interview" element={ <Interview /> } />
-        <Route path="ai-coach" element={ <AICoach /> } />
-        <Route path="learning" element={ <Learning />  }/>
-        <Route path="progress" element={ <Progress />  }/>
-        <Route path="achievement" element={ <Achievements /> } />
-        <Route path="notification" element={ <Notification /> } />
-        <Route path="payment" element={ <Payment /> } />
-        <Route path="settings" element={ <Settings />} />
+        }
+      >
+        <Route
+          index
+          element={<Overview />}
+        />
+
+        <Route
+          path="overview"
+          element={<Overview />}
+        />
+
+        <Route
+          path="assessment"
+          element={<Assessment />}
+        />
+
+        <Route
+          path="resume"
+          element={<Resume />}
+        />
+
+        <Route
+          path="skill-gap"
+          element={<SkillGap />}
+        />
+
+        <Route
+          path="roadmap"
+          element={<Roadmap />}
+        />
+
+        <Route
+          path="interview"
+          element={<Interview />}
+        />
+
+        <Route
+          path="ai-coach"
+          element={<AICoach />}
+        />
+
+        <Route
+          path="learning"
+          element={<Learning />}
+        />
+
+        <Route
+          path="progress"
+          element={<Progress />}
+        />
+
+        <Route
+          path="achievement"
+          element={<Achievements />}
+        />
+
+        <Route
+          path="notification"
+          element={<Notification />}
+        />
+
+        <Route
+          path="payment"
+          element={<Payment />}
+        />
+
+        <Route
+          path="settings"
+          element={<Settings />}
+        />
       </Route>
 
 
@@ -131,38 +207,158 @@ function App() {
           ADMIN LOGIN
       ====================================== */}
 
-      <Route path="/admin/login" element={ <AdminLogin /> }/>
+      <Route
+        path="/admin/login"
+        element={<AdminLogin />}
+      />
+
 
       {/* ======================================
           ADMIN PANEL
       ====================================== */}
 
-      <Route path="/admin" element={
+      <Route
+        path="/admin"
+        element={
           <AdminProtectedRoute>
             <AdminLayout />
-          </AdminProtectedRoute> }>
+          </AdminProtectedRoute>
+        }
+      >
 
-        {/* ADMIN DASHBOARD */}
+        {/* ======================================
+            ADMIN DASHBOARD
+        ====================================== */}
 
-        <Route index element={ <AdminDashboard /> } />
-        <Route path="users" element={ <AdminUsers /> } />
-        <Route path="ai-coach" element={ <AdminAICoach /> }/>
-        <Route path="resumes" element={ <AdminResumes /> } />
-        <Route path="skillgap" element={ <AdminSkillGap /> } />
-        <Route path="roadmaps" element={ <AdminRoadmaps /> } />
-        <Route path="interviews" element={<AdminInterviews />}/>
-        <Route path="Learning" element={<AdminLearning />}/>
-        <Route path="/admin/payments" element={<AdminPayments />}/>
-        <Route path="/admin/progress" element={ <AdminProgress /> }/>
-        <Route path="/admin/achievements" element={ <AdminAchievements /> } />
-        <Route path="/admin/certificate-criteria" element={<AdminCertificateCriteria />}/>
-        <Route path="settings" element={<AdminSettings />} />
+        <Route
+          index
+          element={<AdminDashboard />}
+        />
+
+
+        {/* ======================================
+            ADMIN USERS
+        ====================================== */}
+
+        <Route
+          path="users"
+          element={<AdminUsers />}
+        />
+
+
+        {/* ======================================
+            ADMIN AI COACH
+        ====================================== */}
+
+        <Route
+          path="ai-coach"
+          element={<AdminAICoach />}
+        />
+
+
+        {/* ======================================
+            ADMIN RESUMES
+        ====================================== */}
+
+        <Route
+          path="resumes"
+          element={<AdminResumes />}
+        />
+
+
+        {/* ======================================
+            ADMIN SKILL GAP
+        ====================================== */}
+
+        <Route
+          path="skillgap"
+          element={<AdminSkillGap />}
+        />
+
+
+        {/* ======================================
+            ADMIN ROADMAPS
+        ====================================== */}
+
+        <Route
+          path="roadmaps"
+          element={<AdminRoadmaps />}
+        />
+
+
+        {/* ======================================
+            ADMIN INTERVIEWS
+        ====================================== */}
+
+        <Route
+          path="interviews"
+          element={<AdminInterviews />}
+        />
+
+
+        {/* ======================================
+            ADMIN LEARNING
+        ====================================== */}
+
+        <Route
+          path="learning"
+          element={<AdminLearning />}
+        />
+
+
+        {/* ======================================
+            ADMIN PAYMENTS
+        ====================================== */}
+
+        <Route
+          path="payments"
+          element={<AdminPayments />}
+        />
+
+
+        {/* ======================================
+            ADMIN PROGRESS
+        ====================================== */}
+
+        <Route
+          path="progress"
+          element={<AdminProgress />}
+        />
+
+
+        {/* ======================================
+            ADMIN ACHIEVEMENTS
+        ====================================== */}
+
+        <Route
+          path="achievements"
+          element={<AdminAchievements />}
+        />
+
+
+        {/* ======================================
+            CERTIFICATE CRITERIA
+        ====================================== */}
+
+        <Route
+          path="certificate-criteria"
+          element={<AdminCertificateCriteria />}
+        />
+
+
+        {/* ======================================
+            ADMIN SETTINGS
+        ====================================== */}
+
+        <Route
+          path="settings"
+          element={<AdminSettings />}
+        />
+
       </Route>
+
     </Routes>
-
   );
-
 }
-
 
 export default App;

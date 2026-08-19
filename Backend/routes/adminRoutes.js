@@ -2,15 +2,9 @@ const express = require("express");
 
 const router = express.Router();
 
-// ==========================================
-// MIDDLEWARE
-// ==========================================
 const protect = require("../middleware/authMiddleware");
 const adminMiddleware = require("../middleware/adminMiddleware");
 
-// ==========================================
-// ADMIN CONTROLLER
-// ==========================================
 const {
   getAdminDashboard,
   getAdminUsers,
@@ -42,10 +36,11 @@ const {
   getAdminFeedback,
 } = require("../controllers/adminController");
 
+
 // ==========================================
-// ADMIN DASHBOARD
-// GET /api/admin/dashboard
+// DASHBOARD
 // ==========================================
+
 router.get(
   "/dashboard",
   protect,
@@ -53,11 +48,11 @@ router.get(
   getAdminDashboard
 );
 
+
 // ==========================================
-// ADMIN USERS
-// GET /api/admin/users
-// DELETE /api/admin/users/:id
+// USERS
 // ==========================================
+
 router.get(
   "/users",
   protect,
@@ -72,13 +67,11 @@ router.delete(
   deleteAdminUser
 );
 
+
 // ==========================================
-// ADMIN COURSES
-// GET    /api/admin/courses
-// POST   /api/admin/courses
-// PUT    /api/admin/courses/:id
-// DELETE /api/admin/courses/:id
+// COURSES
 // ==========================================
+
 router.get(
   "/courses",
   protect,
@@ -107,10 +100,11 @@ router.delete(
   deleteAdminCourse
 );
 
+
 // ==========================================
-// ADMIN USER LEARNINGS
-// GET /api/admin/user-learnings
+// USER LEARNINGS
 // ==========================================
+
 router.get(
   "/user-learnings",
   protect,
@@ -118,10 +112,11 @@ router.get(
   getAdminUserLearnings
 );
 
+
 // ==========================================
-// ADMIN RESUMES
-// GET /api/admin/resumes
+// RESUMES
 // ==========================================
+
 router.get(
   "/resumes",
   protect,
@@ -129,10 +124,11 @@ router.get(
   getAdminResumes
 );
 
+
 // ==========================================
-// ADMIN ROADMAPS
-// GET /api/admin/roadmaps
+// ROADMAPS
 // ==========================================
+
 router.get(
   "/roadmaps",
   protect,
@@ -140,10 +136,11 @@ router.get(
   getAdminRoadmaps
 );
 
+
 // ==========================================
-// ADMIN SKILL GAPS
-// GET /api/admin/skill-gaps
+// SKILL GAPS
 // ==========================================
+
 router.get(
   "/skill-gaps",
   protect,
@@ -151,10 +148,11 @@ router.get(
   getAdminSkillGaps
 );
 
+
 // ==========================================
-// ADMIN INTERVIEWS
-// GET /api/admin/interviews
+// INTERVIEWS
 // ==========================================
+
 router.get(
   "/interviews",
   protect,
@@ -162,10 +160,11 @@ router.get(
   getAdminInterviews
 );
 
+
 // ==========================================
-// ADMIN PAYMENTS
-// GET /api/admin/payments
+// PAYMENTS
 // ==========================================
+
 router.get(
   "/payments",
   protect,
@@ -173,10 +172,11 @@ router.get(
   getAdminPayments
 );
 
+
 // ==========================================
-// ADMIN PROGRESS
-// GET /api/admin/progress
+// PROGRESS
 // ==========================================
+
 router.get(
   "/progress",
   protect,
@@ -184,10 +184,11 @@ router.get(
   getAdminProgress
 );
 
+
 // ==========================================
-// ADMIN ACHIEVEMENTS
-// GET /api/admin/achievements
+// ACHIEVEMENTS
 // ==========================================
+
 router.get(
   "/achievements",
   protect,
@@ -195,9 +196,11 @@ router.get(
   getAdminAchievements
 );
 
+
 // ==========================================
 // CERTIFICATE CRITERIA
 // ==========================================
+
 router.get(
   "/certificate-criteria",
   protect,
@@ -226,9 +229,11 @@ router.delete(
   deleteCertificateCriteria
 );
 
+
 // ==========================================
 // CERTIFICATE ELIGIBILITY
 // ==========================================
+
 router.get(
   "/certificate-eligibility/:userId/:criteriaId",
   protect,
@@ -236,9 +241,11 @@ router.get(
   checkCertificateEligibility
 );
 
+
 // ==========================================
 // GENERATE CERTIFICATE
 // ==========================================
+
 router.post(
   "/certificates/generate",
   protect,
@@ -246,10 +253,11 @@ router.post(
   generateCertificate
 );
 
+
 // ==========================================
-// ADMIN FEEDBACK
-// GET /api/admin/feedback
+// FEEDBACK
 // ==========================================
+
 router.get(
   "/feedback",
   protect,
@@ -257,13 +265,9 @@ router.get(
   getAdminFeedback
 );
 
-router.get(
-  "/settings",
-  protect,
-  adminMiddleware,
-  getAdminFeedback
-);
+
 // ==========================================
 // EXPORT
 // ==========================================
+
 module.exports = router;

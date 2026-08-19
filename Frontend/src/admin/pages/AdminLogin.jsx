@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 
 import { loginUser } from "../../api/authApi";
-
 import "../styles/adminLogin.css";
 
 const AdminLogin = () => {
@@ -24,6 +23,10 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // ==========================================
+  // INPUT CHANGE
+  // ==========================================
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -33,155 +36,164 @@ const AdminLogin = () => {
     }));
   };
 
+  // ==========================================
+  // ADMIN LOGIN
+  // ==========================================
+
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  setError("");
-  setLoading(true);
+    setError("");
+    setLoading(true);
 
-  try {
-    console.log("========== ADMIN LOGIN ==========");
+    try {
+      console.log("====================================");
+      console.log("ADMIN LOGIN STARTED");
+      console.log("====================================");
 
-    console.log(
-      "ADMIN EMAIL:",
-      formData.email
-    );
+      // ==========================================
+      // CALL NORMAL LOGIN API
+      // ==========================================
 
-    const response = await loginUser({
-      email: formData.email,
-      password: formData.password,
-    });
+      const response = await loginUser({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      });
 
-    console.log(
-      "ADMIN LOGIN RESPONSE:",
-      response.data
-    );
+      console.log("ADMIN LOGIN API RESPONSE:", response.data);
 
-    const data = response.data;
+      const data = response.data;
 
-    const adminUser = data.user;
+      // ==========================================
+      // CHECK API SUCCESS
+      // ==========================================
 
-    console.log(
-      "ADMIN USER OBJECT:",
-      adminUser
-    );
+      if (!data?.success) {
+        throw new Error(
+          data?.message || "Login failed"
+        );
+      }
 
-    console.log(
-      "ADMIN USER ID:",
-      adminUser?._id
-    );
+      // ==========================================
+      // GET USER
+      // ==========================================
 
-    console.log(
-      "ADMIN USER EMAIL:",
-      adminUser?.email
-    );
+      const loggedUser = data.user;
 
-    console.log(
-      "ADMIN USER ROLE:",
-      adminUser?.role
-    );
+      console.log("LOGGED USER:", loggedUser);
+      console.log("USER EMAIL:", loggedUser?.email);
+      console.log("USER ROLE:", loggedUser?.role);
 
-    // ==========================================
-    // CHECK ADMIN USER
-    // ==========================================
+      if (!loggedUser) {
+        throw new Error(
+          "User information was not returned."
+        );
+      }
 
-    if (!adminUser) {
-      setError(
-        "Login successful, but user information was not returned."
-      );
+      // ==========================================
+      // CHECK ADMIN ROLE
+      // ==========================================
 
-      return;
-    }
-
-    // ==========================================
-    // CHECK ADMIN ROLE
-    // ==========================================
-
-    if (
-      String(adminUser.role)
+      const role = String(loggedUser.role || "")
         .trim()
-        .toLowerCase() !== "admin"
-    ) {
-      setError(
-        "This account does not have administrator access."
+        .toLowerCase();
+
+      console.log("NORMALIZED ROLE:", role);
+
+      if (role !== "admin") {
+        throw new Error(
+          "This account does not have administrator access."
+        );
+      }
+
+      // ==========================================
+      // CHECK TOKEN
+      // ==========================================
+
+      if (!data.token) {
+        throw new Error(
+          "Authentication token was not returned."
+        );
+      }
+
+      // ==========================================
+      // CLEAR OLD USER AUTH
+      // ==========================================
+
+      localStorage.removeItem("username");
+      localStorage.removeItem("name");
+      localStorage.removeItem("email");
+      localStorage.removeItem("user");
+
+      // ==========================================
+      // SAVE ADMIN AUTH
+      // ==========================================
+
+      localStorage.setItem(
+        "adminToken",
+        data.token
       );
 
-      return;
-    }
-
-    // ==========================================
-    // CHECK TOKEN
-    // ==========================================
-
-    if (!data.token) {
-      setError(
-        "Login successful, but authentication token was not returned."
+      localStorage.setItem(
+        "adminUser",
+        JSON.stringify(loggedUser)
       );
 
-      return;
-    }
+      // Your protect middleware uses "token",
+      // so keep the JWT here as well.
+      localStorage.setItem(
+        "token",
+        data.token
+      );
 
-    // ==========================================
-    // SAVE ADMIN AUTH
-    // ==========================================
-
-    localStorage.setItem(
-      "adminToken",
-      data.token
-    );
-
-    localStorage.setItem(
-      "adminUser",
-      JSON.stringify(adminUser)
-    );
-
-    // Also save normal token if your
-    // existing protected API uses it.
-    localStorage.setItem(
-      "token",
-      data.token
-    );
-
-    console.log(
-      "ADMIN TOKEN SAVED:",
-      !!localStorage.getItem("adminToken")
-    );
-
-    console.log(
-      "ADMIN USER SAVED:",
-      JSON.parse(
+      console.log("====================================");
+      console.log("ADMIN AUTH SAVED");
+      console.log(
+        "adminToken:",
+        !!localStorage.getItem("adminToken")
+      );
+      console.log(
+        "token:",
+        !!localStorage.getItem("token")
+      );
+      console.log(
+        "adminUser:",
         localStorage.getItem("adminUser")
-      )
-    );
+      );
+      console.log("====================================");
 
-    // ==========================================
-    // GO TO ADMIN DASHBOARD
-    // ==========================================
+      // ==========================================
+      // GO DIRECTLY TO ADMIN DASHBOARD
+      // ==========================================
 
-    navigate("/admin", {
-      replace: true,
-    });
+      navigate("/admin", {
+        replace: true,
+      });
 
-  } catch (error) {
-    console.error(
-      "ADMIN LOGIN ERROR:",
-      error
-    );
+    } catch (error) {
+      console.error("====================================");
+      console.error("ADMIN LOGIN ERROR");
+      console.error("====================================");
 
-    console.error(
-      "ADMIN LOGIN RESPONSE ERROR:",
-      error?.response?.data
-    );
+      console.error("Error:", error);
+      console.error(
+        "Server response:",
+        error?.response?.data
+      );
 
-    setError(
-      error?.response?.data?.message ||
-      "Admin login failed"
-    );
+      setError(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Admin login failed"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  } finally {
-    setLoading(false);
-  }
-};
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <div className="admin-login-page">
@@ -193,8 +205,12 @@ const AdminLogin = () => {
 
       <div className="admin-login-card">
 
-        {/* Logo */}
+        {/* ======================================
+            LOGO
+        ====================================== */}
+
         <div className="admin-login-logo">
+
           <div className="admin-login-logo-icon">
             <ShieldCheck size={27} />
           </div>
@@ -203,32 +219,47 @@ const AdminLogin = () => {
             <h2>CareerPilot</h2>
             <span>Administration</span>
           </div>
+
         </div>
 
-        {/* Heading */}
+        {/* ======================================
+            HEADING
+        ====================================== */}
+
         <div className="admin-login-heading">
+
           <h1>Welcome back</h1>
 
           <p>
             Sign in to access the CareerPilot
             administration panel.
           </p>
+
         </div>
 
-        {/* Error */}
+        {/* ======================================
+            ERROR
+        ====================================== */}
+
         {error && (
           <div className="admin-login-error">
             {error}
           </div>
         )}
 
-        {/* Form */}
+        {/* ======================================
+            FORM
+        ====================================== */}
+
         <form
           className="admin-login-form"
           onSubmit={handleSubmit}
         >
 
-          {/* Email */}
+          {/* ====================================
+              EMAIL
+          ==================================== */}
+
           <div className="admin-input-group">
 
             <label htmlFor="admin-email">
@@ -251,12 +282,17 @@ const AdminLogin = () => {
                 placeholder="yashvi@careerpilot.com"
                 autoComplete="email"
                 disabled={loading}
+                required
               />
 
             </div>
+
           </div>
 
-          {/* Password */}
+          {/* ====================================
+              PASSWORD
+          ==================================== */}
+
           <div className="admin-input-group">
 
             <label htmlFor="admin-password">
@@ -283,6 +319,7 @@ const AdminLogin = () => {
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 disabled={loading}
+                required
               />
 
               <button
@@ -293,6 +330,7 @@ const AdminLogin = () => {
                     (prev) => !prev
                   )
                 }
+                disabled={loading}
               >
                 {showPassword ? (
                   <EyeOff size={18} />
@@ -302,9 +340,13 @@ const AdminLogin = () => {
               </button>
 
             </div>
+
           </div>
 
-          {/* Submit */}
+          {/* ====================================
+              SUBMIT
+          ==================================== */}
+
           <button
             type="submit"
             className="admin-login-submit"
@@ -327,10 +369,16 @@ const AdminLogin = () => {
 
         </form>
 
+        {/* ======================================
+            FOOTER
+        ====================================== */}
+
         <div className="admin-login-footer">
+
           <span>
             Authorized administrators only
           </span>
+
         </div>
 
       </div>
