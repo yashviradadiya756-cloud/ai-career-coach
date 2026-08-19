@@ -1,6 +1,11 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID
+);
 
 // ==========================================
 // REGISTER USER
@@ -206,6 +211,145 @@ const getProfile = async (req, res) => {
   }
 };
 
+// =====================================================
+// GOOGLE LOGIN
+// =====================================================
+
+const googleLogin = async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    console.log("======================================");
+    console.log("GOOGLE LOGIN");
+    console.log("======================================");
+
+    if (!credential) {
+      return res.status(400).json({
+        success: false,
+        message: "Google credential is required",
+      });
+    }
+
+    // -----------------------------------------------
+    // VERIFY GOOGLE TOKEN
+    // -----------------------------------------------
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    console.log("GOOGLE PAYLOAD:", payload);
+
+    const {
+      sub,
+      email,
+      name,
+      picture,
+      email_verified,
+    } = payload;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Google account email not found",
+      });
+    }
+
+    if (!email_verified) {
+      return res.status(401).json({
+        success: false,
+        message: "Google email is not verified",
+      });
+    }
+
+    // -----------------------------------------------
+    // FIND USER
+    // -----------------------------------------------
+
+    let user = await User.findOne({ email });
+
+    // -----------------------------------------------
+    // CREATE USER IF NOT EXISTS
+    // -----------------------------------------------
+
+    if (!user) {
+      let username = email
+        .split("@")[0]
+        .replace(/[^a-zA-Z0-9]/g, "");
+
+      // Prevent duplicate username
+      const usernameExists = await User.findOne({
+        username,
+      });
+
+      if (usernameExists) {
+        username = `${username}${Date.now()
+          .toString()
+          .slice(-5)}`;
+      }
+
+      user = await User.create({
+        name: name || username,
+        username,
+        email,
+        password: undefined,
+      });
+
+      console.log(
+        "NEW GOOGLE USER CREATED:",
+        user._id
+      );
+    } else {
+      console.log(
+        "EXISTING GOOGLE USER:",
+        user._id
+      );
+    }
+
+    // -----------------------------------------------
+    // GENERATE YOUR NORMAL JWT
+    // -----------------------------------------------
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "30d",
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Google login successful",
+
+      token,
+
+      user: {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        picture,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "GOOGLE LOGIN ERROR:",
+      error
+    );
+
+    return res.status(401).json({
+      success: false,
+      message: "Google authentication failed",
+    });
+  }
+};
+
 
 // ==========================================
 // EXPORT
@@ -215,4 +359,5 @@ module.exports = {
   registerUser,
   loginUser,
   getProfile,
+  googleLogin,
 };

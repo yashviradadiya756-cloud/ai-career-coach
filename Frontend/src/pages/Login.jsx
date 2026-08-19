@@ -14,7 +14,7 @@ import { GoogleLogin } from "@react-oauth/google";
 export default function Login() {
   const navigate = useNavigate();
 
-  const { login } = useAuth();
+  const { login, googleLogin, } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -143,11 +143,35 @@ export default function Login() {
           {/* GOOGLE LOGIN */}
           <div className="google-login-wrapper">
             <GoogleLogin
-            onSuccess={(credentialResponse) => {
-              console.log("Google credential:", credentialResponse);
+            onSuccess={async (credentialResponse) => {
+              try {
+                console.log(
+                  "Google credential received"
+                );
+
+                await googleLogin(
+                  credentialResponse.credential
+                );
+
+                alert("Google Login Successful");
+
+                navigate("/dashboard");
+              } catch (error) {
+                console.error(
+                  "Google login failed:",
+                  error
+                );
+
+                alert(
+                  error.response?.data?.message ||
+                  "Google Login Failed"
+                );
+              }
             }}
             onError={() => {
-              console.log("Google Login Failed");
+              console.error(
+                "Google Login Failed"
+              );
             }}
             width={380}
             size="large"

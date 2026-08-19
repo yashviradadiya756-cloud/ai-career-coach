@@ -5,7 +5,7 @@ import {
   useState,
 } from "react";
 
-import { loginUser, registerUser } from "../api/authApi";
+import { loginUser, registerUser, googleLoginUser,} from "../api/authApi";
 import { getProfile } from "../api/userApi";
 
 const AuthContext = createContext();
@@ -90,7 +90,38 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
   };
+  const googleLogin = async (credential) => {
+  try {
+    const res = await googleLoginUser(
+      credential
+    );
 
+    console.log(
+      "GOOGLE LOGIN RESPONSE:",
+      res.data
+    );
+
+    // Save CareerPilot JWT
+    localStorage.setItem(
+      "token",
+      res.data.token
+    );
+
+    // Save user
+    const userData = res.data.user;
+
+    saveUserData(userData);
+
+    return res.data;
+  } catch (error) {
+    console.error(
+      "Google login error:",
+      error
+    );
+
+    throw error;
+  }
+};
   // ==========================================
   // LOGOUT
   // ==========================================
@@ -155,6 +186,7 @@ export const AuthProvider = ({ children }) => {
         user,
         login,
         register,
+        googleLogin,
         logout,
         loading,
       }}
