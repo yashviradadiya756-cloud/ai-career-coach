@@ -3,9 +3,9 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  generateRoadmap,
-  getRoadmap,
-  updatePhaseCompletion,
+  generateRoadmapController,
+  getRoadmapController,
+  updatePhaseCompletionController,
 } = require("../controllers/roadmapController");
 
 const protect = require("../middleware/authMiddleware");
@@ -18,7 +18,7 @@ const protect = require("../middleware/authMiddleware");
 router.get(
   "/",
   protect,
-  getRoadmap
+  getRoadmapController
 );
 
 // ======================================================
@@ -29,7 +29,7 @@ router.get(
 router.post(
   "/generate",
   protect,
-  generateRoadmap
+  generateRoadmapController
 );
 
 // ======================================================
@@ -40,7 +40,7 @@ router.post(
 router.patch(
   "/phase/:phaseId",
   protect,
-  updatePhaseCompletion
+  updatePhaseCompletionController
 );
 
 module.exports = router;
