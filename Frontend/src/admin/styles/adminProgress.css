@@ -236,39 +236,252 @@
 ========================================== */
 
 .chart-card {
-  padding: 24px;
-  margin-bottom: 22px;
+  width: 100%;
+  box-sizing: border-box;
 
-  background: white;
+  padding: 24px;
+  margin-bottom: 32px;
+
+  background: #ffffff;
   border: 1px solid #e6e8ef;
   border-radius: 17px;
 
   box-shadow:
     0 5px 20px rgba(20, 30, 60, 0.04);
+
+  /* Important */
+  position: relative;
+  overflow: visible;
+
+  /* Make sure the chart has room */
+  min-height: 470px;
 }
+
+
+/* ==========================================
+   CHART HEADER
+========================================== */
 
 .chart-header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+
+  min-height: 48px;
+  margin-bottom: 20px;
+
+  position: relative;
+  z-index: 2;
 }
 
 .chart-header h2 {
   margin: 0;
+
   font-size: 18px;
   font-weight: 800;
+  color: #182033;
 }
 
 .chart-header p {
   margin: 5px 0 0;
+
   color: #858c9b;
   font-size: 12px;
+  line-height: 1.5;
 }
+
+
+/* ==========================================
+   CHART CONTAINER
+========================================== */
 
 .chart-container {
   width: 100%;
+  min-width: 0;
+
+  position: relative;
+
+  /*
+    IMPORTANT:
+    Reserve actual physical space for Recharts.
+  */
+  height: 360px;
+
+  overflow: visible;
 }
 
+
+/* ==========================================
+   RECHARTS
+========================================== */
+
+.chart-container .recharts-responsive-container {
+  width: 100% !important;
+  max-width: 100%;
+
+  position: relative;
+}
+
+
+/* ==========================================
+   SECOND CHART SPACING
+========================================== */
+
+.chart-card + .chart-card {
+  margin-top: 32px;
+}
+
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width: 800px) {
+
+  .chart-card {
+    padding: 18px;
+    margin-bottom: 25px;
+    min-height: auto;
+  }
+
+  .chart-header {
+    margin-bottom: 16px;
+  }
+
+  .chart-header h2 {
+    font-size: 16px;
+  }
+
+  .chart-header p {
+    font-size: 11px;
+  }
+
+  .chart-container {
+    height: 360px;
+  }
+}
+
+/* ==========================================
+   PROGRESS TABS
+========================================== */
+
+.progress-tabs-card {
+  width: 38%;
+  box-sizing: border-box;
+
+  margin-bottom: 20px;
+  padding: 5px;
+
+  background: #ffffff;
+
+  border: 1px solid #e6e8ef;
+  border-radius: 13px;
+
+  box-shadow:
+    0 4px 15px rgba(20, 30, 60, 0.04);
+}
+
+.progress-tabs {
+  display: flex;
+  gap: 5px;
+}
+
+/* ==========================================
+   SMALL TAB BUTTON
+========================================== */
+
+.progress-tab {
+  flex: 0 0 auto;
+
+  min-height: 52px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 8px 14px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: transparent;
+
+  color: #727a8a;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.progress-tab > svg {
+  flex-shrink: 0;
+
+  width: 17px;
+  height: 17px;
+}
+
+.progress-tab div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.progress-tab strong {
+  font-size: 13px;
+  font-weight: 800;
+
+  color: #4d5667;
+}
+
+.progress-tab span {
+  font-size: 10px;
+
+  color: #9299a7;
+}
+
+/* ==========================================
+   HOVER
+========================================== */
+
+.progress-tab:hover {
+  background: #f7f7fc;
+}
+
+.progress-tab:hover strong {
+  color: #5d50d0;
+}
+
+/* ==========================================
+   ACTIVE TAB
+========================================== */
+
+.progress-tab.active {
+  background: #eeebff;
+
+  color: #6d5dfc;
+
+  box-shadow:
+    0 2px 7px rgba(
+      109,
+      93,
+      252,
+      0.08
+    );
+}
+
+.progress-tab.active strong {
+  color: #5d50d0;
+}
+
+.progress-tab.active span {
+  color: #7770b5;
+}
 /* ==========================================
    TABLE CARD
 ========================================== */
