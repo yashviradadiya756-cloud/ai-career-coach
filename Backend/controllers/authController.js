@@ -216,6 +216,13 @@ const getProfile = async (req, res) => {
 // =====================================================
 
 const googleLogin = async (req, res) => {
+  console.log("🔥🔥🔥 NEW GOOGLE LOGIN CONTROLLER IS RUNNING 🔥🔥🔥");
+
+  return res.status(200).json({
+    success: true,
+    message: "TEST GOOGLE CONTROLLER",
+  });
+
   try {
     const { credential } = req.body;
 
