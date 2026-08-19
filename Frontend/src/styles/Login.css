@@ -231,6 +231,17 @@
 .google-btn:hover{
     background:#f8fafc;
 }
+/* ==========================================
+   GOOGLE LOGIN
+========================================== */
+
+.google-login-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+}
 
 .register{
     text-align:center;

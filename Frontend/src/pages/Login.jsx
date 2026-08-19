@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Login.css";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -140,14 +141,21 @@ export default function Login() {
           </div>
 
           {/* GOOGLE LOGIN */}
-          <button type="button" className="google-btn">
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google"
-            />
-            <span>Continue with Google</span>
-          </button>
-
+          <div className="google-login-wrapper">
+            <GoogleLogin
+            onSuccess={(credentialResponse) => {
+              console.log("Google credential:", credentialResponse);
+            }}
+            onError={() => {
+              console.log("Google Login Failed");
+            }}
+            width={380}
+            size="large"
+            text="signin_with"
+            shape="rectangular"
+            theme="outline"
+          />
+          </div>
           {/* REGISTER */}
           <p className="register">
             Don't have an account?
