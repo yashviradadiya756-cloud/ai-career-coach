@@ -230,9 +230,9 @@ const googleLogin = async (req, res) => {
       });
     }
 
-    // -----------------------------------------------
+    // ==========================================
     // VERIFY GOOGLE TOKEN
-    // -----------------------------------------------
+    // ==========================================
 
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
@@ -265,22 +265,28 @@ const googleLogin = async (req, res) => {
       });
     }
 
-    // -----------------------------------------------
+    // ==========================================
     // FIND USER
-    // -----------------------------------------------
+    // ==========================================
 
-    let user = await User.findOne({ email });
+    let user = await User.findOne({
+      email: email.toLowerCase(),
+    });
 
-    // -----------------------------------------------
-    // CREATE USER IF NOT EXISTS
-    // -----------------------------------------------
+    // ==========================================
+    // CREATE GOOGLE USER
+    // ==========================================
 
     if (!user) {
       let username = email
         .split("@")[0]
-        .replace(/[^a-zA-Z0-9]/g, "");
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .toLowerCase();
 
-      // Prevent duplicate username
+      if (!username) {
+        username = "googleuser";
+      }
+
       const usernameExists = await User.findOne({
         username,
       });
@@ -294,24 +300,41 @@ const googleLogin = async (req, res) => {
       user = await User.create({
         name: name || username,
         username,
-        email,
-        password: undefined,
+        email: email.toLowerCase(),
+        googleId: sub,
+        authProvider: "google",
+        profileImage: picture || "",
       });
 
       console.log(
         "NEW GOOGLE USER CREATED:",
         user._id
       );
-    } else {
+    }
+
+    // ==========================================
+    // EXISTING USER
+    // ==========================================
+
+    else {
+      user.googleId = sub;
+      user.authProvider = "google";
+
+      if (picture) {
+        user.profileImage = picture;
+      }
+
+      await user.save();
+
       console.log(
-        "EXISTING GOOGLE USER:",
+        "EXISTING USER LINKED TO GOOGLE:",
         user._id
       );
     }
 
-    // -----------------------------------------------
-    // GENERATE YOUR NORMAL JWT
-    // -----------------------------------------------
+    // ==========================================
+    // CREATE JWT
+    // ==========================================
 
     const token = jwt.sign(
       {
@@ -322,6 +345,10 @@ const googleLogin = async (req, res) => {
         expiresIn: "30d",
       }
     );
+
+    // ==========================================
+    // RESPONSE
+    // ==========================================
 
     return res.status(200).json({
       success: true,
@@ -334,18 +361,28 @@ const googleLogin = async (req, res) => {
         name: user.name,
         username: user.username,
         email: user.email,
-        picture,
+        phone: user.phone,
+        role: user.role,
+        plan: user.plan,
+        subscriptionStatus:
+          user.subscriptionStatus,
+        picture: user.profileImage,
+        authProvider: user.authProvider,
       },
     });
+
   } catch (error) {
-    console.error(
-      "GOOGLE LOGIN ERROR:",
-      error
-    );
+    console.error("======================================");
+    console.error("GOOGLE LOGIN ERROR");
+    console.error("======================================");
+    console.error("Message:", error.message);
+    console.error("Name:", error.name);
+    console.error("Stack:", error.stack);
 
     return res.status(401).json({
       success: false,
       message: "Google authentication failed",
+      error: error.message,
     });
   }
 };
