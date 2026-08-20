@@ -1,36 +1,70 @@
-import express from "express";
-import multer from "multer";
+const express = require("express");
+const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
 
-import {
+const {
   uploadResume,
   getLatestResume,
-} from "../controllers/resumeController.js";
+} = require("../controllers/resumeController");
 
-import { protect } from "../middleware/authMiddleware.js";
+const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// =====================================================
+// UPLOAD DIRECTORY
+// =====================================================
+
+const uploadsPath = path.join(
+  process.cwd(),
+  "uploads"
+);
+
+if (!fs.existsSync(uploadsPath)) {
+  fs.mkdirSync(uploadsPath, {
+    recursive: true,
+  });
+}
+
+// =====================================================
+// MULTER STORAGE
+// =====================================================
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, uploadsPath);
   },
 
   filename: (req, file, cb) => {
     const uniqueName =
-      Date.now() + "-" + file.originalname.replace(/\s+/g, "-");
+      Date.now() +
+      "-" +
+      file.originalname.replace(/\s+/g, "-");
 
     cb(null, uniqueName);
   },
 });
 
+// =====================================================
+// MULTER
+// =====================================================
+
 const upload = multer({
   storage,
 
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === "application/pdf") {
+    if (
+      file.mimetype ===
+      "application/pdf"
+    ) {
       cb(null, true);
     } else {
-      cb(new Error("Only PDF files are allowed"));
+      cb(
+        new Error(
+          "Only PDF files are allowed"
+        )
+      );
     }
   },
 
@@ -39,10 +73,39 @@ const upload = multer({
   },
 });
 
-// GET latest resume
-router.get("/latest", protect, getLatestResume);
+// =====================================================
+// DEBUG CHECK
+// =====================================================
 
-// POST upload resume
+console.log(
+  "protect:",
+  typeof protect
+);
+
+console.log(
+  "getLatestResume:",
+  typeof getLatestResume
+);
+
+console.log(
+  "uploadResume:",
+  typeof uploadResume
+);
+
+// =====================================================
+// GET LATEST RESUME
+// =====================================================
+
+router.get(
+  "/latest",
+  protect,
+  getLatestResume
+);
+
+// =====================================================
+// UPLOAD RESUME
+// =====================================================
+
 router.post(
   "/upload",
   protect,
@@ -50,4 +113,8 @@ router.post(
   uploadResume
 );
 
-export default router;
+// =====================================================
+// EXPORT
+// =====================================================
+
+module.exports = router;

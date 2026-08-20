@@ -1,10 +1,13 @@
-import fs from "fs";
-import path from "path";
-import pdfParse from "pdf-parse";
+const fs = require("fs");
+const pdfParse = require("pdf-parse");
 
-import Resume from "../models/Resume.js";
+const Resume = require("../models/Resume");
 
-export const uploadResume = async (req, res) => {
+// =====================================================
+// UPLOAD RESUME
+// =====================================================
+
+const uploadResume = async (req, res) => {
   try {
     console.log("=================================");
     console.log("RESUME UPLOAD STARTED");
@@ -13,6 +16,7 @@ export const uploadResume = async (req, res) => {
     console.log("USER:", req.user);
     console.log("FILE:", req.file);
 
+    // Check authentication
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -20,6 +24,7 @@ export const uploadResume = async (req, res) => {
       });
     }
 
+    // Check file
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -27,9 +32,9 @@ export const uploadResume = async (req, res) => {
       });
     }
 
-    // ----------------------------------
+    // ==========================================
     // READ PDF
-    // ----------------------------------
+    // ==========================================
 
     const filePath = req.file.path;
 
@@ -41,11 +46,14 @@ export const uploadResume = async (req, res) => {
 
     const resumeText = pdfData.text || "";
 
-    console.log("PDF TEXT LENGTH:", resumeText.length);
+    console.log(
+      "PDF TEXT LENGTH:",
+      resumeText.length
+    );
 
-    // ----------------------------------
-    // CREATE RESUME
-    // ----------------------------------
+    // ==========================================
+    // SAVE RESUME
+    // ==========================================
 
     const resume = await Resume.create({
       user: req.user._id,
@@ -54,7 +62,7 @@ export const uploadResume = async (req, res) => {
 
       filePath: req.file.path,
 
-      resumeText,
+      resumeText: resumeText,
 
       atsScore: 0,
 
@@ -67,7 +75,10 @@ export const uploadResume = async (req, res) => {
       suggestions: [],
     });
 
-    console.log("RESUME SAVED:", resume._id);
+    console.log(
+      "RESUME SAVED:",
+      resume._id
+    );
 
     return res.status(201).json({
       success: true,
@@ -77,33 +88,54 @@ export const uploadResume = async (req, res) => {
       resume,
     });
   } catch (error) {
-    console.error("=================================");
-    console.error("RESUME UPLOAD ERROR");
-    console.error("=================================");
+    console.error(
+      "================================="
+    );
+
+    console.error(
+      "RESUME UPLOAD ERROR:"
+    );
+
     console.error(error);
+
+    console.error(
+      "================================="
+    );
 
     return res.status(500).json({
       success: false,
 
-      message: error.message || "Resume upload failed",
-
-      error:
-        process.env.NODE_ENV === "production"
-          ? undefined
-          : error.stack,
+      message:
+        error.message ||
+        "Resume upload failed",
     });
   }
 };
 
-// ----------------------------------
+// =====================================================
 // GET LATEST RESUME
-// ----------------------------------
+// =====================================================
 
-export const getLatestResume = async (req, res) => {
+const getLatestResume = async (req, res) => {
   try {
-    console.log("GET LATEST RESUME");
-    console.log("USER ID:", req.user?._id);
+    console.log(
+      "================================="
+    );
 
+    console.log(
+      "GET LATEST RESUME"
+    );
+
+    console.log(
+      "USER:",
+      req.user
+    );
+
+    console.log(
+      "================================="
+    );
+
+    // Check authentication
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -111,12 +143,14 @@ export const getLatestResume = async (req, res) => {
       });
     }
 
+    // Find latest resume
     const resume = await Resume.findOne({
       user: req.user._id,
     }).sort({
       createdAt: -1,
     });
 
+    // No resume
     if (!resume) {
       return res.status(404).json({
         success: false,
@@ -124,16 +158,32 @@ export const getLatestResume = async (req, res) => {
       });
     }
 
+    // Resume found
     return res.status(200).json({
       success: true,
       resume,
     });
   } catch (error) {
-    console.error("GET LATEST RESUME ERROR:", error);
+    console.error(
+      "GET LATEST RESUME ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to get latest resume",
+
+      message:
+        error.message ||
+        "Failed to get latest resume",
     });
   }
+};
+
+// =====================================================
+// EXPORTS
+// =====================================================
+
+module.exports = {
+  uploadResume,
+  getLatestResume,
 };

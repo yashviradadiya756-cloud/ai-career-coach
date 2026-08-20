@@ -1,20 +1,43 @@
 const express = require("express");
 
-const router = express.Router();
-
-const protect = require("../middleware/authMiddleware");
-
 const {
   getProfile,
+  updateProfile,
 } = require("../controllers/userController");
 
-console.log("USER getProfile:", typeof getProfile);
-console.log("USER protect:", typeof protect);
+const { protect } = require("../middleware/authMiddleware");
+
+const router = express.Router();
+
+// =====================================================
+// DEBUG
+// =====================================================
+
+console.log("=================================");
+console.log("USER ROUTES");
+console.log("protect:", typeof protect);
+console.log("getProfile:", typeof getProfile);
+console.log("updateProfile:", typeof updateProfile);
+console.log("=================================");
+
+// =====================================================
+// GET PROFILE
+// =====================================================
 
 router.get(
   "/profile",
   protect,
   getProfile
+);
+
+// =====================================================
+// UPDATE PROFILE
+// =====================================================
+
+router.put(
+  "/profile",
+  protect,
+  updateProfile
 );
 
 module.exports = router;
