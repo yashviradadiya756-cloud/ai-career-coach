@@ -14,6 +14,8 @@ export default function Resume() {
     try {
       setDataLoading(true);
       const response = await getLatestResume();
+      console.log("FETCH RESUME RESPONSE:", response); 
+      console.log("RESUME OBJECT:", response?.resume);
       setResumeData(response?.resume || null);
     } catch (err) {
       if (err.response?.status === 404) {

@@ -22,14 +22,16 @@ export const uploadResume = async (formData) => {
   try {
     const response = await api.post(
       "/api/resume/upload",
-      formData
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data", // ← add this
+        },
+      }
     );
     return response.data;
   } catch (error) {
-    console.error(
-      "UPLOAD RESUME ERROR:",
-      error.response?.data || error.message
-    );
+    console.error("UPLOAD RESUME ERROR:", error.response?.data || error.message);
     throw error;
   }
 };
