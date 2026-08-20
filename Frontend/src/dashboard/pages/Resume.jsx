@@ -9,110 +9,84 @@ export default function Resume() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // ✅ Single fetchResume function — called in useEffect
   const fetchResume = async () => {
-  try {
-    setDataLoading(true);
-
-    const response = await getLatestResume();
-
-    console.log(
-      "LATEST RESUME RESPONSE:",
-      response.data
-    );
-
-    setResumeData(
-      response.data?.resume || null
-    );
-  } catch (error) {
-    if (error.response?.status === 404) {
-      // No resume uploaded yet.
-      // This is not a frontend error.
+    try {
+      setDataLoading(true);
+      const response = await getLatestResume();
+      setResumeData(response?.resume || null);
+    } catch (err) {
+      if (err.response?.status === 404) {
+        // No resume yet — not a real error
+        setResumeData(null);
+        return;
+      }
+      console.error("FETCH RESUME ERROR:", err.response?.data || err.message);
       setResumeData(null);
-      setResume(null);
-      return;
+    } finally {
+      setDataLoading(false);
     }
+  };
 
-    console.error(
-      "FETCH RESUME ERROR:",
-      error.response?.data || error.message
-    );
-
-    setResumeData(null);
-  } finally {
-    setDataLoading(false);
-  }
-};
-
+  // ✅ Call the outer fetchResume
   useEffect(() => {
     fetchResume();
   }, []);
 
-  const tips = [
-    "Use ATS-friendly keywords",
-    "Keep your resume to one page",
-    "Highlight projects and internships",
-    "Add measurable achievements",
-    "Use a professional summary",
-  ];
-
   // Handle PDF Selection
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-
     if (!file) return;
-
-    if (
-      file.type !== "application/pdf" &&
-      !file.name.toLowerCase().endsWith(".pdf")
-    ) {
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
       setError("❌ Only PDF files are allowed.");
       setResume(null);
       e.target.value = "";
       return;
     }
-
     setError("");
     setResume(file);
   };
 
-  // Upload Resume
   const removeFile = () => {
     setResume(null);
     setError("");
-
     const input = document.getElementById("resumeUpload");
-
     if (input) input.value = "";
   };
 
+  // ✅ Fixed: use `resume` (the state variable), not `selectedFile`
   const handleAnalyze = async () => {
-    if (!resume) {
-      alert("Select a PDF first");
-      return;
-    }
-
     try {
+      if (!resume) {
+        alert("Please select a PDF resume first.");
+        return;
+      }
+      if (resume.type !== "application/pdf") {
+        alert("Only PDF files are allowed.");
+        return;
+      }
+      if (resume.size > 5 * 1024 * 1024) {
+        alert("Resume must be smaller than 5 MB.");
+        return;
+      }
+
       setLoading(true);
-
       const formData = new FormData();
-
       formData.append("resume", resume);
 
-      await uploadResume(formData);
-
-      alert("Resume Uploaded Successfully");
-
-      await fetchResume();
-
-      removeFile();
+      const response = await uploadResume(formData);
+      console.log("UPLOAD SUCCESS:", response);
+      alert("Resume uploaded successfully!");
+      await fetchResume(); // Refresh resume data after upload
     } catch (err) {
-      console.log(err);
-
-      alert(err.response?.data?.message || "Upload Failed");
+      console.error("RESUME UPLOAD ERROR:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Resume upload failed");
     } finally {
       setLoading(false);
     }
   };
+
+  // ... rest of your JSX (unchanged)
 
   return (
     <div style={styles.container}>

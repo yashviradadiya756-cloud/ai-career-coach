@@ -152,11 +152,13 @@ const getLatestResume = async (req, res) => {
 
     // No resume
     if (!resume) {
-      return res.status(404).json({
-        success: false,
-        message: "No resume found",
-      });
-    }
+    return res.status(200).json({
+      success: true,
+      hasResume: false,
+      resume: null,
+      message: "No resume found",
+    });
+  }
 
     // Resume found
     return res.status(200).json({

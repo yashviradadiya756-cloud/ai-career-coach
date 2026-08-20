@@ -95,6 +95,13 @@ app.get("/api/learning-test", (req, res) => {
   });
 });
 
+app.get("/api/resume-test", (req, res) => {
+  res.json({
+    success: true,
+    message: "Resume API is working",
+  });
+});
+
 console.log("================================");
 console.log("CHECKING ROUTES");
 
