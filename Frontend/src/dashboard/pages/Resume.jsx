@@ -9,26 +9,30 @@ export default function Resume() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ Single fetchResume function — called in useEffect
   const fetchResume = async () => {
-    try {
-      setDataLoading(true);
-      const response = await getLatestResume();
-      console.log("FETCH RESUME RESPONSE:", response); 
-      console.log("RESUME OBJECT:", response?.resume);
-      setResumeData(response?.resume || null);
-    } catch (err) {
-      if (err.response?.status === 404) {
-        // No resume yet — not a real error
-        setResumeData(null);
-        return;
-      }
-      console.error("FETCH RESUME ERROR:", err.response?.data || err.message);
+  try {
+    setDataLoading(true);
+    const response = await getLatestResume();
+
+    // ✅ FIX: getLatestResume returns null on 404 — handle it here
+    if (!response) {
       setResumeData(null);
-    } finally {
-      setDataLoading(false);
+      return;
     }
-  };
+
+    console.log("FETCH RESUME RESPONSE:", response);
+    console.log("RESUME OBJECT:", response.resume);
+    console.log("ANALYSIS STATUS:", response.resume?.analysisStatus);
+    console.log("STRENGTHS:", response.resume?.strengths);
+
+    setResumeData(response.resume || null);
+  } catch (err) {
+    console.error("FETCH RESUME ERROR:", err.response?.data || err.message);
+    setResumeData(null);
+  } finally {
+    setDataLoading(false);
+  }
+};
 
   // ✅ Call the outer fetchResume
   useEffect(() => {

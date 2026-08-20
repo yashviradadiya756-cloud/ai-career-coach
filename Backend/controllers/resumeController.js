@@ -1,16 +1,19 @@
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-
 const Resume = require("../models/Resume");
 
 // =====================================================
 // GEMINI AI SETUP
 // =====================================================
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 const analyzeResumeWithAI = async (resumeText) => {
+  // ✅ FIX: Check API key exists before attempting
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not set in environment variables");
+  }
+
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `
@@ -34,13 +37,26 @@ Respond with ONLY a raw JSON object — no markdown, no code blocks, no explanat
   const result = await model.generateContent(prompt);
   let text = result.response.text().trim();
 
-  // Strip markdown code fences if present
-  text = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+  console.log("RAW AI RESPONSE:", text.substring(0, 500)); // ✅ Log what Gemini actually returned
+
+  // ✅ FIX: Strip markdown fences
+  text = text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
+
+  // ✅ FIX: Extract JSON object even if Gemini adds surrounding text
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error(`No JSON found in AI response. Got: ${text.substring(0, 200)}`);
+  }
+  text = jsonMatch[0];
 
   const parsed = JSON.parse(text);
 
   return {
-    atsScore:      Number(parsed.atsScore)      || 0,
+    atsScore:      Number(parsed.atsScore)                              || 0,
     strengths:     Array.isArray(parsed.strengths)     ? parsed.strengths     : [],
     weaknesses:    Array.isArray(parsed.weaknesses)    ? parsed.weaknesses    : [],
     missingSkills: Array.isArray(parsed.missingSkills) ? parsed.missingSkills : [],
@@ -82,6 +98,7 @@ const uploadResume = async (req, res) => {
     // ==========================================
 
     console.log("Running AI analysis...");
+    console.log("GEMINI_API_KEY present:", !!process.env.GEMINI_API_KEY); // ✅ log key presence
 
     let analysis = {
       atsScore: 0,
@@ -90,12 +107,18 @@ const uploadResume = async (req, res) => {
       missingSkills: [],
       suggestions: [],
     };
+    let analysisStatus = "success";
 
     try {
       analysis = await analyzeResumeWithAI(resumeText);
-      console.log("AI ANALYSIS DONE:", analysis);
+      console.log("AI ANALYSIS DONE:", JSON.stringify(analysis));
     } catch (aiError) {
-      console.error("AI ANALYSIS FAILED (saving with defaults):", aiError.message);
+      analysisStatus = "failed";
+      // ✅ FIX: Log the FULL error so you can see it on Render logs
+      console.error("===== AI ANALYSIS FAILED =====");
+      console.error("Error message:", aiError.message);
+      console.error("Error stack:", aiError.stack);
+      console.error("==============================");
     }
 
     // ==========================================
@@ -103,18 +126,20 @@ const uploadResume = async (req, res) => {
     // ==========================================
 
     const resume = await Resume.create({
-      user:          req.user._id,
-      fileName:      req.file.originalname,
-      filePath:      req.file.path,
+      user:           req.user._id,
+      fileName:       req.file.originalname,
+      filePath:       req.file.path,
       resumeText,
-      atsScore:      analysis.atsScore,
-      strengths:     analysis.strengths,
-      weaknesses:    analysis.weaknesses,
-      missingSkills: analysis.missingSkills,
-      suggestions:   analysis.suggestions,
+      atsScore:       analysis.atsScore,
+      strengths:      analysis.strengths,
+      weaknesses:     analysis.weaknesses,
+      missingSkills:  analysis.missingSkills,
+      suggestions:    analysis.suggestions,
+      analysisStatus, // ✅ track whether AI succeeded
     });
 
     console.log("RESUME SAVED:", resume._id);
+    console.log("ANALYSIS STATUS:", analysisStatus);
 
     return res.status(201).json({
       success: true,
@@ -144,10 +169,7 @@ const getLatestResume = async (req, res) => {
     const resume = await Resume.findOne({ user: req.user._id }).sort({ createdAt: -1 });
 
     if (!resume) {
-      return res.status(404).json({
-        success: false,
-        message: "No resume found",
-      });
+      return res.status(404).json({ success: false, message: "No resume found" });
     }
 
     return res.status(200).json({ success: true, resume });
@@ -160,9 +182,5 @@ const getLatestResume = async (req, res) => {
     });
   }
 };
-
-// =====================================================
-// EXPORTS
-// =====================================================
 
 module.exports = { uploadResume, getLatestResume };

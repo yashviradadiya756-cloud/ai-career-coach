@@ -43,6 +43,12 @@ const resumeSchema = new mongoose.Schema(
       default: [],
     },
 
+    analysisStatus: {
+      type: String,
+      enum: ["success", "failed", "pending"],
+      default: "pending",
+    },
+
     suggestions: {
       type: [String],
       default: [],
