@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const resumeSchema = new mongoose.Schema(
   {
@@ -18,7 +18,6 @@ const resumeSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Store extracted resume text
     resumeText: {
       type: String,
       default: "",
@@ -54,4 +53,4 @@ const resumeSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Resume", resumeSchema);
+export default mongoose.model("Resume", resumeSchema);

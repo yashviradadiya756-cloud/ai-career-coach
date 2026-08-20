@@ -1,111 +1,113 @@
-const Resume = require("../models/Resume");
-const extractResumeText = require("../utils/pdfParser");
-const analyzeResume = require("../utils/geminiResumeAnalyzer");
+import fs from "fs";
+import path from "path";
+import pdfParse from "pdf-parse";
 
-// ======================================================
-// UPLOAD RESUME
-// ======================================================
+import Resume from "../models/Resume.js";
 
-const uploadResume = async (req, res) => {
+export const uploadResume = async (req, res) => {
   try {
     console.log("=================================");
     console.log("RESUME UPLOAD STARTED");
-    console.log("User:", req.user?._id);
-    console.log("File:", req.file);
     console.log("=================================");
+
+    console.log("USER:", req.user);
+    console.log("FILE:", req.file);
 
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: "User not authenticated",
+        message: "Authentication required",
       });
     }
 
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "No PDF uploaded",
+        message: "Please upload a PDF resume",
       });
     }
 
-    console.log("Step 1: File received");
+    // ----------------------------------
+    // READ PDF
+    // ----------------------------------
 
-    console.log("Step 2: Extracting PDF");
+    const filePath = req.file.path;
 
-    const resumeText = await extractResumeText(
-      req.file.path
-    );
+    console.log("PDF PATH:", filePath);
 
-    console.log("Step 3: Resume extracted");
+    const pdfBuffer = fs.readFileSync(filePath);
 
-    console.log(
-      resumeText.substring(0, 200)
-    );
+    const pdfData = await pdfParse(pdfBuffer);
 
-    console.log("Step 4: Calling Gemini");
+    const resumeText = pdfData.text || "";
 
-    const analysis = await analyzeResume(
-      resumeText
-    );
+    console.log("PDF TEXT LENGTH:", resumeText.length);
 
-    console.log("Step 5: Gemini Result");
-    console.log(analysis);
-
-    console.log("Step 6: Saving MongoDB");
+    // ----------------------------------
+    // CREATE RESUME
+    // ----------------------------------
 
     const resume = await Resume.create({
       user: req.user._id,
+
       fileName: req.file.originalname,
+
       filePath: req.file.path,
-      resumeText: resumeText,
 
-      atsScore: analysis.atsScore || 0,
+      resumeText,
 
-      strengths:
-        analysis.strengths || [],
+      atsScore: 0,
 
-      weaknesses:
-        analysis.weaknesses || [],
+      strengths: [],
 
-      missingSkills:
-        analysis.missingSkills || [],
+      weaknesses: [],
 
-      suggestions:
-        analysis.suggestions || [],
+      missingSkills: [],
+
+      suggestions: [],
     });
 
-    console.log(
-      "Step 7: Resume saved in MongoDB"
-    );
+    console.log("RESUME SAVED:", resume._id);
 
     return res.status(201).json({
       success: true,
+
       message: "Resume uploaded successfully",
+
       resume,
     });
-
   } catch (error) {
     console.error("=================================");
-    console.error("UPLOAD ERROR:", error);
+    console.error("RESUME UPLOAD ERROR");
     console.error("=================================");
+    console.error(error);
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+
+      message: error.message || "Resume upload failed",
+
+      error:
+        process.env.NODE_ENV === "production"
+          ? undefined
+          : error.stack,
     });
   }
 };
 
-// ======================================================
-// GET LATEST USER RESUME
-// ======================================================
+// ----------------------------------
+// GET LATEST RESUME
+// ----------------------------------
 
-const getLatestResume = async (req, res) => {
+export const getLatestResume = async (req, res) => {
   try {
+    console.log("GET LATEST RESUME");
+    console.log("USER ID:", req.user?._id);
+
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: "User not authenticated",
+        message: "Authentication required",
       });
     }
 
@@ -126,21 +128,12 @@ const getLatestResume = async (req, res) => {
       success: true,
       resume,
     });
-
   } catch (error) {
-    console.error(
-      "Get Latest Resume Error:",
-      error
-    );
+    console.error("GET LATEST RESUME ERROR:", error);
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Failed to get latest resume",
     });
   }
-};
-
-module.exports = {
-  uploadResume,
-  getLatestResume,
 };

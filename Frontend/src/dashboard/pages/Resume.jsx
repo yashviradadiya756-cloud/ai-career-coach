@@ -10,25 +10,26 @@ export default function Resume() {
   const [error, setError] = useState("");
 
   const fetchResume = async () => {
-    try {
-      setDataLoading(true);
+  try {
+    setDataLoading(true);
 
-      const response = await getLatestResume();
+    const response = await getLatestResume();
 
-      console.log("LATEST RESUME RESPONSE:", response.data);
+    console.log("LATEST RESUME RESPONSE:", response.data);
 
-      setResumeData(response.data.resume);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setResume(null);
-        return;
-      }
-
-      console.log(error);
-    } finally {
-      setDataLoading(false);
+    setResumeData(response.data.resume);
+  } catch (error) {
+    if (error.response?.status === 404) {
+      setResume(null);
+      setResumeData(null);
+      return;
     }
-  };
+
+    console.error("FETCH RESUME ERROR:", error);
+  } finally {
+    setDataLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchResume();

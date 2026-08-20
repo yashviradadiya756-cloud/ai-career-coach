@@ -1,31 +1,48 @@
-const express = require("express");
+import express from "express";
+import multer from "multer";
+
+import {
+  uploadResume,
+  getLatestResume,
+} from "../controllers/resumeController.js";
+
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-const { protect } = require("../middleware/authMiddleware");
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
 
-const upload = require("../middleware/uploadMiddleware");
+  filename: (req, file, cb) => {
+    const uniqueName =
+      Date.now() + "-" + file.originalname.replace(/\s+/g, "-");
 
-const {
-  uploadResume,
-  getLatestResume,
-} = require("../controllers/resumeController");
-
-// ======================================================
-// DEBUG ROUTE
-// ======================================================
-
-router.get("/test", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Resume route is working",
-  });
+    cb(null, uniqueName);
+  },
 });
 
-// ======================================================
-// UPLOAD RESUME
-// ======================================================
+const upload = multer({
+  storage,
 
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/pdf") {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF files are allowed"));
+    }
+  },
+
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+});
+
+// GET latest resume
+router.get("/latest", protect, getLatestResume);
+
+// POST upload resume
 router.post(
   "/upload",
   protect,
@@ -33,14 +50,4 @@ router.post(
   uploadResume
 );
 
-// ======================================================
-// GET LATEST RESUME
-// ======================================================
-
-router.get(
-  "/latest",
-  protect,
-  getLatestResume
-);
-
-module.exports = router;
+export default router;
