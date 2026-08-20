@@ -7,6 +7,7 @@ import {
   Eye,
   EyeOff,
   BriefcaseBusiness,
+  Phone,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
@@ -183,6 +184,8 @@ export default function Register() {
           <label>Phone Number</label>
 
           <div className="input-box">
+            <Phone size={20} className="icon" />
+
             <input
               type="tel"
               name="phone"

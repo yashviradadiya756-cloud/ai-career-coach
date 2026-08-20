@@ -8,7 +8,18 @@ const analyzeResume = require("../utils/geminiResumeAnalyzer");
 
 const uploadResume = async (req, res) => {
   try {
-    console.log("Step 1: File received");
+    console.log("=================================");
+    console.log("RESUME UPLOAD STARTED");
+    console.log("User:", req.user?._id);
+    console.log("File:", req.file);
+    console.log("=================================");
+
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
 
     if (!req.file) {
       return res.status(400).json({
@@ -16,6 +27,8 @@ const uploadResume = async (req, res) => {
         message: "No PDF uploaded",
       });
     }
+
+    console.log("Step 1: File received");
 
     console.log("Step 2: Extracting PDF");
 
@@ -45,13 +58,18 @@ const uploadResume = async (req, res) => {
       fileName: req.file.originalname,
       filePath: req.file.path,
       resumeText: resumeText,
+
       atsScore: analysis.atsScore || 0,
+
       strengths:
         analysis.strengths || [],
+
       weaknesses:
         analysis.weaknesses || [],
+
       missingSkills:
         analysis.missingSkills || [],
+
       suggestions:
         analysis.suggestions || [],
     });
@@ -62,14 +80,14 @@ const uploadResume = async (req, res) => {
 
     return res.status(201).json({
       success: true,
+      message: "Resume uploaded successfully",
       resume,
     });
 
   } catch (error) {
-    console.error(
-      "UPLOAD ERROR:",
-      error
-    );
+    console.error("=================================");
+    console.error("UPLOAD ERROR:", error);
+    console.error("=================================");
 
     return res.status(500).json({
       success: false,
@@ -82,17 +100,20 @@ const uploadResume = async (req, res) => {
 // GET LATEST USER RESUME
 // ======================================================
 
-const getLatestResume = async (
-  req,
-  res
-) => {
+const getLatestResume = async (req, res) => {
   try {
-    const resume =
-      await Resume.findOne({
-        user: req.user._id,
-      }).sort({
-        createdAt: -1,
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
       });
+    }
+
+    const resume = await Resume.findOne({
+      user: req.user._id,
+    }).sort({
+      createdAt: -1,
+    });
 
     if (!resume) {
       return res.status(404).json({
