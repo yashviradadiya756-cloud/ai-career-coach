@@ -1,5 +1,7 @@
 const express = require("express");
-const router = express.Router();
+
+const router =
+  express.Router();
 
 const {
   uploadResume,
@@ -12,7 +14,10 @@ const protect =
 const upload =
   require("../middleware/uploadMiddleware");
 
-// Upload resume
+// =====================================================
+// UPLOAD RESUME
+// =====================================================
+
 router.post(
   "/upload",
   protect,
@@ -20,7 +25,10 @@ router.post(
   uploadResume
 );
 
-// Latest resume
+// =====================================================
+// GET LATEST RESUME
+// =====================================================
+
 router.get(
   "/latest",
   protect,

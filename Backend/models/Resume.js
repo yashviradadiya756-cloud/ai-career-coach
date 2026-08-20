@@ -58,6 +58,11 @@ const resumeSchema =
         ],
         default: "processing",
       },
+
+      analysisError: {
+        type: String,
+        default: "",
+      },
     },
     {
       timestamps: true,

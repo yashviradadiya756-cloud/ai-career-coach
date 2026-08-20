@@ -83,6 +83,22 @@ app.use(
   express.static(path.join(__dirname, "uploads"))
 );
 
+app.get(
+  "/api/resume-test",
+  (req, res) => {
+
+    console.log(
+      "RESUME TEST ROUTE HIT"
+    );
+
+    res.json({
+      success: true,
+      message:
+        "Resume API is reachable",
+    });
+  }
+);
+
 app.get("/", (req, res) => {
   res.send("AI Career Coach Backend is Running...");
 });
@@ -95,11 +111,52 @@ app.get("/api/learning-test", (req, res) => {
   });
 });
 
-app.get("/api/resume-test", (req, res) => {
-  res.json({
-    success: true,
-    message: "Resume API is working",
-  });
+const { testGemini, } = require("./config/gemini");
+
+app.get("/api/gemini-test", async (req, res) => {
+
+  console.log("================================");
+  console.log("GEMINI TEST ROUTE HIT");
+  console.log("================================");
+
+  try {
+
+    const response =
+      await testGemini();
+
+    if (!response) {
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Gemini test failed",
+      });
+    }
+
+    res.json({
+      success: true,
+      message:
+        "Gemini API is working",
+      response:
+        response.text || "",
+    });
+
+  } catch (error) {
+
+    console.error(
+      "GEMINI TEST ROUTE ERROR:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message:
+        "Gemini API test failed",
+      error:
+        error?.message ||
+        String(error),
+    });
+  }
 });
 
 console.log("================================");
@@ -137,10 +194,6 @@ app.use("/api/achievement", achievementRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/settings", settingsRoutes); 
-
-// ===============================
-// ADMIN ROUTES
-// ===============================
 
 // ===============================
 // ADMIN ROUTES
