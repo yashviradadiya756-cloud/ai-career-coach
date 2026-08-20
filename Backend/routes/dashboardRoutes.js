@@ -8,9 +8,7 @@ const {
 } = require("../controllers/dashboardController");
 
 // Middleware
-const {
-  protect,
-} = require("../middleware/authMiddleware");
+const protect = require("../middleware/authMiddleware");
 
 // =====================================================
 // GET DASHBOARD OVERVIEW

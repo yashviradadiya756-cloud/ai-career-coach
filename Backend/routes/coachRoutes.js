@@ -4,7 +4,7 @@ const router = express.Router();
 
 // IMPORTANT: use this form because this is how your middleware
 // is exported in your current project
-const { protect } = require("../middleware/authMiddleware")
+const protect = require("../middleware/authMiddleware");
 
 const {
   askCoachController,

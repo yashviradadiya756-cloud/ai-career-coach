@@ -10,7 +10,7 @@ const {
   deleteAccount,
 } = require("../controllers/settingsController");
 
-const { protect } = require("../middleware/authMiddleware")
+const protect = require("../middleware/authMiddleware");
 
 
 // Get current user settings

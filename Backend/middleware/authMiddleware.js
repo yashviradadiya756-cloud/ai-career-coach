@@ -66,6 +66,4 @@ const protect = async (req, res, next) => {
 // EXPORT
 // =====================================================
 
-module.exports = {
-  protect,
-};
+module.exports = protect;

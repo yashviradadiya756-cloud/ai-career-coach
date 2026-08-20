@@ -7,9 +7,7 @@ const {
   getLatestSkillGap,
 } = require("../controllers/skillGapController");
 
-const {
-  protect,
-} = require("../middleware/authMiddleware");
+const protect = require("../middleware/authMiddleware");
 
 // =====================================================
 // DEBUG
