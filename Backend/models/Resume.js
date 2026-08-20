@@ -26,6 +26,8 @@ const resumeSchema = new mongoose.Schema(
     atsScore: {
       type: Number,
       default: 0,
+      min: 0,
+      max: 100,
     },
 
     strengths: {
@@ -43,15 +45,15 @@ const resumeSchema = new mongoose.Schema(
       default: [],
     },
 
+    suggestions: {
+      type: [String],
+      default: [],
+    },
+
     analysisStatus: {
       type: String,
       enum: ["success", "failed", "pending"],
       default: "pending",
-    },
-
-    suggestions: {
-      type: [String],
-      default: [],
     },
   },
   {
@@ -59,4 +61,7 @@ const resumeSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Resume", resumeSchema);
+module.exports = mongoose.model(
+  "Resume",
+  resumeSchema
+);
