@@ -1,175 +1,542 @@
+const fs = require("fs");
+const path = require("path");
+
+const pdfParse = require("pdf-parse");
+
 const Resume = require("../models/Resume");
-const analyzeResume = require("../services/resumeAnalyzer");
 
-// =====================================================
-// GET LATEST RESUME
-// =====================================================
-
-const getLatestResume = async (req, res) => {
-  try {
-    console.log("🔥 GET LATEST RESUME");
-
-    const resume = await Resume.findOne({
-      user: req.user._id,
-    }).sort({ createdAt: -1 });
-
-    if (!resume) {
-      return res.status(404).json({
-        success: false,
-        message: "No resume found",
-      });
-    }
-
-    console.log("🔥 Latest resume:", resume._id);
-    console.log("🔥 Analysis status:", resume.analysisStatus);
-
-    return res.status(200).json({
-      success: true,
-      resume,
-    });
-  } catch (error) {
-    console.error("GET LATEST RESUME ERROR:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch resume",
-      error: error.message,
-    });
-  }
-};
+const {
+  generateContent,
+  PRIMARY_MODEL,
+  FALLBACK_MODEL,
+} = require("../services/geminiService");
 
 // =====================================================
 // UPLOAD + ANALYZE RESUME
 // =====================================================
 
 const uploadResume = async (req, res) => {
-  console.log("=================================");
-  console.log("🔥 RESUME UPLOAD CONTROLLER CALLED");
-  console.log("=================================");
 
-  let resume = null;
+  let savedResume = null;
 
   try {
-    // -------------------------------------------------
+
+    console.log("=================================");
+    console.log("RESUME UPLOAD STARTED");
+    console.log("=================================");
+
+    // =================================================
     // CHECK FILE
-    // -------------------------------------------------
+    // =================================================
 
     if (!req.file) {
+
+      console.log(
+        "NO FILE RECEIVED"
+      );
+
       return res.status(400).json({
         success: false,
         message: "Please upload a PDF resume",
       });
     }
 
-    console.log("🔥 File:", req.file.originalname);
-    console.log("🔥 Saved filename:", req.file.filename);
-    console.log("🔥 File path:", req.file.path);
+    console.log(
+      "FILE NAME:",
+      req.file.originalname
+    );
 
-    // -------------------------------------------------
-    // SAVE INITIAL RESUME
-    // -------------------------------------------------
+    console.log(
+      "FILE MIME:",
+      req.file.mimetype
+    );
 
-    resume = await Resume.create({
-      user: req.user._id,
-      fileName: req.file.originalname,
-      filePath: req.file.path,
-      analysisStatus: "pending",
-    });
+    console.log(
+      "FILE PATH:",
+      req.file.path
+    );
 
-    console.log("🔥 Resume saved:", resume._id);
+    // =================================================
+    // PDF VALIDATION
+    // =================================================
 
-    // -------------------------------------------------
-    // CALL AI ANALYZER
-    // -------------------------------------------------
+    const isPDF =
+      req.file.mimetype === "application/pdf" ||
+      path
+        .extname(req.file.originalname)
+        .toLowerCase() === ".pdf";
 
-    console.log("");
-    console.log("🔥 ABOUT TO CALL analyzeResume");
-    console.log("");
+    if (!isPDF) {
 
-    const analysis = await analyzeResume(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: "Please upload a PDF resume",
+      });
+    }
 
-    console.log("");
-    console.log("🔥 analyzeResume COMPLETED");
-    console.log("🔥 ATS SCORE:", analysis.atsScore);
-    console.log("");
+    // =================================================
+    // READ PDF
+    // =================================================
 
-    // -------------------------------------------------
-    // SAVE AI RESULT
-    // -------------------------------------------------
+    const pdfBuffer =
+      fs.readFileSync(req.file.path);
 
-    resume.resumeText = analysis.resumeText;
+    console.log(
+      "PDF BUFFER SIZE:",
+      pdfBuffer.length
+    );
 
-    resume.atsScore = analysis.atsScore;
+    // =================================================
+    // EXTRACT TEXT
+    // =================================================
 
-    resume.strengths = analysis.strengths;
+    let resumeText = "";
 
-    resume.weaknesses = analysis.weaknesses;
+    try {
 
-    resume.missingSkills = analysis.missingSkills;
+      const pdfData =
+        await pdfParse(pdfBuffer);
 
-    resume.suggestions = analysis.suggestions;
+      resumeText =
+        pdfData.text || "";
 
-    resume.analysisStatus = "success";
+      console.log(
+        "PDF TEXT LENGTH:",
+        resumeText.length
+      );
 
-    await resume.save();
+    } catch (pdfError) {
 
-    console.log("=================================");
-    console.log("🔥 RESUME ANALYSIS SAVED");
-    console.log("Resume ID:", resume._id);
-    console.log("Status:", resume.analysisStatus);
-    console.log("ATS:", resume.atsScore);
-    console.log("Strengths:", resume.strengths.length);
-    console.log("Weaknesses:", resume.weaknesses.length);
-    console.log("Missing Skills:", resume.missingSkills.length);
-    console.log("Suggestions:", resume.suggestions.length);
-    console.log("=================================");
+      console.error(
+        "PDF PARSE ERROR:",
+        pdfError?.message
+      );
 
-    // -------------------------------------------------
-    // RETURN RESULT TO FRONTEND
-    // -------------------------------------------------
+      resumeText = "";
+    }
 
-    return res.status(201).json({
+    // =================================================
+    // CREATE DATABASE RECORD
+    // =================================================
+
+    savedResume =
+      await Resume.create({
+
+        user: req.user._id,
+
+        fileName:
+          req.file.originalname,
+
+        filePath:
+          req.file.path,
+
+        resumeText,
+
+        analysisStatus:
+          "processing",
+
+        atsScore: 0,
+
+        strengths: [],
+
+        weaknesses: [],
+
+        missingSkills: [],
+
+        suggestions: [],
+      });
+
+    console.log(
+      "RESUME SAVED:",
+      savedResume._id
+    );
+
+    // =================================================
+    // CHECK EXTRACTED TEXT
+    // =================================================
+
+    if (!resumeText.trim()) {
+
+      savedResume.analysisStatus =
+        "failed";
+
+      await savedResume.save();
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Resume uploaded but PDF text could not be extracted",
+        resume: savedResume,
+      });
+    }
+
+    // =================================================
+    // AI PROMPT
+    // =================================================
+
+    const prompt = `
+You are an expert ATS resume analyzer.
+
+Analyze the following resume carefully.
+
+Return ONLY valid JSON.
+
+Do not use markdown.
+Do not use code fences.
+Do not add explanations outside JSON.
+
+Required JSON structure:
+
+{
+  "atsScore": 0,
+  "strengths": [],
+  "weaknesses": [],
+  "missingSkills": [],
+  "suggestions": []
+}
+
+Rules:
+
+1. atsScore must be an integer from 0 to 100.
+2. strengths must be an array of strings.
+3. weaknesses must be an array of strings.
+4. missingSkills must be an array of strings.
+5. suggestions must be an array of strings.
+6. Do not return objects inside these arrays.
+7. Keep the suggestions practical and career-focused.
+
+Resume:
+
+${resumeText}
+`;
+
+    // =================================================
+    // GEMINI
+    // =================================================
+
+    console.log(
+      "STARTING AI ANALYSIS"
+    );
+
+    console.log(
+      "PRIMARY MODEL:",
+      PRIMARY_MODEL
+    );
+
+    console.log(
+      "FALLBACK MODEL:",
+      FALLBACK_MODEL
+    );
+
+    const aiResponse =
+      await generateContent(
+        prompt
+      );
+
+    // =================================================
+    // GET RESPONSE TEXT
+    // =================================================
+
+    let responseText = "";
+
+    if (
+      aiResponse &&
+      typeof aiResponse.text === "string"
+    ) {
+
+      responseText =
+        aiResponse.text;
+
+    } else if (
+      aiResponse &&
+      typeof aiResponse.text === "function"
+    ) {
+
+      responseText =
+        aiResponse.text();
+
+    } else if (
+      aiResponse?.candidates?.[0]?.content
+        ?.parts?.[0]?.text
+    ) {
+
+      responseText =
+        aiResponse
+          .candidates[0]
+          .content
+          .parts[0]
+          .text;
+
+    } else {
+
+      throw new Error(
+        "Gemini returned an empty response"
+      );
+    }
+
+    console.log(
+      "AI RESPONSE:",
+      responseText
+    );
+
+    // =================================================
+    // CLEAN JSON
+    // =================================================
+
+    responseText =
+      responseText
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
+
+    // =================================================
+    // PARSE JSON
+    // =================================================
+
+    let analysis;
+
+    try {
+
+      analysis =
+        JSON.parse(responseText);
+
+    } catch (jsonError) {
+
+      console.error(
+        "AI JSON PARSE ERROR:",
+        jsonError.message
+      );
+
+      console.error(
+        "RAW AI RESPONSE:",
+        responseText
+      );
+
+      throw new Error(
+        "AI returned invalid JSON"
+      );
+    }
+
+    // =================================================
+    // NORMALIZE DATA
+    // =================================================
+
+    const atsScore =
+      Number(analysis.atsScore) || 0;
+
+    const strengths =
+      Array.isArray(
+        analysis.strengths
+      )
+        ? analysis.strengths
+            .map(String)
+            .filter(Boolean)
+        : [];
+
+    const weaknesses =
+      Array.isArray(
+        analysis.weaknesses
+      )
+        ? analysis.weaknesses
+            .map(String)
+            .filter(Boolean)
+        : [];
+
+    const missingSkills =
+      Array.isArray(
+        analysis.missingSkills
+      )
+        ? analysis.missingSkills
+            .map(String)
+            .filter(Boolean)
+        : [];
+
+    const suggestions =
+      Array.isArray(
+        analysis.suggestions
+      )
+        ? analysis.suggestions
+            .map(String)
+            .filter(Boolean)
+        : [];
+
+    // =================================================
+    // UPDATE RESUME
+    // =================================================
+
+    savedResume.atsScore =
+      Math.min(
+        100,
+        Math.max(0, atsScore)
+      );
+
+    savedResume.strengths =
+      strengths;
+
+    savedResume.weaknesses =
+      weaknesses;
+
+    savedResume.missingSkills =
+      missingSkills;
+
+    savedResume.suggestions =
+      suggestions;
+
+    savedResume.analysisStatus =
+      "completed";
+
+    await savedResume.save();
+
+    // =================================================
+    // SUCCESS
+    // =================================================
+
+    console.log(
+      "================================="
+    );
+
+    console.log(
+      "RESUME ANALYSIS SUCCESS"
+    );
+
+    console.log(
+      "ATS SCORE:",
+      savedResume.atsScore
+    );
+
+    console.log(
+      "================================="
+    );
+
+    return res.status(200).json({
       success: true,
-      message: "Resume uploaded and analyzed successfully",
 
-      resume,
+      message:
+        "Resume uploaded and analyzed successfully",
+
+      resume: savedResume,
     });
+
   } catch (error) {
-    console.error("=================================");
-    console.error("🔥 RESUME ANALYSIS FAILED");
-    console.error("=================================");
-    console.error(error);
 
-    // -------------------------------------------------
-    // UPDATE DATABASE STATUS
-    // -------------------------------------------------
+    console.error(
+      "================================="
+    );
 
-    if (resume) {
+    console.error(
+      "RESUME ANALYSIS ERROR"
+    );
+
+    console.error(
+      error?.message ||
+      error
+    );
+
+    console.error(
+      "================================="
+    );
+
+    // =================================================
+    // UPDATE FAILED RECORD
+    // =================================================
+
+    if (savedResume) {
+
       try {
-        resume.analysisStatus = "failed";
-        await resume.save();
 
-        console.log(
-          "🔥 Resume status updated to FAILED:",
-          resume._id
-        );
-      } catch (saveError) {
+        savedResume.analysisStatus =
+          "failed";
+
+        await savedResume.save();
+
+      } catch (dbError) {
+
         console.error(
-          "🔥 Could not update failed status:",
-          saveError
+          "FAILED TO UPDATE RESUME STATUS:",
+          dbError.message
         );
       }
     }
 
     return res.status(500).json({
+
       success: false,
-      message: "Resume analysis failed",
-      error: error.message,
+
+      message:
+        "Resume analysis failed",
+
+      error:
+        error?.message ||
+        "Unknown error",
+
+      resume:
+        savedResume || null,
     });
   }
 };
 
+// =====================================================
+// GET LATEST RESUME
+// =====================================================
+
+const getLatestResume = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const resume =
+      await Resume.findOne({
+        user: req.user._id,
+      })
+        .sort({
+          createdAt: -1,
+        });
+
+    if (!resume) {
+
+      return res.status(404).json({
+
+        success: false,
+
+        message:
+          "No resume found",
+      });
+    }
+
+    return res.status(200).json({
+
+      success: true,
+
+      resume,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "GET LATEST RESUME ERROR:",
+      error.message
+    );
+
+    return res.status(500).json({
+
+      success: false,
+
+      message:
+        "Failed to get latest resume",
+
+      error:
+        error.message,
+    });
+  }
+};
+
+// =====================================================
+// EXPORT
+// =====================================================
+
 module.exports = {
-  getLatestResume,
   uploadResume,
+  getLatestResume,
 };

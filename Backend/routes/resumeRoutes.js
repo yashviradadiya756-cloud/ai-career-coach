@@ -1,14 +1,18 @@
 const express = require("express");
 const router = express.Router();
 
-const upload = require("../middleware/uploadMiddleware");
 const {
   uploadResume,
   getLatestResume,
 } = require("../controllers/resumeController");
 
-const protect = require("../middleware/authMiddleware");
+const protect =
+  require("../middleware/authMiddleware");
 
+const upload =
+  require("../middleware/uploadMiddleware");
+
+// Upload resume
 router.post(
   "/upload",
   protect,
@@ -16,6 +20,7 @@ router.post(
   uploadResume
 );
 
+// Latest resume
 router.get(
   "/latest",
   protect,

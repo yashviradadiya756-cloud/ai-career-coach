@@ -7,6 +7,12 @@ require("dotenv").config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+const PRIMARY_MODEL =
+  process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+
+const FALLBACK_MODEL =
+  process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash";
+
 console.log("=================================");
 console.log("GEMINI CONFIG");
 console.log("=================================");
@@ -23,6 +29,16 @@ console.log(
     : 0
 );
 
+console.log(
+  "PRIMARY MODEL:",
+  PRIMARY_MODEL
+);
+
+console.log(
+  "FALLBACK MODEL:",
+  FALLBACK_MODEL
+);
+
 // =====================================================
 // VALIDATE API KEY
 // =====================================================
@@ -34,7 +50,7 @@ if (!GEMINI_API_KEY) {
 }
 
 // =====================================================
-// CLIENT
+// GEMINI CLIENT
 // =====================================================
 
 const ai = new GoogleGenAI({
@@ -42,56 +58,117 @@ const ai = new GoogleGenAI({
 });
 
 // =====================================================
-// MODEL
-// =====================================================
-
-const PRIMARY_MODEL = "gemini-3.6-flash";
-
-// =====================================================
 // GENERATE CONTENT
 // =====================================================
 
-const generateContent = async (prompt) => {
-  try {
-    console.log("=================================");
-    console.log("GEMINI REQUEST");
-    console.log("MODEL:", PRIMARY_MODEL);
-    console.log("=================================");
+const generateContent = async (
+  prompt,
+  options = {}
+) => {
+  const requestedModel =
+    options.model || PRIMARY_MODEL;
 
+  console.log("=================================");
+  console.log("GEMINI REQUEST");
+  console.log("=================================");
+  console.log(
+    "MODEL:",
+    requestedModel
+  );
+
+  try {
     const response =
       await ai.models.generateContent({
-        model: PRIMARY_MODEL,
+        model: requestedModel,
         contents: prompt,
       });
 
     console.log(
-      "Gemini request successful"
+      "GEMINI REQUEST SUCCESS"
     );
 
     return response;
-  } catch (error) {
-    console.error(
-      "================================="
-    );
 
-    console.error(
-      "GEMINI GENERATION ERROR"
-    );
-
-    console.error(
-      error?.message || error
-    );
+  } catch (primaryError) {
 
     console.error(
       "================================="
     );
 
-    throw error;
+    console.error(
+      "PRIMARY GEMINI ERROR"
+    );
+
+    console.error(
+      primaryError?.message ||
+      primaryError
+    );
+
+    console.error(
+      "================================="
+    );
+
+    // =================================================
+    // FALLBACK
+    // =================================================
+
+    if (
+      requestedModel !== FALLBACK_MODEL
+    ) {
+
+      console.log(
+        "Trying fallback model:",
+        FALLBACK_MODEL
+      );
+
+      try {
+
+        const fallbackResponse =
+          await ai.models.generateContent({
+            model: FALLBACK_MODEL,
+            contents: prompt,
+          });
+
+        console.log(
+          "FALLBACK GEMINI REQUEST SUCCESS"
+        );
+
+        return fallbackResponse;
+
+      } catch (fallbackError) {
+
+        console.error(
+          "================================="
+        );
+
+        console.error(
+          "FALLBACK GEMINI ERROR"
+        );
+
+        console.error(
+          fallbackError?.message ||
+          fallbackError
+        );
+
+        console.error(
+          "================================="
+        );
+
+        throw fallbackError;
+      }
+    }
+
+    throw primaryError;
   }
 };
+
+// =====================================================
+// EXPORTS
+// =====================================================
 
 module.exports = {
   ai,
   generateContent,
   PRIMARY_MODEL,
+  FALLBACK_MODEL,
 };
