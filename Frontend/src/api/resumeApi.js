@@ -1,13 +1,38 @@
 import api from "./axios";
 
-export const getLatestResume = () => {
-  return api.get("/api/resume/latest");
+// =====================================================
+// GET LATEST RESUME
+// =====================================================
+
+export const getLatestResume = async () => {
+  try {
+    return await api.get("/api/resume/latest");
+  } catch (error) {
+    console.error(
+      "GET LATEST RESUME ERROR:",
+      error.response?.data || error.message
+    );
+
+    throw error;
+  }
 };
 
-export const uploadResume = (formData) => {
-  return api.post("/api/resume/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+// =====================================================
+// UPLOAD RESUME
+// =====================================================
+
+export const uploadResume = async (formData) => {
+  try {
+    return await api.post(
+      "/api/resume/upload",
+      formData
+    );
+  } catch (error) {
+    console.error(
+      "UPLOAD RESUME ERROR:",
+      error.response?.data || error.message
+    );
+
+    throw error;
+  }
 };

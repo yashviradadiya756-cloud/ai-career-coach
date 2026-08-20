@@ -72,20 +72,33 @@ const getDashboardOverview = async (req, res) => {
       .lean();
 
     if (latestResume) {
-      resumeATS = Number(latestResume.atsScore) || 0;
+      resumeATS =
+        Number(latestResume.atsScore) || 0;
 
       resumeATS = Math.min(
         100,
         Math.max(0, resumeATS)
       );
 
-      if (Array.isArray(latestResume.skills)) {
-        totalSkills = latestResume.skills.length;
+      // Total skills recommended/missing
+      if (
+        Array.isArray(
+          latestResume.missingSkills
+        )
+      ) {
+        totalSkills =
+          latestResume.missingSkills.length;
       }
 
-      if (Array.isArray(latestResume.matchedSkills)) {
+      // Calculate matched skills
+      // from strengths for now
+      if (
+        Array.isArray(
+          latestResume.strengths
+        )
+      ) {
         skillsMatched =
-          latestResume.matchedSkills.length;
+          latestResume.strengths.length;
       }
     }
 

@@ -368,6 +368,6 @@ const getLatestSkillGap = async (
 };
 
 module.exports = {
-  analyzeSkillGapController,
+  analyzeSkillGap,
   getLatestSkillGap,
 };

@@ -8,8 +8,7 @@ const {
   updatePhaseCompletionController,
 } = require("../controllers/roadmapController");
 
-const protect = require("../middleware/authMiddleware");
-
+const { protect } = require("../middleware/authMiddleware")
 // ======================================================
 // GET ROADMAP
 // GET /api/roadmap

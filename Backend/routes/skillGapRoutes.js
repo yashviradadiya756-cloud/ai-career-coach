@@ -2,41 +2,41 @@ const express = require("express");
 
 const router = express.Router();
 
-const protect =
-  require("../middleware/authMiddleware");
-
 const {
-  analyzeSkillGapController,
+  analyzeSkillGap,
   getLatestSkillGap,
 } = require("../controllers/skillGapController");
 
-// =====================================================
-// TEST
-// =====================================================
-
-router.get(
-  "/test",
-  (req, res) => {
-    res.status(200).json({
-      success: true,
-      message:
-        "Skill Gap API is working",
-    });
-  }
-);
-
-// =====================================================
-// ANALYZE
-// =====================================================
-
-router.post(
-  "/analyze",
+const {
   protect,
-  analyzeSkillGapController
-);
+} = require("../middleware/authMiddleware");
 
 // =====================================================
-// LATEST
+// DEBUG
+// =====================================================
+
+console.log("=================================");
+console.log("SKILL GAP ROUTES");
+
+console.log(
+  "protect:",
+  typeof protect
+);
+
+console.log(
+  "analyzeSkillGap:",
+  typeof analyzeSkillGap
+);
+
+console.log(
+  "getLatestSkillGap:",
+  typeof getLatestSkillGap
+);
+
+console.log("=================================");
+
+// =====================================================
+// GET LATEST SKILL GAP
 // =====================================================
 
 router.get(
@@ -44,5 +44,19 @@ router.get(
   protect,
   getLatestSkillGap
 );
+
+// =====================================================
+// ANALYZE SKILL GAP
+// =====================================================
+
+router.post(
+  "/analyze",
+  protect,
+  analyzeSkillGap
+);
+
+// =====================================================
+// EXPORT
+// =====================================================
 
 module.exports = router;

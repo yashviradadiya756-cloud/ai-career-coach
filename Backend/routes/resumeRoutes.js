@@ -8,7 +8,7 @@ const {
   getLatestResume,
 } = require("../controllers/resumeController");
 
-const { protect } = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authMiddleware")
 
 const router = express.Router();
 
@@ -55,8 +55,7 @@ const upload = multer({
 
   fileFilter: (req, file, cb) => {
     if (
-      file.mimetype ===
-      "application/pdf"
+      file.mimetype === "application/pdf"
     ) {
       cb(null, true);
     } else {
@@ -74,8 +73,12 @@ const upload = multer({
 });
 
 // =====================================================
-// DEBUG CHECK
+// DEBUG
 // =====================================================
+
+console.log(
+  "RESUME ROUTES"
+);
 
 console.log(
   "protect:",

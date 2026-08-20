@@ -15,17 +15,29 @@ export default function Resume() {
 
     const response = await getLatestResume();
 
-    console.log("LATEST RESUME RESPONSE:", response.data);
+    console.log(
+      "LATEST RESUME RESPONSE:",
+      response.data
+    );
 
-    setResumeData(response.data.resume);
+    setResumeData(
+      response.data?.resume || null
+    );
   } catch (error) {
     if (error.response?.status === 404) {
-      setResume(null);
+      // No resume uploaded yet.
+      // This is not a frontend error.
       setResumeData(null);
+      setResume(null);
       return;
     }
 
-    console.error("FETCH RESUME ERROR:", error);
+    console.error(
+      "FETCH RESUME ERROR:",
+      error.response?.data || error.message
+    );
+
+    setResumeData(null);
   } finally {
     setDataLoading(false);
   }
