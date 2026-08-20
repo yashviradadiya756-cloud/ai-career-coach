@@ -74,10 +74,9 @@ ${resumeText}
 
     console.log("🔥 Sending resume to Gemini...");
 
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt
-        });
+    const model = genAI.getGenerativeModel({
+    model: process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
+});
     console.log("🔥 Gemini response received");
 
     let result = response.text;
