@@ -7,6 +7,8 @@ const analyzeResume = require("../services/resumeAnalyzer");
 
 const getLatestResume = async (req, res) => {
   try {
+    console.log("🔥 GET LATEST RESUME");
+
     const resume = await Resume.findOne({
       user: req.user._id,
     }).sort({ createdAt: -1 });
@@ -17,6 +19,9 @@ const getLatestResume = async (req, res) => {
         message: "No resume found",
       });
     }
+
+    console.log("🔥 Latest resume:", resume._id);
+    console.log("🔥 Analysis status:", resume.analysisStatus);
 
     return res.status(200).json({
       success: true,
@@ -38,16 +43,16 @@ const getLatestResume = async (req, res) => {
 // =====================================================
 
 const uploadResume = async (req, res) => {
+  console.log("=================================");
+  console.log("🔥 RESUME UPLOAD CONTROLLER CALLED");
+  console.log("=================================");
+
   let resume = null;
 
   try {
-    console.log("=================================");
-    console.log("RESUME UPLOAD CONTROLLER");
-    console.log("=================================");
-
-    // -----------------------------------------------
+    // -------------------------------------------------
     // CHECK FILE
-    // -----------------------------------------------
+    // -------------------------------------------------
 
     if (!req.file) {
       return res.status(400).json({
@@ -56,12 +61,13 @@ const uploadResume = async (req, res) => {
       });
     }
 
-    console.log("File:", req.file.filename);
-    console.log("Path:", req.file.path);
+    console.log("🔥 File:", req.file.originalname);
+    console.log("🔥 Saved filename:", req.file.filename);
+    console.log("🔥 File path:", req.file.path);
 
-    // -----------------------------------------------
-    // CREATE RESUME RECORD
-    // -----------------------------------------------
+    // -------------------------------------------------
+    // SAVE INITIAL RESUME
+    // -------------------------------------------------
 
     resume = await Resume.create({
       user: req.user._id,
@@ -70,83 +76,86 @@ const uploadResume = async (req, res) => {
       analysisStatus: "pending",
     });
 
-    console.log("Resume saved:", resume._id);
+    console.log("🔥 Resume saved:", resume._id);
 
-    // -----------------------------------------------
-    // RUN AI ANALYSIS
-    // -----------------------------------------------
+    // -------------------------------------------------
+    // CALL AI ANALYZER
+    // -------------------------------------------------
 
-    try {
-      console.log("Starting AI analysis...");
+    console.log("");
+    console.log("🔥 ABOUT TO CALL analyzeResume");
+    console.log("");
 
-      const analysis = await analyzeResume(
-        req.file.path
-      );
+    const analysis = await analyzeResume(req.file.path);
 
-      // ---------------------------------------------
-      // UPDATE DATABASE
-      // ---------------------------------------------
+    console.log("");
+    console.log("🔥 analyzeResume COMPLETED");
+    console.log("🔥 ATS SCORE:", analysis.atsScore);
+    console.log("");
 
-      resume.resumeText = analysis.resumeText;
+    // -------------------------------------------------
+    // SAVE AI RESULT
+    // -------------------------------------------------
 
-      resume.atsScore = analysis.atsScore;
+    resume.resumeText = analysis.resumeText;
 
-      resume.strengths = analysis.strengths;
+    resume.atsScore = analysis.atsScore;
 
-      resume.weaknesses = analysis.weaknesses;
+    resume.strengths = analysis.strengths;
 
-      resume.missingSkills =
-        analysis.missingSkills;
+    resume.weaknesses = analysis.weaknesses;
 
-      resume.suggestions =
-        analysis.suggestions;
+    resume.missingSkills = analysis.missingSkills;
 
-      resume.analysisStatus = "success";
+    resume.suggestions = analysis.suggestions;
 
-      await resume.save();
+    resume.analysisStatus = "success";
 
-      console.log("=================================");
-      console.log("RESUME ANALYSIS SAVED");
-      console.log("Resume ID:", resume._id);
-      console.log("ATS:", resume.atsScore);
-      console.log("=================================");
+    await resume.save();
 
-      return res.status(201).json({
-        success: true,
-        message: "Resume uploaded and analyzed successfully",
-        resume,
-      });
-    } catch (analysisError) {
-      // ---------------------------------------------
-      // ANALYSIS FAILED
-      // ---------------------------------------------
+    console.log("=================================");
+    console.log("🔥 RESUME ANALYSIS SAVED");
+    console.log("Resume ID:", resume._id);
+    console.log("Status:", resume.analysisStatus);
+    console.log("ATS:", resume.atsScore);
+    console.log("Strengths:", resume.strengths.length);
+    console.log("Weaknesses:", resume.weaknesses.length);
+    console.log("Missing Skills:", resume.missingSkills.length);
+    console.log("Suggestions:", resume.suggestions.length);
+    console.log("=================================");
 
-      console.error(
-        "ANALYSIS ERROR:",
-        analysisError
-      );
+    // -------------------------------------------------
+    // RETURN RESULT TO FRONTEND
+    // -------------------------------------------------
 
-      resume.analysisStatus = "failed";
+    return res.status(201).json({
+      success: true,
+      message: "Resume uploaded and analyzed successfully",
 
-      await resume.save();
-
-      return res.status(500).json({
-        success: false,
-        message: "Resume uploaded but AI analysis failed",
-        resume,
-        error: analysisError.message,
-      });
-    }
+      resume,
+    });
   } catch (error) {
-    console.error("UPLOAD RESUME ERROR:", error);
+    console.error("=================================");
+    console.error("🔥 RESUME ANALYSIS FAILED");
+    console.error("=================================");
+    console.error(error);
+
+    // -------------------------------------------------
+    // UPDATE DATABASE STATUS
+    // -------------------------------------------------
 
     if (resume) {
       try {
         resume.analysisStatus = "failed";
         await resume.save();
+
+        console.log(
+          "🔥 Resume status updated to FAILED:",
+          resume._id
+        );
       } catch (saveError) {
         console.error(
-          "FAILED TO UPDATE RESUME STATUS:",
+          "🔥 Could not update failed status:",
           saveError
         );
       }
@@ -154,7 +163,7 @@ const uploadResume = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Resume upload failed",
+      message: "Resume analysis failed",
       error: error.message,
     });
   }

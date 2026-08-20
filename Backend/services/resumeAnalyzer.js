@@ -2,35 +2,29 @@ const fs = require("fs");
 const pdfParse = require("pdf-parse");
 const { GoogleGenAI } = require("@google/genai");
 
+console.log("🔥 resumeAnalyzer.js LOADED");
+
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-// =====================================================
-// ANALYZE RESUME
-// =====================================================
-
 const analyzeResume = async (filePath) => {
   try {
     console.log("=================================");
-    console.log("AI RESUME ANALYSIS STARTED");
+    console.log("🔥 AI RESUME ANALYSIS STARTED");
     console.log("=================================");
 
-    // -----------------------------------------------
-    // CHECK FILE
-    // -----------------------------------------------
-
+    // Check PDF
     if (!fs.existsSync(filePath)) {
       throw new Error("Resume PDF file not found");
     }
 
-    console.log("Resume file:", filePath);
+    console.log("🔥 Resume file:", filePath);
 
-    // -----------------------------------------------
-    // READ PDF
-    // -----------------------------------------------
-
+    // Read PDF
     const dataBuffer = fs.readFileSync(filePath);
+
+    console.log("🔥 PDF loaded");
 
     const pdfData = await pdfParse(dataBuffer);
 
@@ -40,24 +34,17 @@ const analyzeResume = async (filePath) => {
       throw new Error("Could not extract text from resume PDF");
     }
 
-    console.log("Resume text extracted");
-    console.log("Text length:", resumeText.length);
-
-    // -----------------------------------------------
-    // GEMINI PROMPT
-    // -----------------------------------------------
+    console.log("🔥 Resume text extracted");
+    console.log("🔥 Text length:", resumeText.length);
 
     const prompt = `
 You are an expert ATS resume analyzer and career coach.
 
-Analyze the following resume carefully.
+Analyze this resume carefully.
 
 Return ONLY valid JSON.
-Do not use markdown.
-Do not use code fences.
-Do not add any explanation outside JSON.
 
-Required JSON structure:
+Required format:
 
 {
   "atsScore": 0,
@@ -69,101 +56,86 @@ Required JSON structure:
 
 Rules:
 
-1. atsScore must be an integer between 0 and 100.
-2. strengths must contain 3 to 6 useful points.
-3. weaknesses must contain 3 to 6 useful points.
-4. missingSkills must contain relevant technical or professional skills that would improve the candidate's profile.
-5. suggestions must contain 3 to 6 actionable resume improvement suggestions.
-6. Keep every array item as a simple string.
-7. Do not return objects inside arrays.
-8. Do not return markdown.
-9. Do not return comments.
+- atsScore must be an integer from 0 to 100.
+- strengths must contain 3 to 6 strings.
+- weaknesses must contain 3 to 6 strings.
+- missingSkills must contain 2 to 6 strings.
+- suggestions must contain 3 to 6 strings.
+- Every array item must be a simple string.
+- Do not return objects inside arrays.
+- Do not use markdown.
+- Do not use code fences.
+- Do not add explanations.
 
 Resume:
 
 ${resumeText}
 `;
 
-    console.log("Sending resume to Gemini...");
-
-    // -----------------------------------------------
-    // GEMINI REQUEST
-    // -----------------------------------------------
+    console.log("🔥 Sending resume to Gemini...");
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
     });
 
-    let result = response.text;
+    console.log("🔥 Gemini response received");
 
-    console.log("Gemini response received");
+    let result = response.text;
 
     if (!result) {
       throw new Error("Empty response received from Gemini");
     }
-
-    // -----------------------------------------------
-    // CLEAN RESPONSE
-    // -----------------------------------------------
 
     result = result
       .replace(/```json/gi, "")
       .replace(/```/g, "")
       .trim();
 
-    console.log("Cleaned Gemini response:");
+    console.log("🔥 Gemini cleaned response:");
     console.log(result);
-
-    // -----------------------------------------------
-    // PARSE JSON
-    // -----------------------------------------------
 
     let analysis;
 
     try {
       analysis = JSON.parse(result);
-    } catch (jsonError) {
-      console.error("GEMINI JSON PARSE ERROR:", jsonError);
+    } catch (error) {
+      console.error("🔥 GEMINI JSON PARSE ERROR");
+      console.error(error);
       console.error("RAW RESPONSE:", result);
 
       throw new Error("Gemini returned invalid JSON");
     }
 
-    // -----------------------------------------------
-    // NORMALIZE DATA
-    // -----------------------------------------------
-
     const normalized = {
       atsScore: Number(analysis.atsScore) || 0,
 
       strengths: Array.isArray(analysis.strengths)
-        ? analysis.strengths.map(String)
+        ? analysis.strengths.map((item) => String(item))
         : [],
 
       weaknesses: Array.isArray(analysis.weaknesses)
-        ? analysis.weaknesses.map(String)
+        ? analysis.weaknesses.map((item) => String(item))
         : [],
 
       missingSkills: Array.isArray(analysis.missingSkills)
-        ? analysis.missingSkills.map(String)
+        ? analysis.missingSkills.map((item) => String(item))
         : [],
 
       suggestions: Array.isArray(analysis.suggestions)
-        ? analysis.suggestions.map(String)
+        ? analysis.suggestions.map((item) => String(item))
         : [],
 
       resumeText,
     };
 
-    // Keep score between 0 and 100
     normalized.atsScore = Math.max(
       0,
       Math.min(100, normalized.atsScore)
     );
 
     console.log("=================================");
-    console.log("AI ANALYSIS SUCCESS");
+    console.log("🔥 AI ANALYSIS SUCCESS");
     console.log("ATS Score:", normalized.atsScore);
     console.log("Strengths:", normalized.strengths.length);
     console.log("Weaknesses:", normalized.weaknesses.length);
@@ -174,7 +146,7 @@ ${resumeText}
     return normalized;
   } catch (error) {
     console.error("=================================");
-    console.error("AI RESUME ANALYSIS FAILED");
+    console.error("🔥 AI RESUME ANALYSIS FAILED");
     console.error("=================================");
     console.error(error);
 

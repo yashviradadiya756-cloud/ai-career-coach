@@ -2,19 +2,16 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// =====================================================
-// UPLOAD DIRECTORY
-// =====================================================
-
-const uploadDir = path.join(__dirname, "..", "uploads");
+const uploadDir = path.join(
+  __dirname,
+  "../uploads"
+);
 
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+  fs.mkdirSync(uploadDir, {
+    recursive: true,
+  });
 }
-
-// =====================================================
-// MULTER STORAGE
-// =====================================================
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -25,49 +22,48 @@ const storage = multer.diskStorage({
     const uniqueName =
       Date.now() +
       "-" +
-      Math.round(Math.random() * 1e9) +
+      Math.round(
+        Math.random() * 1e9
+      ) +
       path.extname(file.originalname);
 
     cb(null, uniqueName);
   },
 });
 
-// =====================================================
-// PDF FILE FILTER
-// =====================================================
+const fileFilter = (
+  req,
+  file,
+  cb
+) => {
+  const extension =
+    path.extname(
+      file.originalname
+    ).toLowerCase();
 
-const fileFilter = (req, file, cb) => {
-  const extension = path
-    .extname(file.originalname)
-    .toLowerCase();
+  const isPdf =
+    extension === ".pdf";
 
-  if (
-    file.mimetype === "application/pdf" &&
-    extension === ".pdf"
-  ) {
+  if (isPdf) {
     cb(null, true);
   } else {
     cb(
-      new Error("Only PDF files are allowed."),
+      new Error(
+        "Only PDF files are allowed"
+      ),
       false
     );
   }
 };
 
-// =====================================================
-// MULTER UPLOAD
-// =====================================================
-
 const upload = multer({
   storage,
   fileFilter,
+
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize:
+      5 * 1024 * 1024,
   },
 });
-
-// =====================================================
-// EXPORT
-// =====================================================
 
 module.exports = upload;

@@ -1,485 +1,1110 @@
-import { X } from "lucide-react";
+import { X, Upload, FileText, CheckCircle, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { uploadResume, getLatestResume } from "../../api/resumeApi";
+import {
+  uploadResume,
+  getLatestResume,
+} from "../../api/resumeApi";
 
 export default function Resume() {
   const [resume, setResume] = useState(null);
   const [resumeData, setResumeData] = useState(null);
+
   const [dataLoading, setDataLoading] = useState(true);
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  /*
+  |--------------------------------------------------------------------------
+  | Fetch latest resume
+  |--------------------------------------------------------------------------
+  */
 
   const fetchResume = async () => {
-  try {
-    setDataLoading(true);
-    const response = await getLatestResume();
+    try {
+      setDataLoading(true);
 
-    // ✅ FIX: getLatestResume returns null on 404 — handle it here
-    if (!response) {
+      const response = await getLatestResume();
+
+      console.log(
+        "FETCH RESUME RESPONSE:",
+        response
+      );
+
+      if (!response) {
+        setResumeData(null);
+        return;
+      }
+
+      console.log(
+        "RESUME OBJECT:",
+        response.resume
+      );
+
+      console.log(
+        "ANALYSIS STATUS:",
+        response.resume?.analysisStatus
+      );
+
+      console.log(
+        "STRENGTHS:",
+        response.resume?.strengths
+      );
+
+      setResumeData(
+        response.resume || null
+      );
+    } catch (err) {
+      console.error(
+        "FETCH RESUME ERROR:",
+        err.response?.data || err.message
+      );
+
       setResumeData(null);
-      return;
+    } finally {
+      setDataLoading(false);
     }
+  };
 
-    console.log("FETCH RESUME RESPONSE:", response);
-    console.log("RESUME OBJECT:", response.resume);
-    console.log("ANALYSIS STATUS:", response.resume?.analysisStatus);
-    console.log("STRENGTHS:", response.resume?.strengths);
+  /*
+  |--------------------------------------------------------------------------
+  | Load resume when page opens
+  |--------------------------------------------------------------------------
+  */
 
-    setResumeData(response.resume || null);
-  } catch (err) {
-    console.error("FETCH RESUME ERROR:", err.response?.data || err.message);
-    setResumeData(null);
-  } finally {
-    setDataLoading(false);
-  }
-};
-
-  // ✅ Call the outer fetchResume
   useEffect(() => {
     fetchResume();
   }, []);
 
-  // Handle PDF Selection
+  /*
+  |--------------------------------------------------------------------------
+  | Handle PDF selection
+  |--------------------------------------------------------------------------
+  */
+
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-      setError("❌ Only PDF files are allowed.");
+    const file = e.target.files?.[0];
+
+    setError("");
+    setSuccess("");
+
+    if (!file) {
+      setResume(null);
+      return;
+    }
+
+    console.log("SELECTED FILE:", file);
+    console.log("FILE NAME:", file.name);
+    console.log("FILE TYPE:", file.type);
+    console.log("FILE SIZE:", file.size);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate extension
+    |--------------------------------------------------------------------------
+    */
+
+    const isPdfExtension =
+      file.name
+        .toLowerCase()
+        .endsWith(".pdf");
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validate MIME type
+    |--------------------------------------------------------------------------
+    |
+    | Some browsers may return an empty or unusual MIME type.
+    | Therefore extension is also checked.
+    |--------------------------------------------------------------------------
+    */
+
+    const isPdfMime =
+      file.type === "application/pdf" ||
+      file.type === "";
+
+    if (!isPdfExtension) {
+      setError(
+        "Only PDF files are allowed."
+      );
+
       setResume(null);
       e.target.value = "";
       return;
     }
-    setError("");
+
+    if (!isPdfMime) {
+      setError(
+        `Invalid file type: ${file.type}. Please select a PDF file.`
+      );
+
+      setResume(null);
+      e.target.value = "";
+      return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Maximum 5 MB
+    |--------------------------------------------------------------------------
+    */
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError(
+        "Resume must be smaller than 5 MB."
+      );
+
+      setResume(null);
+      e.target.value = "";
+      return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | File accepted
+    |--------------------------------------------------------------------------
+    */
+
     setResume(file);
+
+    console.log(
+      "PDF FILE ACCEPTED:",
+      file.name
+    );
   };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Remove selected file
+  |--------------------------------------------------------------------------
+  */
 
   const removeFile = () => {
     setResume(null);
     setError("");
-    const input = document.getElementById("resumeUpload");
-    if (input) input.value = "";
+    setSuccess("");
+
+    const input =
+      document.getElementById(
+        "resumeUpload"
+      );
+
+    if (input) {
+      input.value = "";
+    }
   };
 
-  // ✅ Fixed: use `resume` (the state variable), not `selectedFile`
+  /*
+  |--------------------------------------------------------------------------
+  | Upload / Analyze Resume
+  |--------------------------------------------------------------------------
+  */
+
   const handleAnalyze = async () => {
+    setError("");
+    setSuccess("");
+
+    /*
+    |--------------------------------------------------------------------------
+    | Check file
+    |--------------------------------------------------------------------------
+    */
+
+    if (!resume) {
+      setError(
+        "Please select a PDF resume first."
+      );
+      return;
+    }
+
+    const isPdf =
+      resume.name
+        .toLowerCase()
+        .endsWith(".pdf");
+
+    if (!isPdf) {
+      setError(
+        "Only PDF files are allowed."
+      );
+      return;
+    }
+
+    if (
+      resume.size >
+      5 * 1024 * 1024
+    ) {
+      setError(
+        "Resume must be smaller than 5 MB."
+      );
+      return;
+    }
+
     try {
-      if (!resume) {
-        alert("Please select a PDF resume first.");
-        return;
-      }
-      if (resume.type !== "application/pdf") {
-        alert("Only PDF files are allowed.");
-        return;
-      }
-      if (resume.size > 5 * 1024 * 1024) {
-        alert("Resume must be smaller than 5 MB.");
-        return;
-      }
-
       setLoading(true);
-      const formData = new FormData();
-      formData.append("resume", resume);
 
-      const response = await uploadResume(formData);
-      console.log("UPLOAD SUCCESS:", response);
-      alert("Resume uploaded successfully!");
-      await fetchResume(); // Refresh resume data after upload
+      /*
+      |--------------------------------------------------------------------------
+      | Create FormData
+      |--------------------------------------------------------------------------
+      */
+
+      const formData = new FormData();
+
+      /*
+      |--------------------------------------------------------------------------
+      | IMPORTANT
+      |--------------------------------------------------------------------------
+      |
+      | Backend must have:
+      |
+      | upload.single("resume")
+      |
+      | Therefore the field name MUST be "resume".
+      |--------------------------------------------------------------------------
+      */
+
+      formData.append(
+        "resume",
+        resume,
+        resume.name
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Debug FormData
+      |--------------------------------------------------------------------------
+      */
+
+      console.log(
+        "===================================="
+      );
+
+      console.log(
+        "UPLOADING RESUME"
+      );
+
+      console.log(
+        "FILE:",
+        resume.name
+      );
+
+      console.log(
+        "TYPE:",
+        resume.type
+      );
+
+      console.log(
+        "SIZE:",
+        resume.size
+      );
+
+      console.log(
+        "FORM DATA:"
+      );
+
+      for (
+        const [key, value]
+        of formData.entries()
+      ) {
+        console.log(
+          key,
+          value
+        );
+      }
+
+      console.log(
+        "===================================="
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Call API
+      |--------------------------------------------------------------------------
+      */
+
+      const response =
+        await uploadResume(
+          formData
+        );
+
+      console.log(
+        "UPLOAD SUCCESS:",
+        response
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Success message
+      |--------------------------------------------------------------------------
+      */
+
+      setSuccess(
+        "Resume uploaded and analyzed successfully!"
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Clear selected file
+      |--------------------------------------------------------------------------
+      */
+
+      setResume(null);
+
+      const input =
+        document.getElementById(
+          "resumeUpload"
+        );
+
+      if (input) {
+        input.value = "";
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Refresh resume data
+      |--------------------------------------------------------------------------
+      */
+
+      await fetchResume();
     } catch (err) {
-      console.error("RESUME UPLOAD ERROR:", err.response?.data || err.message);
-      alert(err.response?.data?.message || "Resume upload failed");
+      console.error(
+        "RESUME UPLOAD ERROR:",
+        err
+      );
+
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Resume upload failed.";
+
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
-  // ... rest of your JSX (unchanged)
+  /*
+  |--------------------------------------------------------------------------
+  | Helper
+  |--------------------------------------------------------------------------
+  */
+
+  const atsScore =
+    Number(resumeData?.atsScore) || 0;
+
+  const missingSkills =
+    Array.isArray(
+      resumeData?.missingSkills
+    )
+      ? resumeData.missingSkills
+      : [];
+
+  const suggestions =
+    Array.isArray(
+      resumeData?.suggestions
+    )
+      ? resumeData.suggestions
+      : [];
+
+  const strengths =
+    Array.isArray(
+      resumeData?.strengths
+    )
+      ? resumeData.strengths
+      : [];
+
+  const weaknesses =
+    Array.isArray(
+      resumeData?.weaknesses
+    )
+      ? resumeData.weaknesses
+      : [];
+
+  /*
+  |--------------------------------------------------------------------------
+  | UI
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <div style={styles.container}>
-      {/* ========================================= */}
-      {/* HEADER */}
-      {/* ========================================= */}
+
+      {/* =========================================================
+          HEADER
+      ========================================================= */}
 
       <div style={styles.header}>
+
         <div style={styles.headerLeft}>
-          <div style={styles.headerIcon}>📄</div>
+
+          <div style={styles.headerIcon}>
+            <FileText size={28} />
+          </div>
 
           <div>
-            <h1 style={styles.headerTitle}>Resume Analyzer</h1>
+            <h1 style={styles.headerTitle}>
+              Resume Analyzer
+            </h1>
 
             <p style={styles.headerText}>
-              Upload your resume to get an ATS score, AI suggestions,
-              and improvement recommendations.
+              Upload your resume to get an ATS
+              score, AI suggestions, and
+              improvement recommendations.
             </p>
           </div>
+
         </div>
 
-        <div style={styles.headerBadge}>AI Powered</div>
+        <div style={styles.headerBadge}>
+          AI Powered
+        </div>
+
       </div>
 
-      {/* ========================================= */}
-      {/* CARDS */}
-      {/* ========================================= */}
+      {/* =========================================================
+          STAT CARDS
+      ========================================================= */}
 
       <div style={styles.cardGrid}>
-        {/* ATS SCORE */}
+
+        {/* ATS */}
 
         <div style={styles.statCard}>
+
           <div style={styles.statTop}>
+
             <div>
-              <p style={styles.statLabel}>ATS Score</p>
+
+              <p style={styles.statLabel}>
+                ATS Score
+              </p>
 
               <h1 style={styles.blueValue}>
                 {dataLoading
-                  ? "Loading..."
-                  : resumeData?.atsScore || 0}
-                {!dataLoading && "%"}
+                  ? "..."
+                  : `${atsScore}%`}
               </h1>
+
             </div>
 
-            <div style={styles.blueIcon}>📊</div>
+            <div style={styles.blueIcon}>
+              📊
+            </div>
+
           </div>
 
-          <div style={styles.progressBackground}>
+          <div
+            style={
+              styles.progressBackground
+            }
+          >
             <div
               style={{
                 ...styles.progressBlue,
-                width: `${resumeData?.atsScore || 0}%`,
+                width: `${atsScore}%`,
               }}
             />
           </div>
+
         </div>
 
-        {/* RESUME VERSION */}
+        {/* VERSION */}
 
         <div style={styles.statCard}>
+
           <div style={styles.statTop}>
+
             <div>
-              <p style={styles.statLabel}>Resume Version</p>
+
+              <p style={styles.statLabel}>
+                Resume Version
+              </p>
 
               <h1 style={styles.greenValue}>
-                {resumeData ? "Latest" : "--"}
+                {resumeData
+                  ? "Latest"
+                  : "--"}
               </h1>
+
             </div>
 
-            <div style={styles.greenIcon}>✓</div>
+            <div style={styles.greenIcon}>
+              <CheckCircle size={22} />
+            </div>
+
           </div>
 
           <p style={styles.statBottom}>
-            {resumeData ? "Latest resume analyzed" : "No resume uploaded"}
+            {resumeData
+              ? "Latest resume analyzed"
+              : "No resume uploaded"}
           </p>
+
         </div>
 
         {/* MISSING SKILLS */}
 
         <div style={styles.statCard}>
+
           <div style={styles.statTop}>
+
             <div>
-              <p style={styles.statLabel}>Missing Skills</p>
+
+              <p style={styles.statLabel}>
+                Missing Skills
+              </p>
 
               <h1 style={styles.redValue}>
-                {resumeData?.missingSkills?.length || 0}
+                {missingSkills.length}
               </h1>
+
             </div>
 
-            <div style={styles.redIcon}>⚠</div>
+            <div style={styles.redIcon}>
+              <AlertTriangle size={22} />
+            </div>
+
           </div>
 
           <p style={styles.statBottom}>
             Skills recommended for improvement
           </p>
+
         </div>
 
         {/* APPLICATIONS */}
 
         <div style={styles.statCard}>
-          <div style={styles.statTop}>
-            <div>
-              <p style={styles.statLabel}>Applications</p>
 
-              <h1 style={styles.orangeValue}>15</h1>
+          <div style={styles.statTop}>
+
+            <div>
+
+              <p style={styles.statLabel}>
+                Applications
+              </p>
+
+              <h1 style={styles.orangeValue}>
+                15
+              </h1>
+
             </div>
 
-            <div style={styles.orangeIcon}>🚀</div>
+            <div style={styles.orangeIcon}>
+              🚀
+            </div>
+
           </div>
 
           <p style={styles.statBottom}>
             Total job applications
           </p>
+
         </div>
+
       </div>
 
-      {/* ========================================= */}
-      {/* UPLOAD SECTION */}
-      {/* ========================================= */}
+      {/* =========================================================
+          UPLOAD SECTION
+      ========================================================= */}
 
       <div style={styles.section}>
+
         <div style={styles.sectionHeader}>
+
           <div>
-            <h2 style={styles.sectionTitle}>📤 Upload Resume</h2>
+
+            <h2 style={styles.sectionTitle}>
+              <Upload
+                size={20}
+                style={{
+                  verticalAlign: "middle",
+                  marginRight: "7px",
+                }}
+              />
+              Upload Resume
+            </h2>
 
             <p style={styles.sectionSubtitle}>
-              Upload your latest PDF resume for AI-powered analysis.
+              Upload your latest PDF resume
+              for AI-powered analysis.
             </p>
+
           </div>
 
-          <span style={styles.pdfBadge}>PDF Only</span>
+          <span style={styles.pdfBadge}>
+            PDF Only
+          </span>
+
         </div>
+
+        {/* Hidden input */}
 
         <input
           id="resumeUpload"
           type="file"
-          accept=".pdf"
+          accept="application/pdf,.pdf"
           onChange={handleFileChange}
-          style={{ display: "none" }}
+          style={{
+            display: "none",
+          }}
         />
 
+        {/* Upload area */}
+
         <div style={styles.uploadArea}>
-          <div style={styles.uploadIcon}>📄</div>
+
+          <div style={styles.uploadIcon}>
+            <FileText size={26} />
+          </div>
 
           <h3 style={styles.uploadTitle}>
             Upload your resume
           </h3>
 
           <p style={styles.uploadText}>
-            Select a PDF file from your computer
+            Select a PDF file from your
+            computer
           </p>
 
-          <div style={styles.buttonContainer}>
-            <label htmlFor="resumeUpload" style={styles.uploadButton}>
-              📄 Choose Resume
+          <div
+            style={styles.buttonContainer}
+          >
+
+            <label
+              htmlFor="resumeUpload"
+              style={styles.uploadButton}
+            >
+              <FileText size={17} />
+              Choose Resume
             </label>
 
             <button
+              type="button"
+              disabled={
+                !resume || loading
+              }
+              onClick={handleAnalyze}
               style={{
                 ...styles.button,
-                ...(resume ? styles.buttonActive : styles.buttonDisabled),
+                ...(resume && !loading
+                  ? styles.buttonActive
+                  : styles.buttonDisabled),
               }}
-              disabled={!resume}
-              onClick={handleAnalyze}
             >
-              {loading ? "Uploading..." : "Analyze Resume"}
+              {loading
+                ? "Uploading..."
+                : "Analyze Resume"}
             </button>
+
           </div>
+
         </div>
 
-        {/* SELECTED FILE */}
+        {/* Selected file */}
 
         {resume && (
           <div style={styles.fileBox}>
+
             <div style={styles.fileInfo}>
-              <div style={styles.fileIcon}>PDF</div>
+
+              <div style={styles.fileIcon}>
+                PDF
+              </div>
 
               <div>
+
                 <span style={styles.fileName}>
                   {resume.name}
                 </span>
 
                 <p style={styles.fileStatus}>
-                  Ready for analysis
+                  Ready for analysis •{" "}
+                  {(
+                    resume.size /
+                    1024 /
+                    1024
+                  ).toFixed(2)}{" "}
+                  MB
                 </p>
+
               </div>
+
             </div>
 
             <button
+              type="button"
               onClick={removeFile}
               style={styles.removeButton}
             >
               <X size={18} />
             </button>
+
           </div>
         )}
+
+        {/* Error */}
 
         {error && (
           <div style={styles.error}>
-            {error}
+            <AlertTriangle size={17} />
+            <span>{error}</span>
           </div>
         )}
+
+        {/* Success */}
+
+        {success && (
+          <div style={styles.success}>
+            <CheckCircle size={17} />
+            <span>{success}</span>
+          </div>
+        )}
+
       </div>
 
-      {/* ========================================= */}
-      {/* AI SUGGESTIONS */}
-      {/* ========================================= */}
+      {/* =========================================================
+          AI SUGGESTIONS
+      ========================================================= */}
 
       <div style={styles.section}>
+
         <div style={styles.sectionHeader}>
+
           <div>
-            <h2 style={styles.sectionTitle}>🤖 AI Suggestions</h2>
+
+            <h2 style={styles.sectionTitle}>
+              🤖 AI Suggestions
+            </h2>
 
             <p style={styles.sectionSubtitle}>
-              Personalized improvements generated from your resume.
+              Personalized improvements
+              generated from your resume.
             </p>
+
           </div>
 
-          <div style={styles.aiBadge}>AI</div>
+          <div style={styles.aiBadge}>
+            AI
+          </div>
+
         </div>
 
-        {resumeData?.suggestions?.length > 0 ? (
-          <div style={styles.list}>
-            {resumeData.suggestions.map((item, index) => (
-              <div key={index} style={styles.listItem}>
-                <span style={styles.checkIcon}>✓</span>
+        {suggestions.length > 0 ? (
 
-                <span>{item}</span>
-              </div>
-            ))}
+          <div style={styles.list}>
+
+            {suggestions.map(
+              (item, index) => (
+
+                <div
+                  key={index}
+                  style={styles.listItem}
+                >
+
+                  <span
+                    style={styles.checkIcon}
+                  >
+                    ✓
+                  </span>
+
+                  <span>{item}</span>
+
+                </div>
+
+              )
+            )}
+
           </div>
+
         ) : (
+
           <p style={styles.emptyText}>
-            Upload and analyze your resume to receive AI suggestions.
+            Upload and analyze your resume
+            to receive AI suggestions.
           </p>
+
         )}
+
       </div>
 
-      {/* ========================================= */}
-      {/* STRENGTHS + WEAKNESSES */}
-      {/* ========================================= */}
+      {/* =========================================================
+          STRENGTHS + WEAKNESSES
+      ========================================================= */}
 
       <div style={styles.twoColumn}>
+
         {/* STRENGTHS */}
 
         <div style={styles.section}>
+
           <div style={styles.sectionHeader}>
+
             <div>
-              <h2 style={styles.sectionTitle}>💪 Strengths</h2>
+
+              <h2 style={styles.sectionTitle}>
+                💪 Strengths
+              </h2>
 
               <p style={styles.sectionSubtitle}>
-                Strong points identified in your resume.
+                Strong points identified in
+                your resume.
               </p>
+
             </div>
 
-            <div style={styles.strengthBadge}>
+            <div
+              style={styles.strengthBadge}
+            >
               ✓
             </div>
+
           </div>
 
-          {resumeData?.strengths?.length > 0 ? (
-            <div style={styles.list}>
-              {resumeData.strengths.map((item, index) => (
-                <div key={index} style={styles.strengthItem}>
-                  <span style={styles.checkIcon}>✓</span>
+          {strengths.length > 0 ? (
 
-                  <span>{item}</span>
-                </div>
-              ))}
+            <div style={styles.list}>
+
+              {strengths.map(
+                (item, index) => (
+
+                  <div
+                    key={index}
+                    style={
+                      styles.strengthItem
+                    }
+                  >
+
+                    <span
+                      style={
+                        styles.checkIcon
+                      }
+                    >
+                      ✓
+                    </span>
+
+                    <span>{item}</span>
+
+                  </div>
+
+                )
+              )}
+
             </div>
+
           ) : (
+
             <p style={styles.emptyText}>
               No strengths available yet.
             </p>
+
           )}
+
         </div>
 
         {/* WEAKNESSES */}
 
         <div style={styles.section}>
+
           <div style={styles.sectionHeader}>
+
             <div>
-              <h2 style={styles.sectionTitle}>⚠ Weaknesses</h2>
+
+              <h2 style={styles.sectionTitle}>
+                ⚠ Weaknesses
+              </h2>
 
               <p style={styles.sectionSubtitle}>
                 Areas that can be improved.
               </p>
+
             </div>
 
-            <div style={styles.warningBadge}>
+            <div
+              style={styles.warningBadge}
+            >
               !
             </div>
+
           </div>
 
-          {resumeData?.weaknesses?.length > 0 ? (
-            <div style={styles.list}>
-              {resumeData.weaknesses.map((item, index) => (
-                <div key={index} style={styles.warningItem}>
-                  <span style={styles.warningIcon}>!</span>
+          {weaknesses.length > 0 ? (
 
-                  <span>{item}</span>
-                </div>
-              ))}
+            <div style={styles.list}>
+
+              {weaknesses.map(
+                (item, index) => (
+
+                  <div
+                    key={index}
+                    style={
+                      styles.warningItem
+                    }
+                  >
+
+                    <span
+                      style={
+                        styles.warningIcon
+                      }
+                    >
+                      !
+                    </span>
+
+                    <span>{item}</span>
+
+                  </div>
+
+                )
+              )}
+
             </div>
+
           ) : (
+
             <p style={styles.emptyText}>
               No weaknesses available yet.
             </p>
+
           )}
+
         </div>
+
       </div>
 
-      {/* ========================================= */}
-      {/* MISSING SKILLS */}
-      {/* ========================================= */}
+      {/* =========================================================
+          MISSING SKILLS
+      ========================================================= */}
 
-      {/* <div style={styles.section}>
+      <div style={styles.section}>
+
         <div style={styles.sectionHeader}>
+
           <div>
-            <h2 style={styles.sectionTitle}>🚀 Missing Skills</h2>
+
+            <h2 style={styles.sectionTitle}>
+              🚀 Missing Skills
+            </h2>
 
             <p style={styles.sectionSubtitle}>
-              Skills you can develop to improve your career readiness.
+              Skills you can develop to
+              improve your career readiness.
             </p>
+
           </div>
 
           <div style={styles.skillCount}>
-            {resumeData?.missingSkills?.length || 0}
+            {missingSkills.length}
           </div>
+
         </div>
 
-        {resumeData?.missingSkills?.length > 0 ? (
-          <div style={styles.skillGrid}>
-            {resumeData.missingSkills.map((item, index) => (
-              <div key={index} style={styles.skillItem}>
-                <span style={styles.skillDot}>◆</span>
+        {missingSkills.length > 0 ? (
 
-                <span>{item}</span>
-              </div>
-            ))}
+          <div style={styles.skillGrid}>
+
+            {missingSkills.map(
+              (item, index) => (
+
+                <div
+                  key={index}
+                  style={styles.skillItem}
+                >
+                  <span
+                    style={styles.skillDot}
+                  >
+                    ◆
+                  </span>
+
+                  <span>{item}</span>
+
+                </div>
+
+              )
+            )}
+
           </div>
+
         ) : (
+
           <p style={styles.emptyText}>
             No missing skills available yet.
           </p>
-        )}
-      </div> */}
 
-      {/* ========================================= */}
-      {/* RESUME HISTORY */}
-      {/* ========================================= */}
+        )}
+
+      </div>
+
+      {/* =========================================================
+          RESUME HISTORY
+      ========================================================= */}
 
       <div style={styles.section}>
+
         <div style={styles.sectionHeader}>
+
           <div>
-            <h2 style={styles.sectionTitle}>🕒 Resume History</h2>
+
+            <h2 style={styles.sectionTitle}>
+              🕒 Resume History
+            </h2>
 
             <p style={styles.sectionSubtitle}>
-              Information about your latest uploaded resume.
+              Information about your latest
+              uploaded resume.
             </p>
+
           </div>
 
-          <div style={styles.historyIcon}>📋</div>
+          <div style={styles.historyIcon}>
+            📋
+          </div>
+
         </div>
 
         <div style={styles.historyBox}>
+
           <div>
+
             <p style={styles.historyLabel}>
               Uploaded on
             </p>
 
             <p style={styles.historyDate}>
-              {resumeData &&
-                new Date(
-                  resumeData.createdAt
-                ).toLocaleDateString()}
+              {resumeData?.createdAt
+                ? new Date(
+                    resumeData.createdAt
+                  ).toLocaleDateString(
+                    "en-IN",
+                    {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    }
+                  )
+                : "--"}
             </p>
+
           </div>
 
           <div style={styles.historyStatus}>
-            {resumeData ? "Latest Resume" : "No Resume"}
+            {resumeData
+              ? "Latest Resume"
+              : "No Resume"}
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }
+
+/* =================================================================
+   STYLES
+================================================================= */
 
 const styles = {
   container: {
@@ -489,7 +1114,7 @@ const styles = {
     color: "#172033",
   },
 
-  /* ================= HEADER ================= */
+  /* HEADER */
 
   header: {
     background:
@@ -502,7 +1127,8 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     gap: "20px",
-    boxShadow: "0 8px 25px rgba(15, 23, 42, 0.06)",
+    boxShadow:
+      "0 8px 25px rgba(15, 23, 42, 0.06)",
   },
 
   headerLeft: {
@@ -516,10 +1142,10 @@ const styles = {
     height: "58px",
     borderRadius: "16px",
     background: "#e8efff",
+    color: "#315bdc",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "28px",
   },
 
   headerTitle: {
@@ -546,11 +1172,12 @@ const styles = {
     whiteSpace: "nowrap",
   },
 
-  /* ================= STAT CARDS ================= */
+  /* CARDS */
 
   cardGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    gridTemplateColumns:
+      "repeat(4, minmax(0, 1fr))",
     gap: "18px",
     marginBottom: "24px",
   },
@@ -560,8 +1187,8 @@ const styles = {
     border: "1px solid #e7ebf2",
     borderRadius: "18px",
     padding: "22px",
-    boxShadow: "0 5px 18px rgba(15, 23, 42, 0.05)",
-    transition: "0.2s ease",
+    boxShadow:
+      "0 5px 18px rgba(15, 23, 42, 0.05)",
   },
 
   statTop: {
@@ -626,8 +1253,6 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "22px",
-    fontWeight: "800",
   },
 
   redIcon: {
@@ -639,8 +1264,6 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "22px",
-    fontWeight: "800",
   },
 
   orangeIcon: {
@@ -675,7 +1298,7 @@ const styles = {
     color: "#94a3b8",
   },
 
-  /* ================= SECTIONS ================= */
+  /* SECTION */
 
   section: {
     background: "#ffffff",
@@ -683,7 +1306,8 @@ const styles = {
     borderRadius: "18px",
     padding: "25px",
     marginBottom: "22px",
-    boxShadow: "0 5px 18px rgba(15, 23, 42, 0.04)",
+    boxShadow:
+      "0 5px 18px rgba(15, 23, 42, 0.04)",
   },
 
   sectionHeader: {
@@ -699,6 +1323,8 @@ const styles = {
     fontSize: "19px",
     fontWeight: "750",
     color: "#172033",
+    display: "flex",
+    alignItems: "center",
   },
 
   sectionSubtitle: {
@@ -763,7 +1389,7 @@ const styles = {
     justifyContent: "center",
   },
 
-  /* ================= UPLOAD ================= */
+  /* UPLOAD */
 
   uploadArea: {
     border: "2px dashed #cbd5e1",
@@ -779,10 +1405,10 @@ const styles = {
     margin: "0 auto 12px",
     borderRadius: "15px",
     background: "#e8efff",
+    color: "#2563eb",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "25px",
   },
 
   uploadTitle: {
@@ -817,6 +1443,7 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
+    gap: "8px",
   },
 
   button: {
@@ -826,11 +1453,11 @@ const styles = {
     color: "#ffffff",
     fontSize: "14px",
     fontWeight: "700",
-    cursor: "pointer",
   },
 
   buttonActive: {
     background: "#2563eb",
+    cursor: "pointer",
   },
 
   buttonDisabled: {
@@ -838,7 +1465,7 @@ const styles = {
     cursor: "not-allowed",
   },
 
-  /* ================= FILE ================= */
+  /* FILE */
 
   fileBox: {
     marginTop: "16px",
@@ -870,6 +1497,7 @@ const styles = {
     justifyContent: "center",
     fontSize: "11px",
     fontWeight: "800",
+    flexShrink: 0,
   },
 
   fileName: {
@@ -899,7 +1527,7 @@ const styles = {
     flexShrink: 0,
   },
 
-  /* ================= LISTS ================= */
+  /* LISTS */
 
   list: {
     display: "flex",
@@ -971,15 +1599,16 @@ const styles = {
     flexShrink: 0,
   },
 
-  /* ================= TWO COLUMN ================= */
+  /* TWO COLUMN */
 
   twoColumn: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridTemplateColumns:
+      "repeat(2, minmax(0, 1fr))",
     gap: "22px",
   },
 
-  /* ================= SKILLS ================= */
+  /* SKILLS */
 
   skillCount: {
     minWidth: "38px",
@@ -996,7 +1625,8 @@ const styles = {
 
   skillGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridTemplateColumns:
+      "repeat(2, minmax(0, 1fr))",
     gap: "10px",
   },
 
@@ -1017,7 +1647,7 @@ const styles = {
     fontSize: "10px",
   },
 
-  /* ================= HISTORY ================= */
+  /* HISTORY */
 
   historyBox: {
     display: "flex",
@@ -1052,7 +1682,7 @@ const styles = {
     fontWeight: "700",
   },
 
-  /* ================= EMPTY / ERROR ================= */
+  /* EMPTY */
 
   emptyText: {
     margin: 0,
@@ -1063,6 +1693,8 @@ const styles = {
     fontSize: "14px",
   },
 
+  /* ERROR */
+
   error: {
     marginTop: "15px",
     padding: "12px 15px",
@@ -1071,5 +1703,23 @@ const styles = {
     color: "#b91c1c",
     fontSize: "14px",
     fontWeight: "600",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+
+  /* SUCCESS */
+
+  success: {
+    marginTop: "15px",
+    padding: "12px 15px",
+    borderRadius: "10px",
+    background: "#dcfce7",
+    color: "#15803d",
+    fontSize: "14px",
+    fontWeight: "600",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
   },
 };
