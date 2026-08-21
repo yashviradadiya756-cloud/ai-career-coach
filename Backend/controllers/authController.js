@@ -109,10 +109,21 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   try {
+    console.log("=================================");
+    console.log("BACKEND LOGIN REQUEST RECEIVED");
+    console.log("EMAIL RECEIVED:", req.body.email);
+    console.log("PASSWORD EXISTS:", !!req.body.password);
+    console.log("=================================");
     const {
       email,
       password,
     } = req.body;
+
+    console.log("=================================");
+    console.log("BACKEND LOGIN REQUEST");
+    console.log("EMAIL RECEIVED:", email);
+    console.log("PASSWORD EXISTS:", !!password);
+    console.log("=================================");
 
     if (!email || !password) {
       return res.status(400).json({
@@ -121,9 +132,30 @@ const loginUser = async (req, res) => {
       });
     }
 
+    const normalizedEmail =
+      email.toLowerCase().trim();
+
+    console.log(
+      "NORMALIZED EMAIL:",
+      normalizedEmail
+    );
+
     const user = await User.findOne({
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
     });
+
+    console.log("=================================");
+    console.log("DATABASE USER RESULT");
+    console.log("USER FOUND:", !!user);
+
+    if (user) {
+      console.log("USER ID:", user._id);
+      console.log("USER EMAIL:", user.email);
+      console.log("USER NAME:", user.name);
+      console.log("USERNAME:", user.username);
+    }
+
+    console.log("=================================");
 
     if (!user) {
       return res.status(400).json({
@@ -135,6 +167,11 @@ const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(
       password,
       user.password
+    );
+
+    console.log(
+      "PASSWORD MATCH:",
+      isMatch
     );
 
     if (!isMatch) {
@@ -154,21 +191,26 @@ const loginUser = async (req, res) => {
       }
     );
 
-    res.status(200).json({
-    success: true,
-    message: "Login Successful",
+    console.log("=================================");
+    console.log("LOGIN SUCCESS");
+    console.log("JWT USER ID:", user._id);
+    console.log("USER EMAIL:", user.email);
+    console.log("=================================");
 
-    token,
+    return res.status(200).json({
+      success: true,
+      message: "Login Successful",
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      },
+    });
 
-    user: {
-      _id: user._id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-    },
-  });
   } catch (error) {
     console.error("LOGIN ERROR:", error);
 

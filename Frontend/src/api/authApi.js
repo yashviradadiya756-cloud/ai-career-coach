@@ -1,6 +1,11 @@
 import api from "./axios";
 
 export const loginUser = (data) => {
+  console.log("=================================");
+  console.log("AUTH API LOGIN REQUEST");
+  console.log("EMAIL SENT TO BACKEND:", data.email);
+  console.log("PASSWORD EXISTS:", !!data.password);
+  console.log("=================================");
   return api.post("/api/auth/login", data);
 };
 

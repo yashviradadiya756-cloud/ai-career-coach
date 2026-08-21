@@ -13,20 +13,11 @@ console.log("=================================");
 console.log("SKILL GAP ROUTES");
 console.log("=================================");
 
-console.log(
-  "protect:",
-  typeof protect
-);
+console.log("protect:",typeof protect);
 
-console.log(
-  "analyzeSkillGap:",
-  typeof analyzeSkillGap
-);
+console.log( "analyzeSkillGap:", typeof analyzeSkillGap);
 
-console.log(
-  "getLatestSkillGap:",
-  typeof getLatestSkillGap
-);
+console.log( "getLatestSkillGap:", typeof getLatestSkillGap);
 
 router.post(
   "/analyze",
