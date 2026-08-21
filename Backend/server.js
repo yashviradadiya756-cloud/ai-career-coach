@@ -103,6 +103,99 @@ app.get("/", (req, res) => {
   res.send("AI Career Coach Backend is Running...");
 });
 
+app.get(
+  "/api/gemini-test",
+  async (req, res) => {
+
+    console.log(
+      "================================="
+    );
+
+    console.log(
+      "GEMINI TEST ROUTE HIT"
+    );
+
+    console.log(
+      "================================="
+    );
+
+    try {
+
+      const {
+        generateContent,
+      } = require("./utils/gemini");
+
+      console.log(
+        "Calling Gemini..."
+      );
+
+      const response =
+        await generateContent(
+          "Reply with exactly: GEMINI TEST SUCCESS"
+        );
+
+      console.log(
+        "Gemini response received"
+      );
+
+      let text = "";
+
+      if (response?.text) {
+
+        text =
+          typeof response.text === "function"
+            ? response.text()
+            : response.text;
+      }
+
+      if (
+        !text &&
+        response?.candidates?.[0]
+          ?.content?.parts
+      ) {
+
+        text =
+          response
+            .candidates[0]
+            .content
+            .parts
+            .map(
+              (part) =>
+                part.text || ""
+            )
+            .join("");
+      }
+
+      console.log(
+        "GEMINI TEST RESULT:",
+        text
+      );
+
+      return res.json({
+        success: true,
+        message:
+          "Gemini is working",
+        response: text,
+      });
+
+    } catch (error) {
+
+      console.error(
+        "GEMINI TEST ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Gemini test failed",
+        error:
+          error.message,
+      });
+    }
+  }
+);
+
 app.get("/api/learning-test", (req, res) => {
   res.json({
     success: true,

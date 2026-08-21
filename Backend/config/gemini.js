@@ -1,10 +1,6 @@
 const { GoogleGenAI } = require("@google/genai");
 require("dotenv").config();
 
-// =====================================================
-// ENVIRONMENT
-// =====================================================
-
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const PRIMARY_MODEL =
@@ -24,9 +20,7 @@ console.log(
 
 console.log(
   "GEMINI_API_KEY LENGTH:",
-  GEMINI_API_KEY
-    ? GEMINI_API_KEY.length
-    : 0
+  GEMINI_API_KEY ? GEMINI_API_KEY.length : 0
 );
 
 console.log(
@@ -41,187 +35,134 @@ console.log(
 
 console.log("=================================");
 
-// =====================================================
-// VALIDATE API KEY
-// =====================================================
-
 if (!GEMINI_API_KEY) {
   throw new Error(
     "GEMINI_API_KEY is not configured"
   );
 }
 
-// =====================================================
-// GEMINI CLIENT
-// =====================================================
-
 const ai = new GoogleGenAI({
   apiKey: GEMINI_API_KEY,
 });
 
-// =====================================================
-// GENERATE CONTENT
-// =====================================================
+const withTimeout = (
+  promise,
+  timeoutMs = 30000
+) => {
+  return Promise.race([
+    promise,
 
-const generateContent = async (prompt) => {
-  console.log("=================================");
-  console.log("GEMINI REQUEST START");
-  console.log("PRIMARY MODEL:", PRIMARY_MODEL);
-  console.log("=================================");
-
-  try {
-    const response =
-      await ai.models.generateContent({
-        model: PRIMARY_MODEL,
-        contents: prompt,
-      });
-
-    console.log(
-      "GEMINI PRIMARY SUCCESS"
-    );
-
-    return response;
-
-  } catch (primaryError) {
-
-    console.error(
-      "================================="
-    );
-
-    console.error(
-      "PRIMARY GEMINI ERROR"
-    );
-
-    console.error(
-      primaryError?.message ||
-      primaryError
-    );
-
-    console.error(
-      "================================="
-    );
-
-    // =================================================
-    // FALLBACK MODEL
-    // =================================================
-
-    console.log(
-      "TRYING FALLBACK MODEL:",
-      FALLBACK_MODEL
-    );
-
-    try {
-
-      const fallbackResponse =
-        await ai.models.generateContent({
-          model: FALLBACK_MODEL,
-          contents: prompt,
-        });
-
-      console.log(
-        "GEMINI FALLBACK SUCCESS"
-      );
-
-      return fallbackResponse;
-
-    } catch (fallbackError) {
-
-      console.error(
-        "================================="
-      );
-
-      console.error(
-        "FALLBACK GEMINI ERROR"
-      );
-
-      console.error(
-        fallbackError?.message ||
-        fallbackError
-      );
-
-      console.error(
-        "================================="
-      );
-
-      throw fallbackError;
-    }
-  }
+    new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(
+          new Error(
+            `Gemini request timed out after ${
+              timeoutMs / 1000
+            } seconds`
+          )
+        );
+      }, timeoutMs);
+    }),
+  ]);
 };
 
-// =====================================================
-// TEST GEMINI
-// =====================================================
+const generateContent = async (prompt) => {
 
-const testGemini = async () => {
+  let primaryError = null;
 
-  console.log(
-    "================================="
-  );
+  console.log("=================================");
+  console.log("GEMINI REQUEST STARTED");
+  console.log("=================================");
 
   console.log(
-    "RUNNING GEMINI TEST"
-  );
-
-  console.log(
-    "MODEL:",
+    "Primary Model:",
     PRIMARY_MODEL
   );
 
   console.log(
-    "================================="
+    "Fallback Model:",
+    FALLBACK_MODEL
   );
 
+  console.log(
+    "Prompt Length:",
+    prompt?.length || 0
+  );
+
+  // PRIMARY
   try {
 
-    const response =
-      await ai.models.generateContent({
+    console.log(
+      "Trying PRIMARY MODEL:",
+      PRIMARY_MODEL
+    );
+
+    const response = await withTimeout(
+      ai.models.generateContent({
         model: PRIMARY_MODEL,
-        contents:
-          "Reply with exactly: GEMINI TEST SUCCESS",
-      });
-
-    console.log(
-      "GEMINI TEST RESPONSE:"
+        contents: prompt,
+      }),
+      30000
     );
 
     console.log(
-      response?.text ||
-      response
-    );
-
-    console.log(
-      "================================="
+      "PRIMARY MODEL SUCCESS"
     );
 
     return response;
 
   } catch (error) {
 
-    console.error(
-      "GEMINI TEST FAILED:"
-    );
+    primaryError = error;
 
     console.error(
-      error?.message ||
-      error
+      "PRIMARY MODEL FAILED:",
+      error?.message || error
     );
+  }
+
+  // FALLBACK
+  try {
+
+    console.log(
+      "Trying FALLBACK MODEL:",
+      FALLBACK_MODEL
+    );
+
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: FALLBACK_MODEL,
+        contents: prompt,
+      }),
+      30000
+    );
+
+    console.log(
+      "FALLBACK MODEL SUCCESS"
+    );
+
+    return response;
+
+  } catch (fallbackError) {
 
     console.error(
-      "================================="
+      "FALLBACK MODEL FAILED:",
+      fallbackError?.message || fallbackError
     );
 
-    return null;
+    throw new Error(
+      `Gemini failed. Primary: ${
+        primaryError?.message || "unknown error"
+      }. Fallback: ${
+        fallbackError?.message || "unknown error"
+      }`
+    );
   }
 };
-
-// =====================================================
-// EXPORT
-// =====================================================
 
 module.exports = {
   ai,
   generateContent,
-  testGemini,
   PRIMARY_MODEL,
   FALLBACK_MODEL,
 };
