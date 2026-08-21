@@ -1,10 +1,8 @@
-import api from "./api";
+import api from "./axios";
 
-export const analyzeSkillGap = async (
-  targetRole
-) => {
+export const analyzeSkillGap = async (targetRole) => {
   return api.post(
-    "/api/skill-gap/analyze",
+    "/api/skillgap/analyze",
     {
       targetRole,
     }
@@ -13,6 +11,6 @@ export const analyzeSkillGap = async (
 
 export const getLatestSkillGap = async () => {
   return api.get(
-    "/api/skill-gap/latest"
+    "/api/skillgap/latest"
   );
 };
