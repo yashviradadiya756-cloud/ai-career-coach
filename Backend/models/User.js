@@ -2,29 +2,17 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    // ==========================================
-    // FULL NAME
-    // ==========================================
-
     name: {
       type: String,
-      required: true,
       trim: true,
     },
-
-    // ==========================================
-    // USERNAME
-    // ==========================================
 
     username: {
       type: String,
       required: true,
+      unique: true,
       trim: true,
     },
-
-    // ==========================================
-    // EMAIL
-    // ==========================================
 
     email: {
       type: String,
@@ -34,40 +22,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // ==========================================
-    // PASSWORD
-    // ==========================================
-
     password: {
       type: String,
-      required: false,
-      default: null,
     },
-
-    googleId: {
-  type: String,
-  default: null,
-},
-
-authProvider: {
-  type: String,
-  enum: ["local", "google"],
-  default: "local",
-},
-
-profileImage: {
-  type: String,
-  default: "",
-},
-
-    // ==========================================
-    // PHONE
-    // ==========================================
 
     phone: {
       type: String,
-      default: "",
-      trim: true,
     },
 
     role: {
@@ -76,35 +36,30 @@ profileImage: {
       default: "user",
     },
 
-    // ==========================================
-// SUBSCRIPTION
-// ==========================================
+    authProvider: {
+      type: String,
+      default: "local",
+    },
 
-plan: {
-  type: String,
-  enum: ["Free", "Pro"],
-  default: "Free",
-},
+    googleId: {
+      type: String,
+      default: null,
+    },
 
-subscriptionStatus: {
-  type: String,
-  enum: ["Active", "Inactive", "Expired"],
-  default: "Inactive",
-},
+    plan: {
+      type: String,
+      default: "Free",
+    },
 
-subscriptionStartDate: {
-  type: Date,
-  default: null,
-},
+    profileImage: {
+      type: String,
+      default: "",
+    },
 
-subscriptionEndDate: {
-  type: Date,
-  default: null,
-},
-
-    // ==========================================
-    // PREFERENCES
-    // ==========================================
+    subscriptionStatus: {
+      type: String,
+      default: "Inactive",
+    },
 
     preferences: {
       darkMode: {
@@ -128,5 +83,7 @@ subscriptionEndDate: {
   }
 );
 
-module.exports =
-  mongoose.model("User", userSchema);
+module.exports = mongoose.model(
+  "User",
+  userSchema
+);

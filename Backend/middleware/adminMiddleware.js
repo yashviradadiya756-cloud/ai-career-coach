@@ -1,60 +1,45 @@
-const adminMiddleware = (
-  req,
-  res,
-  next
-) => {
+const adminMiddleware = (req, res, next) => {
   try {
-    console.log(
-      "\n========== ADMIN MIDDLEWARE =========="
-    );
-
-    console.log(
-      "REQ.USER:",
-      req.user
-    );
+    console.log("=================================");
+    console.log("ADMIN MIDDLEWARE STARTED");
+    console.log("=================================");
 
     if (!req.user) {
-      console.log(
-        "ADMIN CHECK FAILED: NO USER"
-      );
+      console.log("NO REQ.USER");
 
       return res.status(401).json({
         success: false,
-        message:
-          "Authentication required",
+        message: "Authentication required",
       });
     }
 
-    console.log(
-      "USER ROLE:",
-      req.user.role
-    );
+    console.log("ADMIN USER ID:", req.user._id);
+    console.log("ADMIN USERNAME:", req.user.username);
+    console.log("ADMIN EMAIL:", req.user.email);
+    console.log("ADMIN ROLE:", req.user.role);
 
-    if (
-      String(req.user.role)
-        .trim()
-        .toLowerCase() !== "admin"
-    ) {
-      console.log(
-        "ADMIN ACCESS DENIED"
-      );
+    const role = String(req.user.role || "")
+      .trim()
+      .toLowerCase();
+
+    console.log("NORMALIZED ROLE:", role);
+
+    if (role !== "admin") {
+      console.log("ADMIN ACCESS DENIED");
 
       return res.status(403).json({
         success: false,
-        message:
-          "Admin access required",
+        message: "Admin access required",
         role: req.user.role || null,
       });
     }
 
-    console.log(
-      "ADMIN ACCESS GRANTED"
-    );
+    console.log("ADMIN ACCESS GRANTED");
+    console.log("=================================");
 
     next();
 
   } catch (error) {
-
     console.error(
       "ADMIN MIDDLEWARE ERROR:",
       error
@@ -62,11 +47,9 @@ const adminMiddleware = (
 
     return res.status(500).json({
       success: false,
-      message:
-        "Admin authorization failed",
+      message: "Admin authorization failed",
     });
   }
 };
 
-module.exports =
-  adminMiddleware;
+module.exports = adminMiddleware;

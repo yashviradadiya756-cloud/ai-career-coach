@@ -1,18 +1,11 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-// =====================================================
-// PROTECT ROUTES
-// =====================================================
-
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   try {
     console.log("=================================");
     console.log("AUTH MIDDLEWARE STARTED");
     console.log("=================================");
-
-    // -----------------------------------------------
-    // AUTHORIZATION HEADER
-    // -----------------------------------------------
 
     const authHeader = req.headers.authorization;
 
@@ -28,10 +21,6 @@ const protect = (req, res, next) => {
       });
     }
 
-    // -----------------------------------------------
-    // BEARER CHECK
-    // -----------------------------------------------
-
     if (!authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
@@ -39,18 +28,7 @@ const protect = (req, res, next) => {
       });
     }
 
-    // -----------------------------------------------
-    // TOKEN
-    // -----------------------------------------------
-
-    const token = authHeader
-      .substring(7)
-      .trim();
-
-    console.log(
-      "TOKEN EXISTS:",
-      !!token
-    );
+    const token = authHeader.substring(7).trim();
 
     if (!token) {
       return res.status(401).json({
@@ -59,42 +37,19 @@ const protect = (req, res, next) => {
       });
     }
 
-    // -----------------------------------------------
-    // JWT SECRET
-    // -----------------------------------------------
-
     if (!process.env.JWT_SECRET) {
-      console.error(
-        "JWT_SECRET IS NOT DEFINED"
-      );
-
       return res.status(500).json({
         success: false,
         message: "JWT_SECRET is not configured",
       });
     }
 
-    // -----------------------------------------------
-    // VERIFY TOKEN
-    // -----------------------------------------------
-
-    console.log(
-      "VERIFYING JWT..."
-    );
-
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET
     );
 
-    console.log(
-      "JWT DECODED:",
-      decoded
-    );
-
-    // -----------------------------------------------
-    // USER ID
-    // -----------------------------------------------
+    console.log("JWT DECODED:", decoded);
 
     const userId =
       decoded?.id ||
@@ -109,74 +64,71 @@ const protect = (req, res, next) => {
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message:
-          "User ID not found in token",
+        message: "User ID not found in token",
       });
     }
 
-    // -----------------------------------------------
-    // ATTACH USER
-    // -----------------------------------------------
+    // =================================================
+    // IMPORTANT:
+    // GET USER FROM MONGODB
+    // =================================================
 
-    req.user = {
-      _id: userId,
-    };
+    const user = await User.findById(userId)
+      .select("-password");
 
     console.log(
-      "REQ.USER:",
-      req.user
+      "DATABASE USER FOUND:",
+      !!user
     );
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    console.log("DATABASE USER ID:", user._id);
+    console.log("DATABASE USERNAME:", user.username);
+    console.log("DATABASE EMAIL:", user.email);
+    console.log("DATABASE ROLE:", user.role);
+
+    // =================================================
+    // ATTACH COMPLETE USER
+    // =================================================
+
+    req.user = user;
+
+    console.log("REQ.USER ROLE:", req.user.role);
 
     console.log(
       "AUTHENTICATION SUCCESS"
     );
 
-    console.log(
-      "================================="
-    );
+    console.log("=================================");
 
     next();
 
   } catch (error) {
-    console.error("=================================");
-    console.error("AUTH MIDDLEWARE ERROR");
-    console.error("ERROR NAME:", error?.name);
+
     console.error(
-      "ERROR MESSAGE:",
-      error?.message
+      "AUTH MIDDLEWARE ERROR:",
+      error
     );
-    console.error("ERROR STACK:", error?.stack);
-    console.error("=================================");
 
-    // -----------------------------------------------
-    // EXPIRED TOKEN
-    // -----------------------------------------------
-
-    if (
-      error?.name === "TokenExpiredError"
-    ) {
+    if (error?.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,
         message: "Token has expired",
       });
     }
 
-    // -----------------------------------------------
-    // INVALID TOKEN
-    // -----------------------------------------------
-
-    if (
-      error?.name === "JsonWebTokenError"
-    ) {
+    if (error?.name === "JsonWebTokenError") {
       return res.status(401).json({
         success: false,
         message: "Invalid token",
       });
     }
-
-    // -----------------------------------------------
-    // OTHER ERROR
-    // -----------------------------------------------
 
     return res.status(500).json({
       success: false,

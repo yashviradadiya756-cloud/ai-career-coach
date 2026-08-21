@@ -31,6 +31,7 @@ const express = require("express");
 const cors = require("cors");
 
 const connectDB = require("./config/db");
+const setupRoutes = require("./routes/setupRoutes");
 
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -271,6 +272,11 @@ console.log("notificationRoutes:", typeof notificationRoutes);
 console.log("paymentRoutes:", typeof paymentRoutes);
 
 console.log("================================");
+
+app.use(
+  "/api/setup",
+  setupRoutes
+);
 
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
