@@ -14,16 +14,22 @@ const getProfile = async (req, res) => {
       });
     }
 
-    const user = await User.findById(
-      req.user._id
-    ).select("-password");
+    const userId =
+      decoded.id ||
+      decoded.userId;
 
-    if (!user) {
-      return res.status(404).json({
+    if (!userId) {
+      return res.status(401).json({
         success: false,
-        message: "User not found",
+        message:
+          "Invalid token payload",
       });
     }
+
+    const user =
+      await User.findById(
+        userId
+      ).select("-password");
 
     return res.status(200).json({
       success: true,

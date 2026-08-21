@@ -2,28 +2,30 @@ const express = require("express");
 
 const router = express.Router();
 
-const protect = require("../middleware/authMiddleware");
-
 const {
   analyzeSkillGap,
   getLatestSkillGap,
-} = require("../controllers/skillGapController");
+} = require(
+  "../controllers/skillGapController"
+);
 
-console.log("=================================");
-console.log("SKILL GAP ROUTES");
-console.log("=================================");
+const protect = require(
+  "../middleware/authMiddleware"
+);
 
-console.log("protect:",typeof protect);
-
-console.log( "analyzeSkillGap:", typeof analyzeSkillGap);
-
-console.log( "getLatestSkillGap:", typeof getLatestSkillGap);
+// =====================================================
+// POST - ANALYZE SKILL GAP
+// =====================================================
 
 router.post(
   "/analyze",
   protect,
   analyzeSkillGap
 );
+
+// =====================================================
+// GET - LATEST SKILL GAP
+// =====================================================
 
 router.get(
   "/latest",

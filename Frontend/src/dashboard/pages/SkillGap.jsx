@@ -60,14 +60,14 @@ const SkillGap = () => {
   // ANALYZE SKILL GAP
   // ==========================================
   const handleAnalyze = async () => {
-  try {
-    if (!targetRole.trim()) {
-      setError(
-        "Please enter your target career role."
-      );
-      return;
-    }
+  if (!targetRole.trim()) {
+    setError(
+      "Please enter your target career role."
+    );
+    return;
+  }
 
+  try {
     setAnalyzing(true);
     setError("");
 
@@ -95,58 +95,68 @@ const SkillGap = () => {
 
     console.log(
       "SKILL GAP RESPONSE:",
-      response?.data
+      response
     );
 
     const data =
       response?.data || response;
 
+    console.log(
+      "NORMALIZED SKILL GAP DATA:",
+      data
+    );
+
     if (
-      data?.success &&
-      data?.skillGap
+      !data?.success
     ) {
-      setSkillGap(
-        data.skillGap
-      );
-
-      setTargetRole(
-        data.skillGap.targetRole ||
-          targetRole
-      );
-
-      console.log(
-        "SKILL GAP ANALYSIS SUCCESS"
-      );
-    } else {
       throw new Error(
         data?.message ||
           "Skill Gap Analysis Failed"
       );
     }
+
+    if (
+      !data?.skillGap
+    ) {
+      throw new Error(
+        "Backend returned success but no skill gap data."
+      );
+    }
+
+    // -----------------------------------------------
+    // SAVE DATA TO UI
+    // -----------------------------------------------
+
+    setSkillGap(
+      data.skillGap
+    );
+
+    setTargetRole(
+      data.skillGap.targetRole ||
+        targetRole.trim()
+    );
+
+    console.log(
+      "SKILL GAP ANALYSIS SUCCESS"
+    );
+
   } catch (error) {
     console.error(
-      "================================"
+      "SKILL GAP ANALYZE ERROR:",
+      error
     );
 
     console.error(
-      "SKILL GAP ANALYZE ERROR"
-    );
-
-    console.error(
-      error.response?.data ||
-        error.message
-    );
-
-    console.error(
-      "================================"
+      "SERVER ERROR:",
+      error?.response?.data
     );
 
     setError(
-      error.response?.data
-        ?.message ||
-        error.message ||
-        "Skill Gap Analysis Failed"
+      error?.response?.data?.message ||
+        error?.message ||
+        "Skill Gap Analysis failed."
     );
+
   } finally {
     setAnalyzing(false);
   }
