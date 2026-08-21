@@ -6,18 +6,20 @@ const bcrypt = require("bcryptjs");
 // =====================================================
 
 const getProfile = async (req, res) => {
-  try {
-    console.log("=================================");
-    console.log("GET PROFILE STARTED");
-    console.log("=================================");
+  console.log("=================================");
+  console.log("GET PROFILE CONTROLLER");
+  console.log("=================================");
 
+  try {
     // -----------------------------------------------
     // CHECK AUTH USER
     // -----------------------------------------------
 
     console.log("REQ.USER:", req.user);
 
-    if (!req.user) {
+    if (!req.user || !req.user._id) {
+      console.log("NO AUTHENTICATED USER");
+
       return res.status(401).json({
         success: false,
         message: "Authentication required",
@@ -25,30 +27,29 @@ const getProfile = async (req, res) => {
     }
 
     // -----------------------------------------------
-    // GET USER ID FROM AUTH MIDDLEWARE
+    // GET USER ID FROM MIDDLEWARE
     // -----------------------------------------------
 
     const userId = req.user._id;
 
     console.log("USER ID:", userId);
 
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "User ID not found",
-      });
-    }
-
     // -----------------------------------------------
     // FIND USER
     // -----------------------------------------------
 
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(userId).select(
+      "-password"
+    );
 
     console.log(
       "USER FOUND:",
       !!user
     );
+
+    // -----------------------------------------------
+    // USER NOT FOUND
+    // -----------------------------------------------
 
     if (!user) {
       return res.status(404).json({
@@ -61,15 +62,8 @@ const getProfile = async (req, res) => {
     // RESPONSE
     // -----------------------------------------------
 
-    console.log(
-      "PROFILE FETCH SUCCESS"
-    );
-
-    console.log("=================================");
-
     return res.status(200).json({
       success: true,
-      message: "Profile fetched successfully",
       user,
     });
 
@@ -78,7 +72,7 @@ const getProfile = async (req, res) => {
     console.error("GET PROFILE ERROR");
     console.error("ERROR NAME:", error?.name);
     console.error("ERROR MESSAGE:", error?.message);
-    console.error("ERROR:", error);
+    console.error("ERROR STACK:", error?.stack);
     console.error("=================================");
 
     return res.status(500).json({
@@ -95,18 +89,18 @@ const getProfile = async (req, res) => {
 // =====================================================
 
 const updateProfile = async (req, res) => {
+  console.log("=================================");
+  console.log("UPDATE PROFILE CONTROLLER");
+  console.log("=================================");
+
   try {
-    console.log("=================================");
-    console.log("UPDATE PROFILE STARTED");
-    console.log("=================================");
+    // -----------------------------------------------
+    // CHECK AUTH USER
+    // -----------------------------------------------
 
     console.log("REQ.USER:", req.user);
 
-    // -----------------------------------------------
-    // CHECK AUTH
-    // -----------------------------------------------
-
-    if (!req.user) {
+    if (!req.user || !req.user._id) {
       return res.status(401).json({
         success: false,
         message: "Authentication required",
@@ -114,7 +108,7 @@ const updateProfile = async (req, res) => {
     }
 
     // -----------------------------------------------
-    // USER ID
+    // GET USER
     // -----------------------------------------------
 
     const userId = req.user._id;
@@ -123,17 +117,6 @@ const updateProfile = async (req, res) => {
       "USER ID:",
       userId
     );
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "User ID not found",
-      });
-    }
-
-    // -----------------------------------------------
-    // FIND USER
-    // -----------------------------------------------
 
     const user = await User.findById(userId);
 
@@ -155,7 +138,7 @@ const updateProfile = async (req, res) => {
       phone,
     } = req.body;
 
-    console.log("UPDATE BODY:", {
+    console.log("UPDATE DATA:", {
       name,
       username,
       email,
@@ -200,12 +183,6 @@ const updateProfile = async (req, res) => {
     // RESPONSE
     // -----------------------------------------------
 
-    console.log(
-      "PROFILE UPDATE SUCCESS"
-    );
-
-    console.log("=================================");
-
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
@@ -217,7 +194,7 @@ const updateProfile = async (req, res) => {
     console.error("UPDATE PROFILE ERROR");
     console.error("ERROR NAME:", error?.name);
     console.error("ERROR MESSAGE:", error?.message);
-    console.error("ERROR:", error);
+    console.error("ERROR STACK:", error?.stack);
     console.error("=================================");
 
     return res.status(500).json({

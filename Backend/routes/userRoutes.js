@@ -15,7 +15,9 @@ const {
 // AUTH MIDDLEWARE
 // =====================================================
 
-const protect = require("../middleware/authMiddleware");
+const protect = require(
+  "../middleware/authMiddleware"
+);
 
 // =====================================================
 // DEBUG
@@ -48,19 +50,19 @@ console.log("=================================");
 
 if (typeof protect !== "function") {
   throw new Error(
-    "protect middleware is not a function. Check authMiddleware.js export."
+    "protect middleware is not a function"
   );
 }
 
 if (typeof getProfile !== "function") {
   throw new Error(
-    "getProfile controller is not a function."
+    "getProfile controller is not a function"
   );
 }
 
 if (typeof updateProfile !== "function") {
   throw new Error(
-    "updateProfile controller is not a function."
+    "updateProfile controller is not a function"
   );
 }
 

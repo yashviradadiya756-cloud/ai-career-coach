@@ -11,7 +11,7 @@ const protect = (req, res, next) => {
     console.log("=================================");
 
     // -----------------------------------------------
-    // GET AUTHORIZATION HEADER
+    // AUTHORIZATION HEADER
     // -----------------------------------------------
 
     const authHeader = req.headers.authorization;
@@ -29,7 +29,7 @@ const protect = (req, res, next) => {
     }
 
     // -----------------------------------------------
-    // CHECK BEARER
+    // BEARER CHECK
     // -----------------------------------------------
 
     if (!authHeader.startsWith("Bearer ")) {
@@ -40,10 +40,12 @@ const protect = (req, res, next) => {
     }
 
     // -----------------------------------------------
-    // EXTRACT TOKEN
+    // TOKEN
     // -----------------------------------------------
 
-    const token = authHeader.substring(7).trim();
+    const token = authHeader
+      .substring(7)
+      .trim();
 
     console.log(
       "TOKEN EXISTS:",
@@ -91,7 +93,7 @@ const protect = (req, res, next) => {
     );
 
     // -----------------------------------------------
-    // GET USER ID
+    // USER ID
     // -----------------------------------------------
 
     const userId =
@@ -107,7 +109,8 @@ const protect = (req, res, next) => {
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: "User ID not found in token",
+        message:
+          "User ID not found in token",
       });
     }
 
@@ -135,28 +138,19 @@ const protect = (req, res, next) => {
     next();
 
   } catch (error) {
-
-    console.error(
-      "================================="
-    );
-
-    console.error(
-      "AUTH MIDDLEWARE ERROR"
-    );
-
-    console.error(
-      "ERROR NAME:",
-      error?.name
-    );
-
+    console.error("=================================");
+    console.error("AUTH MIDDLEWARE ERROR");
+    console.error("ERROR NAME:", error?.name);
     console.error(
       "ERROR MESSAGE:",
       error?.message
     );
+    console.error("ERROR STACK:", error?.stack);
+    console.error("=================================");
 
-    console.error(
-      "================================="
-    );
+    // -----------------------------------------------
+    // EXPIRED TOKEN
+    // -----------------------------------------------
 
     if (
       error?.name === "TokenExpiredError"
@@ -167,6 +161,10 @@ const protect = (req, res, next) => {
       });
     }
 
+    // -----------------------------------------------
+    // INVALID TOKEN
+    // -----------------------------------------------
+
     if (
       error?.name === "JsonWebTokenError"
     ) {
@@ -175,6 +173,10 @@ const protect = (req, res, next) => {
         message: "Invalid token",
       });
     }
+
+    // -----------------------------------------------
+    // OTHER ERROR
+    // -----------------------------------------------
 
     return res.status(500).json({
       success: false,
