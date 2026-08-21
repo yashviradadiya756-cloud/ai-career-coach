@@ -15,13 +15,7 @@ const {
 // AUTH MIDDLEWARE
 // =====================================================
 
-const authMiddleware = require(
-  "../middleware/authMiddleware"
-);
-
-const protect = require(
-  "../middleware/authMiddleware"
-);
+const protect = require("../middleware/authMiddleware");
 
 // =====================================================
 // DEBUG
@@ -30,11 +24,6 @@ const protect = require(
 console.log("=================================");
 console.log("USER ROUTES");
 console.log("=================================");
-
-console.log(
-  "authMiddleware:",
-  typeof authMiddleware
-);
 
 console.log(
   "protect:",
@@ -76,10 +65,8 @@ if (typeof updateProfile !== "function") {
 }
 
 // =====================================================
-// ROUTES
-// =====================================================
-
 // GET PROFILE
+// =====================================================
 
 router.get(
   "/profile",
@@ -87,7 +74,9 @@ router.get(
   getProfile
 );
 
+// =====================================================
 // UPDATE PROFILE
+// =====================================================
 
 router.put(
   "/profile",

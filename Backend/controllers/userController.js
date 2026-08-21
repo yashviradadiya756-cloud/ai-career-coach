@@ -7,6 +7,16 @@ const bcrypt = require("bcryptjs");
 
 const getProfile = async (req, res) => {
   try {
+    console.log("=================================");
+    console.log("GET PROFILE STARTED");
+    console.log("=================================");
+
+    // -----------------------------------------------
+    // CHECK AUTH USER
+    // -----------------------------------------------
+
+    console.log("REQ.USER:", req.user);
+
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -14,36 +24,68 @@ const getProfile = async (req, res) => {
       });
     }
 
-    const userId =
-      decoded.id ||
-      decoded.userId;
+    // -----------------------------------------------
+    // GET USER ID FROM AUTH MIDDLEWARE
+    // -----------------------------------------------
+
+    const userId = req.user._id;
+
+    console.log("USER ID:", userId);
 
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message:
-          "Invalid token payload",
+        message: "User ID not found",
       });
     }
 
-    const user =
-      await User.findById(
-        userId
-      ).select("-password");
+    // -----------------------------------------------
+    // FIND USER
+    // -----------------------------------------------
+
+    const user = await User.findById(userId).select("-password");
+
+    console.log(
+      "USER FOUND:",
+      !!user
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // -----------------------------------------------
+    // RESPONSE
+    // -----------------------------------------------
+
+    console.log(
+      "PROFILE FETCH SUCCESS"
+    );
+
+    console.log("=================================");
 
     return res.status(200).json({
       success: true,
+      message: "Profile fetched successfully",
       user,
     });
+
   } catch (error) {
-    console.error(
-      "GET PROFILE ERROR:",
-      error
-    );
+    console.error("=================================");
+    console.error("GET PROFILE ERROR");
+    console.error("ERROR NAME:", error?.name);
+    console.error("ERROR MESSAGE:", error?.message);
+    console.error("ERROR:", error);
+    console.error("=================================");
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to get profile",
+      message:
+        error?.message ||
+        "Failed to get profile",
     });
   }
 };
@@ -54,6 +96,16 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
+    console.log("=================================");
+    console.log("UPDATE PROFILE STARTED");
+    console.log("=================================");
+
+    console.log("REQ.USER:", req.user);
+
+    // -----------------------------------------------
+    // CHECK AUTH
+    // -----------------------------------------------
+
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -61,9 +113,29 @@ const updateProfile = async (req, res) => {
       });
     }
 
-    const user = await User.findById(
-      req.user._id
+    // -----------------------------------------------
+    // USER ID
+    // -----------------------------------------------
+
+    const userId = req.user._id;
+
+    console.log(
+      "USER ID:",
+      userId
     );
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "User ID not found",
+      });
+    }
+
+    // -----------------------------------------------
+    // FIND USER
+    // -----------------------------------------------
+
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({
@@ -72,12 +144,27 @@ const updateProfile = async (req, res) => {
       });
     }
 
+    // -----------------------------------------------
+    // BODY
+    // -----------------------------------------------
+
     const {
       name,
       username,
       email,
       phone,
     } = req.body;
+
+    console.log("UPDATE BODY:", {
+      name,
+      username,
+      email,
+      phone,
+    });
+
+    // -----------------------------------------------
+    // UPDATE FIELDS
+    // -----------------------------------------------
 
     if (name !== undefined) {
       user.name = name;
@@ -95,27 +182,48 @@ const updateProfile = async (req, res) => {
       user.phone = phone;
     }
 
+    // -----------------------------------------------
+    // SAVE
+    // -----------------------------------------------
+
     const updatedUser = await user.save();
+
+    // -----------------------------------------------
+    // REMOVE PASSWORD
+    // -----------------------------------------------
 
     const safeUser = updatedUser.toObject();
 
     delete safeUser.password;
+
+    // -----------------------------------------------
+    // RESPONSE
+    // -----------------------------------------------
+
+    console.log(
+      "PROFILE UPDATE SUCCESS"
+    );
+
+    console.log("=================================");
 
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
       user: safeUser,
     });
+
   } catch (error) {
-    console.error(
-      "UPDATE PROFILE ERROR:",
-      error
-    );
+    console.error("=================================");
+    console.error("UPDATE PROFILE ERROR");
+    console.error("ERROR NAME:", error?.name);
+    console.error("ERROR MESSAGE:", error?.message);
+    console.error("ERROR:", error);
+    console.error("=================================");
 
     return res.status(500).json({
       success: false,
       message:
-        error.message ||
+        error?.message ||
         "Failed to update profile",
     });
   }
