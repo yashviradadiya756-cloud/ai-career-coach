@@ -1,13 +1,14 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
 
 // =====================================================
-// PROTECT MIDDLEWARE
+// PROTECT ROUTES
 // =====================================================
 
-const protect = async (req, res, next) => {
+const protect = (req, res, next) => {
   try {
-    console.log("AUTH MIDDLEWARE RUNNING");
+    console.log("=================================");
+    console.log("AUTH MIDDLEWARE STARTED");
+    console.log("=================================");
 
     // -----------------------------------------------
     // GET AUTHORIZATION HEADER
@@ -15,26 +16,59 @@ const protect = async (req, res, next) => {
 
     const authHeader = req.headers.authorization;
 
-    if (
-      !authHeader ||
-      !authHeader.startsWith("Bearer ")
-    ) {
+    console.log(
+      "AUTH HEADER:",
+      authHeader ? "PRESENT" : "MISSING"
+    );
+
+    if (!authHeader) {
       return res.status(401).json({
         success: false,
-        message: "No token provided",
+        message: "Authorization token missing",
       });
     }
 
     // -----------------------------------------------
-    // GET TOKEN
+    // CHECK BEARER
     // -----------------------------------------------
 
-    const token = authHeader.split(" ")[1];
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid authorization format",
+      });
+    }
+
+    // -----------------------------------------------
+    // EXTRACT TOKEN
+    // -----------------------------------------------
+
+    const token = authHeader.substring(7).trim();
+
+    console.log(
+      "TOKEN EXISTS:",
+      !!token
+    );
 
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Invalid token",
+        message: "Token missing",
+      });
+    }
+
+    // -----------------------------------------------
+    // JWT SECRET
+    // -----------------------------------------------
+
+    if (!process.env.JWT_SECRET) {
+      console.error(
+        "JWT_SECRET IS NOT DEFINED"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "JWT_SECRET is not configured",
       });
     }
 
@@ -42,28 +76,38 @@ const protect = async (req, res, next) => {
     // VERIFY TOKEN
     // -----------------------------------------------
 
+    console.log(
+      "VERIFYING JWT..."
+    );
+
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET
     );
 
     console.log(
-      "TOKEN DECODED:",
+      "JWT DECODED:",
       decoded
     );
 
     // -----------------------------------------------
-    // FIND USER
+    // GET USER ID
     // -----------------------------------------------
 
-    const user = await User.findById(
-      decoded.id
-    ).select("-password");
+    const userId =
+      decoded?.id ||
+      decoded?._id ||
+      decoded?.userId;
 
-    if (!user) {
+    console.log(
+      "USER ID FROM TOKEN:",
+      userId
+    );
+
+    if (!userId) {
       return res.status(401).json({
         success: false,
-        message: "User not found",
+        message: "User ID not found in token",
       });
     }
 
@@ -71,34 +115,74 @@ const protect = async (req, res, next) => {
     // ATTACH USER
     // -----------------------------------------------
 
-    req.user = user;
+    req.user = {
+      _id: userId,
+    };
 
     console.log(
-      "AUTHENTICATED USER:",
-      user._id
+      "REQ.USER:",
+      req.user
     );
 
-    // -----------------------------------------------
-    // CONTINUE
-    // -----------------------------------------------
+    console.log(
+      "AUTHENTICATION SUCCESS"
+    );
+
+    console.log(
+      "================================="
+    );
 
     next();
 
   } catch (error) {
+
     console.error(
-      "AUTH MIDDLEWARE ERROR:",
-      error.message
+      "================================="
     );
 
-    return res.status(401).json({
+    console.error(
+      "AUTH MIDDLEWARE ERROR"
+    );
+
+    console.error(
+      "ERROR NAME:",
+      error?.name
+    );
+
+    console.error(
+      "ERROR MESSAGE:",
+      error?.message
+    );
+
+    console.error(
+      "================================="
+    );
+
+    if (
+      error?.name === "TokenExpiredError"
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "Token has expired",
+      });
+    }
+
+    if (
+      error?.name === "JsonWebTokenError"
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
+    return res.status(500).json({
       success: false,
-      message: "Invalid or expired token",
+      message:
+        error?.message ||
+        "Authentication middleware failed",
     });
   }
 };
-
-// =====================================================
-// EXPORT
-// =====================================================
 
 module.exports = protect;
