@@ -1,13 +1,36 @@
 import axios from "axios";
 
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://ai-career-coach-jpzu.onrender.com/api";
+// =====================================================
+// CONTACT API
+// =====================================================
+
+// IMPORTANT:
+// Backend route is:
+// POST https://ai-career-coach-jpzu.onrender.com/api/contact
+
+const CONTACT_API_URL =
+  "https://ai-career-coach-jpzu.onrender.com/api/contact";
+
+
+// =====================================================
+// SEND CONTACT MESSAGE
+// =====================================================
 
 export const sendContactMessage = async (data) => {
+  console.log("=================================");
+  console.log("CONTACT API REQUEST");
+  console.log("URL:", CONTACT_API_URL);
+  console.log("DATA:", data);
+  console.log("=================================");
+
   const response = await axios.post(
-    `${API_URL}/contact`,
-    data
+    CONTACT_API_URL,
+    data,
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
   );
 
   return response.data;
