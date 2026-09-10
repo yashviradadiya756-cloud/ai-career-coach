@@ -40,6 +40,7 @@ const AdminSettings = () => {
     username: "",
     email: "",
     phone: "",
+    photo: "",
   });
 
   // ==========================================
@@ -140,23 +141,67 @@ const AdminSettings = () => {
   // ==========================================
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+  try {
+    // Get admin account
+    const storedAdmin =
+      localStorage.getItem(
+        "adminUser"
+      );
 
-    if (storedUser) {
+    // Fallback user
+    const storedUser =
+      localStorage.getItem("user");
+
+    // Get profile photo
+    const storedPhoto =
+      localStorage.getItem(
+        "adminProfilePhoto"
+      ) || "";
+
+    let user = {};
+
+    if (storedAdmin) {
       try {
-        const user = JSON.parse(storedUser);
-
-        setProfile({
-          name: user.name || "",
-          username: user.username || "",
-          email: user.email || "",
-          phone: user.phone || "",
-        });
+        user = JSON.parse(
+          storedAdmin
+        );
       } catch (error) {
-        console.error("Admin profile parse error:", error);
+        console.error(
+          "ADMIN USER ERROR:",
+          error
+        );
+      }
+    } else if (storedUser) {
+      try {
+        user = JSON.parse(
+          storedUser
+        );
+      } catch (error) {
+        console.error(
+          "USER ERROR:",
+          error
+        );
       }
     }
-  }, []);
+
+    setProfile({
+      name: user.name || "Yashvi",
+      username:
+        user.username || "",
+      email:
+        user.email || "",
+      phone:
+        user.phone || "",
+      photo: storedPhoto,
+    });
+
+  } catch (error) {
+    console.error(
+      "PROFILE LOAD ERROR:",
+      error
+    );
+  }
+}, []);
 
   // ==========================================
   // MESSAGE
@@ -185,51 +230,392 @@ const AdminSettings = () => {
   // ==========================================
 
   const handleSave = async () => {
-    try {
-      setSaving(true);
+  try {
+    setSaving(true);
 
-      /*
-        Later connect this function with:
+    // ==========================================
+    // PROFILE WITHOUT PHOTO
+    // ==========================================
 
-        PUT /api/admin/settings
+    const profileData = {
+      name:
+        profile.name || "",
 
-        For now this stores settings locally so
-        the frontend works without backend changes.
-      */
+      username:
+        profile.username || "",
 
-      const settings = {
-        profile,
-        security: {
-          twoFactor: security.twoFactor,
-          loginNotification: security.loginNotification,
-        },
-        platform,
-        notifications,
-        payment,
-        aiSettings,
-        certificate,
-        system,
+      email:
+        profile.email || "",
+
+      phone:
+        profile.phone || "",
+    };
+
+    // ==========================================
+    // ADMIN SETTINGS
+    // ==========================================
+
+    const settings = {
+      profile: profileData,
+
+      security: {
+        twoFactor:
+          security.twoFactor,
+
+        loginNotification:
+          security.loginNotification,
+      },
+
+      platform,
+
+      notifications,
+
+      payment,
+
+      aiSettings,
+
+      certificate,
+
+      system,
+    };
+
+    // ==========================================
+    // SAVE SETTINGS
+    // ==========================================
+
+    localStorage.setItem(
+      "adminSettings",
+      JSON.stringify(settings)
+    );
+
+    // ==========================================
+    // UPDATE ADMIN USER
+    // ==========================================
+
+    const storedAdmin =
+      localStorage.getItem(
+        "adminUser"
+      );
+
+    if (storedAdmin) {
+
+      let admin = {};
+
+      try {
+        admin =
+          JSON.parse(
+            storedAdmin
+          );
+      } catch (error) {
+        admin = {};
+      }
+
+      const updatedAdmin = {
+        ...admin,
+
+        name:
+          profile.name,
+
+        username:
+          profile.username,
+
+        email:
+          profile.email,
+
+        phone:
+          profile.phone,
       };
 
       localStorage.setItem(
-        "adminSettings",
-        JSON.stringify(settings)
+        "adminUser",
+        JSON.stringify(
+          updatedAdmin
+        )
       );
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, 600)
-      );
-
-      showSuccess("Settings saved successfully.");
-    } catch (error) {
-      console.error("ADMIN SETTINGS ERROR:", error);
-
-      showError("Failed to save settings.");
-    } finally {
-      setSaving(false);
     }
+
+    // ==========================================
+    // UPDATE NORMAL USER TOO
+    // ==========================================
+
+    const storedUser =
+      localStorage.getItem(
+        "user"
+      );
+
+    if (storedUser) {
+
+      let user = {};
+
+      try {
+        user =
+          JSON.parse(
+            storedUser
+          );
+      } catch (error) {
+        user = {};
+      }
+
+      const updatedUser = {
+        ...user,
+
+        name:
+          profile.name,
+
+        username:
+          profile.username,
+
+        email:
+          profile.email,
+
+        phone:
+          profile.phone,
+      };
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(
+          updatedUser
+        )
+      );
+    }
+
+    // ==========================================
+    // IMPORTANT:
+    // PHOTO IS ALREADY STORED SEPARATELY
+    // ==========================================
+
+    const savedPhoto =
+      localStorage.getItem(
+        "adminProfilePhoto"
+      ) || "";
+
+    // ==========================================
+    // TELL NAVBAR
+    // ==========================================
+
+    window.dispatchEvent(
+      new CustomEvent(
+        "adminProfileUpdated",
+        {
+          detail: {
+            name:
+              profile.name ||
+              "Yashvi",
+
+            photo:
+              savedPhoto,
+          },
+        }
+      )
+    );
+
+    showSuccess(
+      "Admin profile updated successfully."
+    );
+
+  } catch (error) {
+
+    console.error(
+      "ADMIN SETTINGS ERROR:",
+      error
+    );
+
+    showError(
+      "Failed to save settings."
+    );
+
+  } finally {
+    setSaving(false);
+  }
+};
+
+  const handleProfilePhoto = (e) => {
+  const file =
+    e.target.files?.[0];
+
+  if (!file) return;
+
+  // Check image
+  if (!file.type.startsWith("image/")) {
+    showError(
+      "Please select a valid image."
+    );
+
+    return;
+  }
+
+  // Original file maximum 5MB
+  if (
+    file.size >
+    5 * 1024 * 1024
+  ) {
+    showError(
+      "Photo must be less than 5 MB."
+    );
+
+    return;
+  }
+
+  const reader =
+    new FileReader();
+
+  reader.onload = (event) => {
+    const image =
+      new Image();
+
+    image.onload = () => {
+
+      // ==========================================
+      // RESIZE IMAGE
+      // ==========================================
+
+      const maxWidth = 500;
+      const maxHeight = 500;
+
+      let width =
+        image.width;
+
+      let height =
+        image.height;
+
+      if (
+        width > maxWidth ||
+        height > maxHeight
+      ) {
+        const ratio =
+          Math.min(
+            maxWidth / width,
+            maxHeight / height
+          );
+
+        width =
+          Math.round(
+            width * ratio
+          );
+
+        height =
+          Math.round(
+            height * ratio
+          );
+      }
+
+      // ==========================================
+      // CANVAS
+      // ==========================================
+
+      const canvas =
+        document.createElement(
+          "canvas"
+        );
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const context =
+        canvas.getContext(
+          "2d"
+        );
+
+      context.drawImage(
+        image,
+        0,
+        0,
+        width,
+        height
+      );
+
+      // ==========================================
+      // COMPRESS
+      // ==========================================
+
+      const compressedPhoto =
+        canvas.toDataURL(
+          "image/jpeg",
+          0.75
+        );
+
+      try {
+
+        // ========================================
+        // SAVE PHOTO IMMEDIATELY
+        // ========================================
+
+        localStorage.setItem(
+          "adminProfilePhoto",
+          compressedPhoto
+        );
+
+        // ========================================
+        // UPDATE SETTINGS PAGE
+        // ========================================
+
+        setProfile(
+          (previous) => ({
+            ...previous,
+            photo:
+              compressedPhoto,
+          })
+        );
+
+        // ========================================
+        // UPDATE NAVBAR
+        // ========================================
+
+        window.dispatchEvent(
+          new CustomEvent(
+            "adminProfileUpdated",
+            {
+              detail: {
+                name:
+                  profile.name ||
+                  "Yashvi",
+
+                photo:
+                  compressedPhoto,
+              },
+            }
+          )
+        );
+
+        showSuccess(
+          "Profile photo updated successfully."
+        );
+
+      } catch (storageError) {
+
+        console.error(
+          "PHOTO STORAGE ERROR:",
+          storageError
+        );
+
+        showError(
+          "Unable to save the photo. Please try a smaller image."
+        );
+      }
+    };
+
+    image.onerror = () => {
+      showError(
+        "Unable to read this image."
+      );
+    };
+
+    image.src =
+      event.target.result;
   };
 
+  reader.onerror = () => {
+    showError(
+      "Unable to read the selected file."
+    );
+  };
+
+  reader.readAsDataURL(file);
+
+  // Allow same image to be selected again
+  e.target.value = "";
+};
   // ==========================================
   // PASSWORD
   // ==========================================
@@ -395,6 +781,95 @@ const AdminSettings = () => {
             </div>
 
             <div className="settings-form-grid">
+              <div className="admin-profile-photo-section">
+
+                {/* PHOTO */}
+
+                <div className="admin-profile-photo">
+
+                  {profile.photo ? (
+                    <img
+                      src={profile.photo}
+                      alt="Admin Profile"
+                    />
+                  ) : (
+                    <User size={42} />
+                  )}
+
+                </div>
+
+                {/* INFORMATION */}
+
+                <div className="admin-profile-photo-info">
+
+                  <h3>
+                    Profile Photo
+                  </h3>
+
+                  <p>
+                    Upload a profile photo for
+                    your administrator account.
+                  </p>
+
+                  <label className="profile-photo-button">
+
+                    Choose Photo
+
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      onChange={
+                        handleProfilePhoto
+                      }
+                      hidden
+                    />
+
+                  </label>
+
+                  {profile.photo && (
+                    <button
+                      type="button"
+                      className="remove-profile-photo"
+                      onClick={() => {
+
+                        localStorage.removeItem(
+                          "adminProfilePhoto"
+                        );
+
+                        setProfile(
+                          (previous) => ({
+                            ...previous,
+                            photo: "",
+                          })
+                        );
+
+                        window.dispatchEvent(
+                          new CustomEvent(
+                            "adminProfileUpdated",
+                            {
+                              detail: {
+                                name:
+                                  profile.name ||
+                                  "Yashvi",
+
+                                photo: "",
+                              },
+                            }
+                          )
+                        );
+
+                        showSuccess(
+                          "Profile photo removed successfully."
+                        );
+                      }}
+                    >
+                      Remove Photo
+                    </button>
+                  )}
+
+                </div>
+
+              </div>
               <div className="form-group">
                 <label>Full Name</label>
 
