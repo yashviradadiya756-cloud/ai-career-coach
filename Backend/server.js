@@ -57,24 +57,58 @@ console.log("ASSESSMENT API VERSION: 2026-08-06");
 
 connectDB();
 
+// ===============================
+// CORS CONFIGURATION
+// ===============================
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://ai-career-coach-beryl-ten.vercel.app",
+];
+
 app.use(
   cors({
     origin: function (origin, callback) {
-      const allowedOrigins = [
-        "http://localhost:5173",
-        "https://your-vercel-domain.vercel.app",
-      ];
-
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+      // Allow requests from Postman, server-to-server requests,
+      // and requests without an Origin header
+      if (!origin) {
+        return callback(null, true);
       }
+
+      if (allowedOrigins.includes(origin)) {
+        console.log("CORS ALLOWED:", origin);
+        return callback(null, true);
+      }
+
+      console.log("CORS BLOCKED:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
+
     credentials: true,
+
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Accept",
+      "Origin",
+      "X-Requested-With",
+    ],
+
+    optionsSuccessStatus: 204,
   })
 );
 
+// Explicitly handle browser preflight requests
+app.options("*", cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -105,98 +139,6 @@ app.get("/", (req, res) => {
   res.send("AI Career Coach Backend is Running...");
 });
 
-app.get(
-  "/api/gemini-test",
-  async (req, res) => {
-
-    console.log(
-      "================================="
-    );
-
-    console.log(
-      "GEMINI TEST ROUTE HIT"
-    );
-
-    console.log(
-      "================================="
-    );
-
-    try {
-
-      const {
-        generateContent,
-      } = require("./utils/gemini");
-
-      console.log(
-        "Calling Gemini..."
-      );
-
-      const response =
-        await generateContent(
-          "Reply with exactly: GEMINI TEST SUCCESS"
-        );
-
-      console.log(
-        "Gemini response received"
-      );
-
-      let text = "";
-
-      if (response?.text) {
-
-        text =
-          typeof response.text === "function"
-            ? response.text()
-            : response.text;
-      }
-
-      if (
-        !text &&
-        response?.candidates?.[0]
-          ?.content?.parts
-      ) {
-
-        text =
-          response
-            .candidates[0]
-            .content
-            .parts
-            .map(
-              (part) =>
-                part.text || ""
-            )
-            .join("");
-      }
-
-      console.log(
-        "GEMINI TEST RESULT:",
-        text
-      );
-
-      return res.json({
-        success: true,
-        message:
-          "Gemini is working",
-        response: text,
-      });
-
-    } catch (error) {
-
-      console.error(
-        "GEMINI TEST ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Gemini test failed",
-        error:
-          error.message,
-      });
-    }
-  }
-);
 
 app.get("/api/learning-test", (req, res) => {
   res.json({
