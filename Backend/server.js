@@ -1,65 +1,50 @@
+// =====================================================
+// SERVER.JS
+// AI CAREER COACH - BACKEND
+// =====================================================
+
+// ===============================
+// LOAD ENVIRONMENT VARIABLES FIRST
+// ===============================
+
+require("dotenv").config();
+
+// ===============================
+// DNS CONFIGURATION
+// ===============================
+
 const dns = require("dns");
 
 dns.setServers([
   "8.8.8.8",
-  "8.8.4.4"
+  "8.8.4.4",
 ]);
 
 dns.setDefaultResultOrder("ipv4first");
 
-require("dotenv").config();
-
-console.log(
-  "Gemini Key Loaded:",
-  process.env.GEMINI_API_KEY ? "YES" : "NO"
-);
-
-console.log("Razorpay Key:", process.env.RAZORPAY_KEY_ID);
-console.log("Secret Loaded:", !!process.env.RAZORPAY_KEY_SECRET);
-
-console.log(
-  "Razorpay Key Loaded:",
-  !!process.env.RAZORPAY_KEY_ID
-);
-
-console.log(
-  "Razorpay Secret Loaded:",
-  !!process.env.RAZORPAY_KEY_SECRET
-);
+// ===============================
+// IMPORT PACKAGES
+// ===============================
 
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 
-const connectDB = require("./config/db");
-
-const contactRoutes = require("./routes/contactRoutes");
-
-const userRoutes = require("./routes/userRoutes");
-const authRoutes = require("./routes/authRoutes");
-const dashboardRoutes = require("./routes/dashboardRoutes");
-const assessmentRoutes = require("./routes/assessmentRoutes");
-const resumeRoutes = require("./routes/resumeRoutes");
-const skillGapRoutes = require("./routes/skillGapRoutes");
-const roadmapRoutes = require("./routes/roadmapRoutes");
-const interviewRoutes = require("./routes/interviewRoutes");
-const coachRoutes = require("./routes/coachRoutes");
-const learningRoutes = require("./routes/learningRoutes");
-const progressRoutes = require("./routes/progressRoutes");
-const achievementRoutes = require("./routes/achievementRoutes");
-const notificationRoutes = require("./routes/notificationRoutes");
-const paymentRoutes = require("./routes/paymentRoutes");
-const settingsRoutes = require("./routes/settingsRoutes");
+// ===============================
+// CREATE EXPRESS APP
+// ===============================
 
 const app = express();
-app.disable("etag");
-
-console.log("ASSESSMENT API VERSION: 2026-08-06");
-
-connectDB();
 
 // ===============================
+// PORT
+// ===============================
+
+const PORT = process.env.PORT || 5000;
+
+// =====================================================
 // CORS CONFIGURATION
-// ===============================
+// =====================================================
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -69,19 +54,24 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests from Postman, server-to-server requests,
-      // and requests without an Origin header
+      // Allow requests that do not contain an Origin
+      // Example: Postman, server-to-server requests
       if (!origin) {
         return callback(null, true);
       }
 
+      // Allow known frontend origins
       if (allowedOrigins.includes(origin)) {
         console.log("CORS ALLOWED:", origin);
         return callback(null, true);
       }
 
+      // Block unknown origins
       console.log("CORS BLOCKED:", origin);
-      return callback(new Error("Not allowed by CORS"));
+
+      return callback(
+        new Error("Not allowed by CORS")
+      );
     },
 
     credentials: true,
@@ -107,155 +97,469 @@ app.use(
   })
 );
 
-// Explicitly handle browser preflight requests
-app.options("*", cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// =====================================================
+// BODY PARSER
+// =====================================================
 
-const path = require("path");
+app.use(express.json());
 
 app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "uploads"))
+  express.urlencoded({
+    extended: true,
+  })
 );
 
-app.get(
-  "/api/resume-test",
-  (req, res) => {
+// =====================================================
+// BASIC REQUEST LOGGER
+// =====================================================
 
+app.use((req, res, next) => {
+  console.log(
+    `${req.method} ${req.originalUrl}`
+  );
+
+  next();
+});
+
+// =====================================================
+// ROOT ROUTE
+// =====================================================
+
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "AI Career Coach Backend is running",
+  });
+});
+
+// =====================================================
+// HEALTH CHECK
+// =====================================================
+
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Backend API is healthy",
+    server: "AI Career Coach",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// =====================================================
+// MONGODB CONNECTION
+// =====================================================
+
+const connectDB = async () => {
+  try {
+    if (!process.env.MONGO_URI) {
+      console.error(
+        "MONGO_URI is missing from environment variables."
+      );
+
+      return;
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
+
+    console.log("MongoDB Connected Successfully");
     console.log(
-      "RESUME TEST ROUTE HIT"
+      "Database:",
+      mongoose.connection.name
+    );
+  } catch (error) {
+    console.error(
+      "MongoDB Connection Error:",
+      error.message
+    );
+  }
+};
+
+connectDB();
+
+// =====================================================
+// MONGODB CONNECTION EVENTS
+// =====================================================
+
+mongoose.connection.on(
+  "connected",
+  () => {
+    console.log("MongoDB connection established");
+  }
+);
+
+mongoose.connection.on(
+  "error",
+  (error) => {
+    console.error(
+      "MongoDB error:",
+      error.message
+    );
+  }
+);
+
+mongoose.connection.on(
+  "disconnected",
+  () => {
+    console.log(
+      "MongoDB disconnected"
+    );
+  }
+);
+
+// =====================================================
+// GEMINI CONFIGURATION
+// =====================================================
+
+console.log(
+  "GEMINI_API_KEY EXISTS:",
+  !!process.env.GEMINI_API_KEY
+);
+
+if (process.env.GEMINI_API_KEY) {
+  console.log(
+    "GEMINI_API_KEY LENGTH:",
+    process.env.GEMINI_API_KEY.length
+  );
+} else {
+  console.log(
+    "WARNING: GEMINI_API_KEY is not loaded"
+  );
+}
+
+console.log(
+  "PRIMARY MODEL:",
+  process.env.GEMINI_PRIMARY_MODEL ||
+    "gemini-3.5-flash-lite"
+);
+
+console.log(
+  "FALLBACK MODEL:",
+  process.env.GEMINI_FALLBACK_MODEL ||
+    "gemini-3.6-flash"
+);
+
+// =====================================================
+// RAZORPAY CONFIGURATION CHECK
+// =====================================================
+
+console.log(
+  "KEY ID:",
+  process.env.RAZORPAY_KEY_ID
+    ? "LOADED"
+    : "MISSING"
+);
+
+console.log(
+  "KEY SECRET:",
+  process.env.RAZORPAY_KEY_SECRET
+    ? "LOADED"
+    : "MISSING"
+);
+
+// =====================================================
+// IMPORT ROUTES
+// =====================================================
+
+// Authentication
+const authRoutes = require("./routes/authRoutes");
+
+// User
+const userRoutes = require("./routes/userRoutes");
+
+// Dashboard
+const dashboardRoutes = require("./routes/dashboardRoutes");
+
+// Assessment
+const assessmentRoutes = require("./routes/assessmentRoutes");
+
+// Resume
+const resumeRoutes = require("./routes/resumeRoutes");
+
+// Skill Gap
+const skillGapRoutes = require("./routes/skillGapRoutes");
+
+// Roadmap
+const roadmapRoutes = require("./routes/roadmapRoutes");
+
+// Interview
+const interviewRoutes = require("./routes/interviewRoutes");
+
+// AI Coach
+const coachRoutes = require("./routes/coachRoutes");
+
+// Learning
+const learningRoutes = require("./routes/learningRoutes");
+
+// Progress
+const progressRoutes = require("./routes/progressRoutes");
+
+// Achievement
+const achievementRoutes = require("./routes/achievementRoutes");
+
+// Notification
+const notificationRoutes = require("./routes/notificationRoutes");
+
+// Payment
+const paymentRoutes = require("./routes/paymentRoutes");
+
+// Settings
+const settingsRoutes = require("./routes/settingsRoutes");
+
+// Admin
+const adminRoutes = require("./routes/adminRoutes");
+
+// Courses
+const courseRoutes = require("./routes/courseRoutes");
+
+// Contact
+const contactRoutes = require("./routes/contactRoutes");
+
+// =====================================================
+// API ROUTES
+// =====================================================
+
+// Authentication
+app.use(
+  "/api/auth",
+  authRoutes
+);
+
+// Users
+app.use(
+  "/api/users",
+  userRoutes
+);
+
+// Dashboard
+app.use(
+  "/api/dashboard",
+  dashboardRoutes
+);
+
+// Assessment
+app.use(
+  "/api/assessment",
+  assessmentRoutes
+);
+
+// Resume
+app.use(
+  "/api/resume",
+  resumeRoutes
+);
+
+// Skill Gap
+app.use(
+  "/api/skillgap",
+  skillGapRoutes
+);
+
+// Roadmap
+app.use(
+  "/api/roadmap",
+  roadmapRoutes
+);
+
+// Interview
+app.use(
+  "/api/interview",
+  interviewRoutes
+);
+
+// AI Coach
+app.use(
+  "/api/coach",
+  coachRoutes
+);
+
+// Learning
+app.use(
+  "/api/learning",
+  learningRoutes
+);
+
+// Progress
+app.use(
+  "/api/progress",
+  progressRoutes
+);
+
+// Achievement
+app.use(
+  "/api/achievement",
+  achievementRoutes
+);
+
+// Notification
+app.use(
+  "/api/notification",
+  notificationRoutes
+);
+
+// Payment
+app.use(
+  "/api/payment",
+  paymentRoutes
+);
+
+// Settings
+app.use(
+  "/api/settings",
+  settingsRoutes
+);
+
+// Admin
+app.use(
+  "/api/admin",
+  adminRoutes
+);
+
+// Courses
+app.use(
+  "/api/courses",
+  courseRoutes
+);
+
+// Contact
+app.use(
+  "/api/contact",
+  contactRoutes
+);
+
+// =====================================================
+// GEMINI TEST ROUTE
+// =====================================================
+
+try {
+  const {
+    testGemini,
+  } = require("./config/gemini");
+
+  app.get(
+    "/api/gemini-test",
+    async (req, res) => {
+      try {
+        const result =
+          await testGemini();
+
+        res.status(200).json({
+          success: true,
+          message:
+            "Gemini API is working",
+          result,
+        });
+      } catch (error) {
+        console.error(
+          "Gemini Test Error:",
+          error
+        );
+
+        res.status(500).json({
+          success: false,
+          message:
+            "Gemini API test failed",
+          error: error.message,
+        });
+      }
+    }
+  );
+} catch (error) {
+  console.error(
+    "Gemini config could not be loaded:",
+    error.message
+  );
+}
+
+// =====================================================
+// 404 HANDLER
+// =====================================================
+
+app.use(
+  (req, res) => {
+    console.log(
+      "404 ROUTE NOT FOUND:",
+      req.method,
+      req.originalUrl
     );
 
-    res.json({
-      success: true,
-      message:
-        "Resume API is reachable",
+    res.status(404).json({
+      success: false,
+      message: "Route not found",
+      path: req.originalUrl,
     });
   }
 );
 
-app.get("/", (req, res) => {
-  res.send("AI Career Coach Backend is Running...");
-});
+// =====================================================
+// GLOBAL ERROR HANDLER
+// =====================================================
 
+app.use(
+  (
+    error,
+    req,
+    res,
+    next
+  ) => {
+    console.error(
+      "GLOBAL ERROR:",
+      error.message
+    );
 
-app.get("/api/learning-test", (req, res) => {
-  res.json({
-    success: true,
-    message: "Learning API is deployed correctly",
-    version: "2026-08-06"
-  });
-});
-
-const { testGemini, } = require("./config/gemini");
-
-app.get("/api/gemini-test", async (req, res) => {
-
-  console.log("================================");
-  console.log("GEMINI TEST ROUTE HIT");
-  console.log("================================");
-
-  try {
-
-    const response =
-      await testGemini();
-
-    if (!response) {
-
-      return res.status(500).json({
+    // CORS error
+    if (
+      error.message ===
+      "Not allowed by CORS"
+    ) {
+      return res.status(403).json({
         success: false,
         message:
-          "Gemini test failed",
+          "CORS blocked this request",
+        origin: req.headers.origin || null,
       });
     }
 
-    res.json({
-      success: true,
-      message:
-        "Gemini API is working",
-      response:
-        response.text || "",
-    });
-
-  } catch (error) {
-
-    console.error(
-      "GEMINI TEST ROUTE ERROR:",
-      error
-    );
-
-    res.status(500).json({
+    res.status(
+      error.status || 500
+    ).json({
       success: false,
       message:
-        "Gemini API test failed",
-      error:
-        error?.message ||
-        String(error),
+        error.message ||
+        "Internal Server Error",
     });
   }
-});
+);
 
-console.log("================================");
-console.log("CHECKING ROUTES");
+// =====================================================
+// START SERVER
+// =====================================================
 
-console.log("userRoutes:", typeof userRoutes);
-console.log("authRoutes:", typeof authRoutes);
-console.log("dashboardRoutes:", typeof dashboardRoutes);
-console.log("assessmentRoutes:", typeof assessmentRoutes);
-console.log("resumeRoutes:", typeof resumeRoutes);
-console.log("skillGapRoutes:", typeof skillGapRoutes);
-console.log("roadmapRoutes:", typeof roadmapRoutes);
-console.log("interviewRoutes:", typeof interviewRoutes);
-console.log("coachRoutes:", typeof coachRoutes);
-console.log("learningRoutes:", typeof learningRoutes);
-console.log("progressRoutes:", typeof progressRoutes);
-console.log("achievementRoutes:", typeof achievementRoutes);
-console.log("notificationRoutes:", typeof notificationRoutes);
-console.log("paymentRoutes:", typeof paymentRoutes);
+app.listen(
+  PORT,
+  () => {
+    console.log(
+      "========================================"
+    );
 
-console.log("================================");
-app.use("/api/contact", contactRoutes);
+    console.log(
+      `Server is running on port ${PORT}`
+    );
 
-app.use("/api/users", userRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/assessment", assessmentRoutes);
-app.use("/api/resume", resumeRoutes);
-app.use("/api/skillgap", skillGapRoutes);
-app.use("/api/roadmap", roadmapRoutes);
-app.use("/api/interview", interviewRoutes);
-app.use("/api/coach", coachRoutes);
-app.use("/api/learning", learningRoutes);
-app.use("/api/progress", progressRoutes);
-app.use("/api/achievement", achievementRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/payment", paymentRoutes);
-app.use("/api/settings", settingsRoutes); 
+    console.log(
+      `Local URL: http://localhost:${PORT}`
+    );
 
-// ===============================
-// ADMIN ROUTES
-// ===============================
+    console.log(
+      `Health URL: http://localhost:${PORT}/api/health`
+    );
 
-const adminRoutes = require("./routes/adminRoutes");
-const courseRoutes = require("./routes/courseRoutes");
+    console.log(
+      "Frontend URL:",
+      "https://ai-career-coach-beryl-ten.vercel.app"
+    );
 
-
-console.log("🔥 ADMIN ROUTES LOADED:", typeof adminRoutes);
-
-app.use("/api/admin", adminRoutes);
-app.use("/api/courses", courseRoutes);
-
-app.get("/api/admin-route-test", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "ADMIN ROUTE FILE DEPLOYED",
-    version: "2026-08-14",
-  });
-});
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+    console.log(
+      "========================================"
+    );
+  }
+);
