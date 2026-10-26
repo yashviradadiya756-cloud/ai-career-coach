@@ -3,9 +3,8 @@ import axios from "axios";
 const api = axios.create({
   baseURL:
     "https://ai-career-coach-jpzu.onrender.com",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // NOTE: Do NOT set Content-Type here.
+  // Axios sets it automatically (multipart for FormData, json for objects).
 });
 
 // =====================================================
