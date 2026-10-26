@@ -91,6 +91,9 @@ app.use(
       "Accept",
       "Origin",
       "X-Requested-With",
+      "Cache-Control",
+      "Pragma",
+      "Expires",
     ],
 
     optionsSuccessStatus: 204,

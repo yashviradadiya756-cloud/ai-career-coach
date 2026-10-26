@@ -3,13 +3,9 @@ import api from "./axios";
 // ==========================================
 // CACHE CONTROL
 // ==========================================
-const noCacheConfig = {
-  headers: {
-    "Cache-Control": "no-cache",
-    Pragma: "no-cache",
-    Expires: "0",
-  },
-};
+// Cache-Control headers removed from request to fix CORS preflight issue.
+// The backend now allows these headers, but they are not needed in API requests.
+const noCacheConfig = {};
 
 // ==========================================
 // ADMIN DASHBOARD
