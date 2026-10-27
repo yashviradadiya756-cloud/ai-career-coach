@@ -288,8 +288,13 @@ ${resumeText}
       "GEMINI RESPONSE RECEIVED"
     );
 
+    // @google/genai SDK: response.text is a top-level string getter
     let aiText =
-      response?.text ||
+      (typeof response?.text === "string"
+        ? response.text
+        : typeof response?.text === "function"
+        ? response.text()
+        : null) ||
       response?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "";
 
