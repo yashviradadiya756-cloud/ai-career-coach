@@ -4,10 +4,10 @@ require("dotenv").config();
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const PRIMARY_MODEL =
-  process.env.GEMINI_MODEL || "gemini-2.0-flash";
+  process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 const FALLBACK_MODEL =
-  process.env.GEMINI_FALLBACK_MODEL || "gemini-1.5-flash";
+  process.env.GEMINI_FALLBACK_MODEL || "gemini-2.5-flash-lite";
 
 console.log("=================================");
 console.log("GEMINI CONFIG");
