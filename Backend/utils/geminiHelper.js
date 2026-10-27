@@ -9,88 +9,48 @@ const ai = new GoogleGenAI({
 // =====================================================
 
 const generateAI = async (prompt) => {
-  try {
-    console.log(
-      "===================================="
-    );
+  const models = [
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+  ];
 
-    console.log(
-      "GEMINI AI REQUEST"
-    );
+  let lastError = null;
 
-    console.log(
-      "===================================="
-    );
+  for (const model of models) {
+    try {
+      console.log("====================================");
+      console.log("GEMINI AI REQUEST");
+      console.log("Trying Gemini model:", model);
+      console.log("====================================");
 
-    const models = [
-      "gemini-2.5-flash",
-      "gemini-3.5-flash",
-      "gemini-3.6-flash",
-    ];
+      const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+      });
 
-    let lastError = null;
+      const text = response?.text;
 
-    for (const model of models) {
-      try {
-        console.log(
-          `Trying Gemini model: ${model}`
-        );
-
-        const response =
-          await ai.models.generateContent({
-            model,
-            contents: prompt,
-          });
-
-        const text =
-          response?.text;
-
-        if (!text) {
-          throw new Error(
-            "Gemini returned empty response"
-          );
-        }
-
-        console.log(
-          `Gemini success with model: ${model}`
-        );
-
-        console.log(
-          "===================================="
-        );
-
-        return text
-          .replace(/```json/gi, "")
-          .replace(/```/g, "")
-          .trim();
-      } catch (error) {
-        lastError = error;
-
-        console.error(
-          `Gemini model ${model} failed:`,
-          error?.message
-        );
-
-        // Try next model
-        continue;
+      if (!text) {
+        throw new Error("Gemini returned an empty response");
       }
-    }
 
-    throw lastError ||
-      new Error(
-        "All Gemini models failed"
+      console.log("Gemini success with model:", model);
+
+      return text
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
+    } catch (error) {
+      lastError = error;
+
+      console.error(
+        `Gemini model ${model} failed:`,
+        error?.message || error
       );
-  } catch (error) {
-    console.error(
-      "GEMINI HELPER ERROR:"
-    );
-
-    console.error(
-      error
-    );
-
-    throw error;
+    }
   }
+
+  throw lastError || new Error("All Gemini models failed");
 };
 
 module.exports = {
